@@ -1,0 +1,244 @@
+import { multiColors } from '@/app/product/flow-mo-neon-sign/_data/colors';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
+import Draggable from "react-draggable";
+
+interface NeonTextProps {
+  text: string;
+  color: string | string[];
+  font: string;
+  width: number;
+  height: number;
+  fontSize: number;
+  textAlignment: string;
+  rounded?: boolean;
+  multiColorMode?: 'word' | 'letter' | 'gradient' | 'flow';
+  animationSpeed?: number;
+}
+
+export const NeonText: React.FC<NeonTextProps> = ({
+  text,
+  color,
+  font,
+  width,
+  height,
+  fontSize,
+  textAlignment,
+  rounded = false,
+  multiColorMode = 'flow',
+  animationSpeed = 2000
+}) => {
+
+  const [flowOffset, setFlowOffset] = useState(0);
+
+  // Memoize colors to prevent unnecessary re-renders
+  const colors = useMemo(() => multiColors.map(c => c.value), []);
+
+  // Optimize the flow animation to reduce re-renders
+  useEffect(() => {
+    if (multiColorMode === 'flow') {
+      const interval = setInterval(() => {
+        setFlowOffset(prev => (prev + 1) % (colors.length * 10));
+      }, Math.max(animationSpeed / 20, 50)); // Minimum 50ms to prevent too frequent updates
+      return () => clearInterval(interval);
+    }
+  }, [multiColorMode, animationSpeed, colors.length]);
+
+  // Memoize the gradient style function
+  const createGradientStyle = useCallback((currentColor: string): React.CSSProperties => ({
+    color: currentColor,
+    fontSize: `${fontSize}px`,
+    fontFamily: font,
+    fontWeight: 'bold',
+    textShadow: `
+      2px 2px 4px rgba(0, 0, 0, 0.5), 
+      0px 0px 10px ${currentColor}88,
+      0px 0px 20px ${currentColor}66,
+      0px 0px 30px ${currentColor}44
+    `,
+  }), [fontSize, font]);
+
+  const baseStyle: React.CSSProperties = useMemo(() => ({
+    fontSize: `${fontSize}px`,
+    fontFamily: font,
+    fontWeight: 'bold',
+    whiteSpace: 'pre-wrap' as const,
+    textAlign: textAlignment as string,
+    display: 'flex',
+    flexDirection: 'column', // Added to stack lines vertically
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '8px 16px',
+    lineHeight: '100px',
+    background: rounded ? 'rgba(0, 0, 0, 0.3)' : 'transparent',
+    borderRadius: rounded ? '25px' : '0px',
+    border: rounded ? '2px solid rgba(255, 255, 255, 0.2)' : 'none',
+    backdropFilter: rounded ? 'blur(10px)' : 'none',
+  }), [fontSize, font, textAlignment, rounded]);
+
+  const renderedText = useMemo(() => {
+    const displayText = text || 'Your Text';
+    const allColorsGradient = colors.join(', ');
+
+    // First, split text into lines to handle line breaks properly
+    const lines = displayText.split('\n');
+
+    if (multiColorMode === 'flow') {
+      return lines.map((line, lineIndex) => (
+        <div key={`line-${lineIndex}`} style={{ textAlign: textAlignment as any }}>
+          {line.split('').map((char, charIndex) => {
+            if (char === ' ') {
+              return <span key={`${lineIndex}-${charIndex}`}>&nbsp;</span>;
+            }
+
+            // Calculate global character index for consistent color flow
+            const globalIndex = lines.slice(0, lineIndex).join('').length + charIndex;
+            const colorIndex = Math.floor((globalIndex + flowOffset) / 3) % colors.length;
+            const currentColor = colors[colorIndex];
+
+            return (
+              <span
+                key={`${lineIndex}-${charIndex}`}
+                style={{
+                  ...createGradientStyle(currentColor),
+                  transition: 'all 0.3s ease',
+                  display: 'inline-block',
+                  filter: 'drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3))',
+                }}
+              >
+                {char}
+              </span>
+            );
+          })}
+        </div>
+      ));
+    }
+
+    if (multiColorMode === 'gradient') {
+      return lines.map((line, lineIndex) => (
+        <div key={`line-${lineIndex}`} style={{ textAlign: textAlignment as any }}>
+          <span style={{
+            fontSize: `${fontSize}px`,
+            fontFamily: font,
+            fontWeight: 'bold',
+            background: `linear-gradient(to right, ${allColorsGradient}, ${allColorsGradient})`,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            backgroundSize: '200% 100%',
+            animation: 'gradientFlowLeftRight 3s linear infinite',
+            filter: 'drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4)) drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.2))',
+          }}>
+            {line}
+          </span>
+        </div>
+      ));
+    }
+
+    if (multiColorMode === 'word') {
+      return lines.map((line, lineIndex) => (
+        <div key={`line-${lineIndex}`} style={{ textAlign: textAlignment as any }}>
+          {line.split(' ').map((word, wordIndex) => (
+            <React.Fragment key={`word-${lineIndex}-${wordIndex}`}>
+              <span style={{
+                ...createGradientStyle(colors[wordIndex % colors.length]),
+                transition: 'color 0.5s ease',
+                filter: 'drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3))',
+              }}>
+                {word}
+              </span>
+              {/* Add space between words, but not after the last word in a line */}
+              {wordIndex < line.split(' ').length - 1 && <span>&nbsp;</span>}
+            </React.Fragment>
+          ))}
+        </div>
+      ));
+    }
+
+    if (multiColorMode === 'letter') {
+      return lines.map((line, lineIndex) => (
+        <div key={`line-${lineIndex}`} style={{ textAlign: textAlignment as any }}>
+          {line.split('').map((char, charIndex) => {
+            if (char === ' ') {
+              return <span key={`${lineIndex}-${charIndex}`}>&nbsp;</span>;
+            }
+
+            // Calculate global character index for consistent coloring
+            const globalIndex = lines.slice(0, lineIndex).join('').length + charIndex;
+
+            return (
+              <span
+                key={`${lineIndex}-${charIndex}`}
+                style={{
+                  ...createGradientStyle(colors[globalIndex % colors.length]),
+                  display: 'inline-block',
+                  transition: 'color 0.3s ease',
+                  filter: 'drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3))',
+                }}
+              >
+                {char}
+              </span>
+            );
+          })}
+        </div>
+      ));
+    }
+
+    // Default: use first color or provided single color
+    const defaultColor = Array.isArray(color) ? color[0] : color;
+    return lines.map((line, lineIndex) => (
+      <div key={`line-${lineIndex}`} style={{ textAlign: textAlignment as any }}>
+        <span style={{
+          ...createGradientStyle(defaultColor),
+          filter: 'drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3))',
+        }}>
+          {line}
+        </span>
+      </div>
+    ));
+  }, [text, flowOffset, fontSize, font, multiColorMode, colors, createGradientStyle, color, textAlignment]);
+
+  const nodeRef = useRef(null);
+
+  // Generate CSS animations for gradient flow
+  const generateAnimationCSS = useCallback(() => {
+    return `
+      @keyframes gradientFlowLeftRight {
+        0% { background-position: -200% 0%; }
+        100% { background-position: 200% 0%; }
+      }
+    `;
+  }, []);
+
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: generateAnimationCSS() }} />
+      <Draggable
+        nodeRef={nodeRef}
+        bounds="parent"
+        defaultPosition={{ x: 0, y: 0 }}>
+        <div className="relative group cursor-move" ref={nodeRef}>
+          <div
+            className="transition-all duration-300 max-[567px]:!text-[40px] max-[567px]:!leading-[4.5rem]"
+            style={baseStyle}
+          >
+            {renderedText}
+          </div>
+
+          {/* Measurement indicators */}
+          <div className="absolute top-1/2 -left-8 w-8 border-t border-gray-400 opacity-100 group-hover:opacity-100 transition-opacity" />
+          <div className="absolute top-1/2 -right-8 w-8 border-t border-gray-400 opacity-100 group-hover:opacity-100 transition-opacity" />
+          <div className="absolute -top-8 left-1/2 h-8 border-l border-gray-400 opacity-100 group-hover:opacity-100 transition-opacity" />
+          <div className="absolute -bottom-8 left-1/2 h-8 border-l border-gray-400 opacity-100 group-hover:opacity-100 transition-opacity" />
+
+          {/* Dimension labels */}
+          <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/75 text-white px-2 py-1 rounded text-sm opacity-100 group-hover:opacity-100 transition-opacity">
+            {width}&quot;
+          </div>
+          <div className="absolute bottom-[38%] -left-20 transform -translate-y-1/2 bg-black/75 text-white px-2 py-1 rounded text-sm opacity-100 group-hover:opacity-100 transition-opacity">
+            {height}&quot;
+          </div>
+        </div>
+      </Draggable>
+    </>
+  );
+};

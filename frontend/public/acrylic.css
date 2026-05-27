@@ -1,0 +1,441 @@
+/* Responsive */
+/* Canvas Container Styles */
+#canvasContainer {
+  display: flex;
+  justify-content: center;
+  margin: auto;
+  background: linear-gradient(rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.02)), url('https://s3.ap-south-1.amazonaws.com/printhutt.dev.bucket/others/white-brick-wall-texture-seamless_177006-173_wwjy5o_dcq1sg.avif');
+  padding: 40px 20px;
+  background-size: contain;
+  background-repeat: repeat;
+  background-position: center;
+  min-height: 375px;
+  position: relative;
+  max-height: 100%;
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Width and Height Labels */
+#width {
+  position: absolute;
+  left: calc(50% - 57.5px);
+  top: 2%;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.8);
+  width: 130px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+#height {
+  position: absolute;
+  top: 300px;
+  left: 0%;
+  width: 130px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+
+
+
+
+.shadow-box.landscape {
+  width: 450px;
+  height: 700px;
+}
+
+.shadow-box canvas {
+  width: 100% !important;
+  height: auto !important;
+  max-width: 700px;
+  transition: all 0.3s ease;
+}
+
+
+.normal-canvas {
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 4px 5px,
+    rgba(0, 0, 0, 0.12) 0px -12px 30px,
+    rgba(0, 0, 0, 0.12) 0px 4px 6px,
+    rgba(0, 0, 0, 0.17) 0px 12px 13px,
+    rgba(0, 0, 0, 0.09) 0px -3px 5px;
+  border-radius: 0%;
+}
+
+.roundEdge-canvas {
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 4px 5px,
+    rgba(0, 0, 0, 0.12) 0px -12px 30px,
+    rgba(0, 0, 0, 0.12) 0px 4px 6px,
+    rgba(0, 0, 0, 0.17) 0px 12px 13px,
+    rgba(0, 0, 0, 0.09) 0px -3px 5px;
+  border-radius: 20px;
+}
+
+.leaf-canvas {
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 4px 5px,
+    rgba(0, 0, 0, 0.12) 0px -12px 30px,
+    rgba(0, 0, 0, 0.12) 0px 4px 6px,
+    rgba(0, 0, 0, 0.17) 0px 12px 13px,
+    rgba(0, 0, 0, 0.09) 0px -3px 5px;
+  border-radius: 200px 0 200px 0;
+
+}
+
+.egghorizontal-canvas {
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 4px 5px,
+    rgba(0, 0, 0, 0.12) 0px -12px 30px,
+    rgba(0, 0, 0, 0.12) 0px 4px 6px,
+    rgba(0, 0, 0, 0.17) 0px 12px 13px,
+    rgba(0, 0, 0, 0.09) 0px -3px 5px;
+  border-radius: 41% 59% 70% 35% / 49% 55% 50% 51%;
+}
+
+.extraRoundhorizontal-canvas {
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 4px 5px,
+    rgba(0, 0, 0, 0.12) 0px -12px 30px,
+    rgba(0, 0, 0, 0.12) 0px 4px 6px,
+    rgba(0, 0, 0, 0.17) 0px 12px 13px,
+    rgba(0, 0, 0, 0.09) 0px -3px 5px;
+  border-radius: 80px;
+}
+
+.selected {
+  border: 2px solid white;
+  transform: scale(1.1);
+}
+
+/* Button Styles */
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: -100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+
+.btn:hover::after {
+  left: 100%;
+}
+
+.btn-outline-primary {
+  border: 1px solid #3B82F6;
+  color: #3B82F6;
+}
+
+.btn-outline-primary:hover {
+  background-color: #3B82F6;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.bg-success {
+  background-color: #10B981;
+  color: white;
+}
+
+.buyNowBtn {
+  transition: all 0.3s ease;
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 12px 55px;
+  border: 0;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 1px;
+  display: inline-block;
+  width: 400px;
+  background: linear-gradient(45deg, #10B981, #059669);
+  position: relative;
+  overflow: hidden;
+}
+
+.buyNowBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.buyNowBtn::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: -100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+
+.buyNowBtn:hover::after {
+  left: 100%;
+}
+
+.upload-container {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.upload-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px -1px rgba(0, 0, 0, 0.1);
+}
+
+.file-input-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100px;
+  border: 2px dashed #E5E7EB;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.file-input-wrapper:hover {
+  border-color: #10B981;
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+.file-input-wrapper input[type="file"] {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-input-wrapper .upload-icon {
+  font-size: 24px;
+  color: #10B981;
+  margin-bottom: 8px;
+}
+
+.size-thickness-container {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+}
+
+/* Responsive Styles */
+@media (max-width: 750px) {
+  #canvasContainer {
+    min-height: auto;
+  }
+
+  .canvas-container {
+    width: 100% !important;
+  }
+
+  .lower-canvas,
+  .upper-canvas {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .shadow-box {
+    height: 100% !important;
+  }
+
+
+
+  #height {
+    background: none;
+    top: 104px;
+    left: -19% !important;
+    color: #000;
+  }
+
+  #width {
+    background: none;
+    top: 2%;
+    left: 30% !important;
+    color: #000;
+  }
+
+  .buyNowBtn {
+    width: 100% !important;
+  }
+
+  .size-thickness-container {
+    padding: 1rem;
+  }
+
+  #cpanel-shape svg {
+    max-width: 25px !important;
+    max-height: 25px !important;
+  }
+
+  .leaf-canvas {
+    border-radius: 100px 0 100px 0 !important;
+  }
+
+  .extraRoundhorizontal-canvas {
+    border-radius: 50px !important;
+  }
+}
+
+#cpanel-shape {
+  /* width: 45px; */
+  cursor: none;
+  height: auto;
+  font-size: 13px;
+  font-weight: bold;
+  max-width: 98%;
+  position: absolute;
+  top: 17px;
+  right: 1px;
+  display: block;
+  clear: both;
+  max-height: 390px;
+  overflow: hidden;
+  border: 0;
+  /* overflow-y: scroll; */
+}
+
+#availableShape .activeshape {
+  border: 2px solid #03A9F4;
+  background: #ffffff00;
+  padding: 1px;
+  filter: none;
+  /* border: 2px solid #000; */
+}
+
+#availableShape svg {
+  max-width: 34px;
+  max-height: 34px;
+  margin: 2px;
+  padding: 1px;
+  /* border: 1px solid #eee; */
+  cursor: pointer;
+  z-index: 9;
+  filter: drop-shadow(0 0 1px #000);
+}
+
+
+
+
+.sizeguide {
+  text-align: right;
+  width: 100%;
+  display: block;
+  position: absolute;
+  left: 10px;
+  font-size: 16px;
+  color: #000;
+  font-weight: bolder;
+  bottom: 2px;
+  left: 1px;
+  max-width: 100px;
+}
+
+.generatedRadios {
+  display: inline-block;
+  padding: 0 10px;
+  margin: 2px 2px 10px 2px;
+  min-width: 60px;
+  text-align: center;
+  font-size: 14px;
+  border-radius: 5px;
+}
+
+.generatedRadios.selected {
+  font-weight: bold;
+  background: #2196f3;
+  color: #fff;
+}
+
+/* marquee for header section */
+@keyframes marquee {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 25s linear infinite;
+}
+
+
+
+
+/* CUSTOMIZE  MAGNET */
+/* https://bennettfeely.com/clippy/   example site */
+
+.rhombus-shape {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+.pentagon-shape {
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+}
+
+.hexagon-shape {
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+}
+
+.heptagon-shape {
+  clip-path: polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%);
+}
+
+.octagon-shape {
+  clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+}
+
+.nonagon-shape {
+  clip-path: polygon(50% 0%, 83% 12%, 100% 43%, 94% 78%, 68% 100%, 32% 100%, 6% 78%, 0% 43%, 17% 12%);
+}
+
+.bevel-shape {
+  clip-path: polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%);
+}
+
+.rabbet-shape {
+  clip-path: polygon(0% 15%, 15% 15%, 15% 0%, 85% 0%, 85% 15%, 100% 15%, 100% 85%, 85% 85%, 85% 100%, 15% 100%, 15% 85%, 0% 85%);
+}
+
+.circle-shape {
+  clip-path: circle(50% at 50% 50%);
+}
+
+.ellipse-shape {
+  clip-path: ellipse(40% 50% at 50% 50%);
+}
+
+.star-shape {
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+/* clip-path: xywh(0 5px 100% 75% round 15% 0); */
+
+
+.main-box-checkout::-webkit-scrollbar{
+  width: 2px;
+}
