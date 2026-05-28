@@ -14,7 +14,7 @@ import { toast } from 'react-toastify';
 
 import Breadcrumb from '@/components/Breadcrumb';
 import { axiosInstance } from '@/utils/axios';
-import { useUserStore } from '@/store/useUserStore';
+import { syncCartOnLogin, useUserStore } from '@/store/useUserStore';
 
 const Login = () => {
   const router = useRouter();
@@ -40,53 +40,53 @@ const Login = () => {
   // SEND OTP
   // =============================
   const handleSubmitSendOtp = async (e: FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!emailOrMobile.trim()) {
-    setErrorMessage('Please enter Email or Mobile Number');
-    toast.error('Please enter Email or Mobile Number');
-    return;
-  }
+    if (!emailOrMobile.trim()) {
+      setErrorMessage('Please enter Email or Mobile Number');
+      toast.error('Please enter Email or Mobile Number');
+      return;
+    }
 
-  // Email regex
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Email regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  // Mobile regex (exactly 10 digits)
-  const mobileRegex = /^[0-9]{10}$/;
+    // Mobile regex (exactly 10 digits)
+    const mobileRegex = /^[0-9]{10}$/;
 
-  const value = emailOrMobile.trim();
+    const value = emailOrMobile.trim();
 
-  // Validate email or mobile
-  const isValid =
-    emailRegex.test(value) || mobileRegex.test(value);
+    // Validate email or mobile
+    const isValid =
+      emailRegex.test(value) || mobileRegex.test(value);
 
-  if (!isValid) {
-    toast.error(
-      'Please enter a valid Email or 10-digit Mobile Number'
-    );
-    return;
-  }
+    if (!isValid) {
+      toast.error(
+        'Please enter a valid Email or 10-digit Mobile Number'
+      );
+      return;
+    }
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    await axiosInstance.post('/auth/login', {
-      emailOrMobile: value,
-    });
+      await axiosInstance.post('/auth/login', {
+        emailOrMobile: value,
+      });
 
-    toast.success(`OTP sent to ${value}`);
+      toast.success(`OTP sent to ${value}`);
 
-    setStep('otp');
-    setTimer(30);
-    setIsResendEnabled(false);
-  } catch (error: any) {
-    toast.error(
-      error?.response?.data?.message || 'Failed to send OTP'
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+      setStep('otp');
+      setTimer(30);
+      setIsResendEnabled(false);
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message || 'Failed to send OTP'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
   // =============================
   // OTP CHANGE
   // =============================
@@ -177,10 +177,11 @@ const Login = () => {
           emailOrMobile,
         }
       );
-
+      console.log('✅ verify-otp response:', data);
       toast.success(data?.message || 'Login Successful');
-
       await fetchUserDetails();
+      console.log('✅ isLoggedIn after fetch:', useUserStore.getState().isLoggedIn);
+      await syncCartOnLogin();
 
       if (data?.role === 'user') {
         router.push('/user/dashboard');
@@ -188,10 +189,8 @@ const Login = () => {
         router.push('/login');
       }
     } catch (error: any) {
-      toast.error(
-        error?.response?.data?.error ||
-        'Invalid or Expired OTP'
-      );
+      console.error('❌ verify-otp error:', error);
+      toast.error(error?.message || 'Invalid or Expired OTP');
     } finally {
       setLoadingOtp(false);
     }
@@ -318,8 +317,8 @@ const Login = () => {
                       }}
                       placeholder="Enter email or mobile"
                       className={`w-full h-14 px-4 rounded-xl border text-gray-700 focus:outline-none focus:ring-2 transition-all ${errorMessage
-                          ? 'border-red-500 focus:ring-red-200'
-                          : 'border-gray-300 focus:ring-blue-200 focus:border-blue-500'
+                        ? 'border-red-500 focus:ring-red-200'
+                        : 'border-gray-300 focus:ring-blue-200 focus:border-blue-500'
                         }`}
                     />
 

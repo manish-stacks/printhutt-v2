@@ -33,6 +33,9 @@ import visitorsRoutes from './modules/visitors/visitors.routes';
 import uploadRoutes from './modules/upload/upload.routes';
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
 import paymentRoutes from './modules/payment/payment.routes';
+import userCartRoutes from './modules/usercart/usercart.routes';
+import settingsRoutes from './modules/settings/settings.routes';
+import seoRoutes from './modules/seo/seo.routes';
 
 export function buildApp(): Express {
   const app = express();
@@ -79,6 +82,9 @@ export function buildApp(): Express {
   app.use('/api/upload', uploadRoutes);
   app.use('/api/dashboard', dashboardRoutes);
   app.use('/api/payment', paymentRoutes);
+  app.use('/api/usercart', userCartRoutes);
+  app.use('/api/settings', settingsRoutes);
+  app.use('/', seoRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

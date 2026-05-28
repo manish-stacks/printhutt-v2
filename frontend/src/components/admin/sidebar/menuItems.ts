@@ -1,4 +1,4 @@
-import { FaBroom, FaCartPlus, FaGifts, FaHome, FaLayerGroup, FaRssSquare, FaStar, FaTag, FaTasks, FaUsers } from "react-icons/fa";
+import { FaBroom, FaCartPlus, FaCog, FaGifts, FaHome, FaLayerGroup, FaRssSquare, FaStar, FaTag, FaTasks, FaUsers } from "react-icons/fa";
 import { RiLuggageCartFill, RiReceiptFill } from "react-icons/ri";
 
 
@@ -119,12 +119,12 @@ export const mainMenuItems = [
   //   label: 'Manages Pages',
   //   path: '/admin/manage-page',
   // },
-  // {
-  //   id: 'transactions',
-  //   icon: FaRandom,
-  //   label: 'Transactions',
-  //   path: '/admin/transactions',
-  // },
+  {
+    id: 'Settings',
+    icon: FaCog,
+    label: 'Settings',
+    path: '/admin/settings',
+  },
   {
     id: 'cache-clear',
     icon: FaBroom,

@@ -43,6 +43,12 @@ const nextConfig: NextConfig = withPWA({
   productionBrowserSourceMaps: true,
   compress: true,
   poweredByHeader: false,
+  async rewrites() {
+    return [
+      { source: '/sitemap.xml', destination: `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}/sitemap.xml` },
+      { source: '/robots.txt', destination: `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}/robots.txt` },
+    ];
+  },
 });
 
 export default nextConfig;

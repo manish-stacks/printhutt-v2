@@ -77,15 +77,17 @@ const Dashboard = () => {
             {/* Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               <StatsCard
-                icon={RiShoppingCartFill}
+                title="Total Orders"
                 value={data?.totalOrders || 0}
-                label="Total Orders"
+                icon='ri-shopping-cart-2-line text-[22px]'
+                color="bg-purple-500"
               />
 
               <StatsCard
-                icon={RiHeartFill}
+                title="Wishlist Items"
                 value={data?.totalWishlist || 0}
-                label="Wishlist Items"
+                icon='ri-heart-2-line text-[22px]'
+                color="bg-pink-500"
               />
             </div>
 

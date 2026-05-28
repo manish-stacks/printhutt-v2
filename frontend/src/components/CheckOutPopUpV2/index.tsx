@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { BiX } from 'react-icons/bi';
-import { useUserStore } from '@/store/useUserStore';
+import { syncCartOnLogin, useUserStore } from '@/store/useUserStore';
 import { useCartStore } from '@/store/useCartStore';
 import { CheckoutForm } from './CheckoutForm';
 import { ModalProps, TotalPrice, CouponItem } from './interfaces';
@@ -187,7 +187,9 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             setLoading(true);
             const data = await axiosInstance.post('/auth/verify-otp', { otp, emailOrMobile });
             toast.success(data.message || 'OTP verified successfully');
-            fetchUserDetails();
+            await fetchUserDetails();
+            await syncCartOnLogin();
+            onClose();
         } catch { setError('Invalid OTP or OTP expired'); }
         finally { setLoading(false); }
     }, [otp]);
