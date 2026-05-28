@@ -25,3 +25,9 @@ export const updateProfileSchema = z
     { message: 'At least one field must be provided' }
   );
 export type UpdateProfileDTO = z.infer<typeof updateProfileSchema>;
+
+/* ─────────── PATCH /api/users/:id/block ─────────── */
+export const blockUserSchema = z.object({
+  isBlocked: z.boolean(),
+});
+export type BlockUserDTO = z.infer<typeof blockUserSchema>;

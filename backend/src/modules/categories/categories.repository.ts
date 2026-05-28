@@ -37,7 +37,7 @@ export const categoriesRepo = {
   /* ─── Featured (storefront) ─── */
   findFeatured: () =>
     Category.find({ featured: true }, { name: 1, _id: 1 })
-      .sort({ createdAt: -1 })
+      .sort({ level: 1 })
       .lean(),
 
   /* ─── Storefront with subcategory + product counts ─── */

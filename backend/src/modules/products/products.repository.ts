@@ -3,6 +3,11 @@ import Product from '@/db/models/productModel';
 import Category from '@/db/models/categoryModel';
 import SubCategory from '@/db/models/subCategoryModel';
 import Offer from '@/db/models/offerModel';
+import WarrantyInformation from '@/db/models/warrantyInformationModel';
+import ShippingInformation from '@/db/models/shippingInformationModel';
+import ReturnPolicy from '@/db/models/returnPolicyModule';
+import Review from '@/db/models/reviewModel';
+import User from '@/db/models/userModel';
 
 /**
  * Product repository — data-access layer.
@@ -41,52 +46,106 @@ export const productRepo = {
   /* ─── Lookups ─── */
   findById: (id: string) => Product.findById(id),
   findByIdRaw: (id: string) => Product.findById(id).lean(),
-  findByIdFull: (id: string) =>
-    Product.findById(id)
+  findByIdFull: (id: string) => {
+    const q = Product.findById(id)
       .populate({ path: 'category', model: Category })
-      .populate({ path: 'subcategory', model: SubCategory }),
-  findBySlug: (slug: string) => Product.findOne({ slug }).populate({ path: 'category', model: Category }).populate({ path: 'subcategory', model: SubCategory }),
+      .populate({ path: 'subcategory', model: SubCategory })
+      .populate({ path: 'warrantyInformation', model: WarrantyInformation })
+      .populate({ path: 'shippingInformation', model: ShippingInformation })
+      .populate({ path: 'returnPolicy', model: ReturnPolicy })
+      .populate({
+        path: 'reviews',
+        model: Review,
+        populate: {
+          path: 'userId',
+          model: User
+        }
+      })
+      .populate({ path: 'offers', model: Offer });
+    return q;
+  },
+
+  findBySlug: (slug: string) => {
+    const q = Product.findOne({ slug })
+      .populate({ path: 'category', model: Category })
+      .populate({ path: 'subcategory', model: SubCategory })
+      .populate({ path: 'warrantyInformation', model: WarrantyInformation })
+      .populate({ path: 'shippingInformation', model: ShippingInformation })
+      .populate({ path: 'returnPolicy', model: ReturnPolicy })
+      .populate({
+        path: 'reviews',
+        model: Review,
+        populate: {
+          path: 'userId',
+          model: User
+        }
+      })
+      .populate({ path: 'offers', model: Offer });
+
+    return q;
+  },
+
   findByCategoryId: (categoryId: string, limit: number | null) => {
     const q = Product.find({ category: categoryId })
       .sort({ createdAt: -1 })
       .populate({ path: 'category', model: Category })
-      .populate({ path: 'subcategory', model: SubCategory });
+      .populate({ path: 'subcategory', model: SubCategory })
+      .populate({ path: 'warrantyInformation', model: WarrantyInformation })
+      .populate({ path: 'shippingInformation', model: ShippingInformation })
+      .populate({ path: 'returnPolicy', model: ReturnPolicy })
+      .populate({
+        path: 'reviews',
+        model: Review,
+        populate: {
+          path: 'userId',
+          model: User
+        }
+      })
+      .populate({ path: 'offers', model: Offer });
     return limit !== null ? q.limit(limit) : q;
   },
 
   findByCategorySlug: async (
     categorySlug: string,
+    page: number,
     limit: number
-  ): Promise<{ category: unknown; products: unknown[] } | null> => {
+  ): Promise<{ category: unknown; products: unknown[]; total: number } | null> => {
     const category = await Category.findOne({ slug: categorySlug })
       .select('_id')
       .lean<{ _id: unknown } | null>();
     if (!category) return null;
-    const products = await Product.find({ category: category._id, status: true })
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .lean();
-    return { category, products };
+
+    const [products, total] = await Promise.all([
+      Product.find({ category: category._id, status: true })
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Product.countDocuments({ category: category._id, status: true }),
+    ]);
+    return { category, products, total };
   },
 
   findBySubCategorySlug: async (
     subCategorySlug: string,
     page: number,
     limit: number
-  ): Promise<{ products: unknown[]; total: number } | null> => {
+  ): Promise<{ products: unknown[]; total: number, categories: unknown[] } | null> => {
     const sub = await SubCategory.findOne({ slug: subCategorySlug }).lean<{
       _id: unknown;
+      parentCategory: unknown;
     } | null>();
     if (!sub) return null;
-    const [products, total] = await Promise.all([
+    const [products, total, categories] = await Promise.all([
       Product.find({ subcategory: sub._id, status: true })
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
         .lean(),
       Product.countDocuments({ subcategory: sub._id, status: true }),
+      SubCategory.find({ status: true, parentCategory: sub.parentCategory }).lean(),
     ]);
-    return { products, total };
+    return { products, total, categories };
   },
 
   /* ─── New arrivals — random sample with aggregation ─── */

@@ -4,7 +4,7 @@ import { asyncHandler } from '@/utils/async-handler';
 import { sendCreated, sendOk } from '@/utils/api-response';
 import type { MulterFile } from '@/utils/storage';
 import * as service from './blogs.service';
-import type { ListBlogsQueryDTO, PatchBlogDTO } from './blogs.validation';
+import type { ListBlogsQueryDTO, PatchBlogDTO, StorefrontBlogsQueryDTO } from './blogs.validation';
 
 const pickFile = (req: Request, field: string): MulterFile | undefined => {
   const single = req.file as Express.Multer.File | undefined;
@@ -49,8 +49,10 @@ export const patchBlog = asyncHandler(async (req: Request, res: Response) => {
   return sendOk(res, { message: 'Blog status updated successfully', data: result });
 });
 
-export const storefrontList = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await service.storefrontList();
+export const storefrontList = asyncHandler(async (req: Request, res: Response) => {
+  const result = await service.storefrontList(
+    req.query as unknown as StorefrontBlogsQueryDTO
+  );
   return res.json(result);
 });
 

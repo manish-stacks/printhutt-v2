@@ -2,33 +2,28 @@ import { Router } from 'express';
 import { requireAuth, requireRole } from '@/middlewares/auth.middleware';
 import { validate } from '@/middlewares/validate.middleware';
 import * as controller from './users.controller';
-import {
-  listUsersQuerySchema,
-  updateProfileSchema,
-} from './users.validation';
+import { blockUserSchema, listUsersQuerySchema, updateProfileSchema } from './users.validation';
 
 const router = Router();
 
 /* ─── Admin ──────────────────────────────────────────────────── */
-// Original: GET /api/user  (admin-only listing of non-admin users)
-router.get(
-  '/',
-  requireAuth,
-  requireRole('admin'),
-  validate(listUsersQuerySchema, 'query'),
-  controller.adminList
-);
+router.get('/', requireAuth, requireRole('admin'), validate(listUsersQuerySchema, 'query'), controller.adminList);
+
+// Excel export — :id route se PEHLE (warna "export" ko id samjhega)
+router.get('/export/excel', requireAuth, requireRole('admin'), controller.exportUsersExcel);
+
+// Full user detail
+router.get('/:id/full', requireAuth, requireRole('admin'), controller.userFullDetail);
 
 /* ─── User self-service ──────────────────────────────────────── */
-// Original: GET /api/v1/user  (user dashboard counts)
 router.get('/me', requireAuth, controller.userDashboard);
-
-// Original: POST /api/v1/user/update-profile
-router.post(
-  '/me/profile',
+router.post('/me/profile', requireAuth, validate(updateProfileSchema), controller.updateProfile);
+router.patch(
+  '/:id/block',
   requireAuth,
-  validate(updateProfileSchema),
-  controller.updateProfile
+  requireRole('admin'),
+  validate(blockUserSchema),
+  controller.setBlockStatus
 );
 
 export default router;

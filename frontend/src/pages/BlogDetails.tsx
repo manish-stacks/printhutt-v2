@@ -45,28 +45,35 @@ const BlogDetails = ({ blogData, relatedBlog }: ProductProps) => {
                       </div>
                       {
                         relatedBlog.map((blog, index) => (
-
-                          <div key={index} className="blog-sidebar-card mb-[24px] p-[15px] bg-[#f8f8fb] border-[1px] border-solid border-[#eee] rounded-[20px] flex max-[991px]:flex-row max-[360px]:flex-col">
-                            <div className="inner-image mr-[15px] max-[991px]:mr-[20px] max-[991px]:mb-[0] max-[360px]:mr-[0] max-[360px]:mb-[15px]">
+                          <div
+                            key={index}
+                            className="blog-sidebar-card mb-[24px] p-[15px] bg-[#f8f8fb] border border-[#eee] rounded-[20px] flex max-[991px]:flex-row max-[360px]:flex-col"
+                          >
+                            {/* Image */}
+                            <div className="relative mr-[15px] max-[991px]:mr-[20px] max-[360px]:mr-[0] max-[360px]:mb-[15px] w-[90px] h-[90px] shrink-0 overflow-hidden rounded-[10px]">
                               <Image
                                 fill
                                 src={blog?.image?.url}
                                 alt="blog"
-                                className="max-w-[80px] rounded-[5px] max-[360px]:max-w-full"
+                                className="object-cover"
                               />
                             </div>
+
+                            {/* Content */}
                             <div className="blog-sidebar-contact">
                               <span className="font-Poppins text-[13px] font-normal leading-[26px] tracking-[0.02rem] text-[#6c7fd8]">
                                 {blog?.category?.name}
                               </span>
+
                               <h4 className="text-[15px] mb-[8px] leading-[1.2]">
                                 <a
-                                  href="blog-detail-left-sidebar"
+                                  href={`/blog-details/${blog?.slug}`}
                                   className="font-Poppins tracking-[0.03rem] text-[15px] font-medium leading-[18px] text-[#3d4750]"
                                 >
                                   {blog?.title}
                                 </a>
                               </h4>
+
                               <p className="font-Poppins tracking-[0.03rem] text-[13px] leading-[16px] font-light text-[#686e7d]">
                                 {formattedDate(blog?.createdAt)}
                               </p>
@@ -78,39 +85,6 @@ const BlogDetails = ({ blogData, relatedBlog }: ProductProps) => {
                   )
                 }
 
-                {/* <div
-                  className="blog-inner-contact p-[30px] border-[1px] border-solid border-[#eee] mb-[24px] rounded-[20px] max-[575px]:p-[15px]"
-                  data-aos="fade-up"
-                  data-aos-duration={1000}
-                  data-aos-delay={400}
-                >
-                  <div className="blog-sidebar-title mb-[20px]">
-                    <h4 className="font-quicksand tracking-[0.03rem] leading-[1.2] text-[20px] font-bold text-[#3d4750] max-[575px]:text-[18px]">
-                      Categories
-                    </h4>
-                  </div>
-                  <div className="blog-categories">
-                    <ul className="mb-[-14px]">
-
-                      <li className="relative mb-[14px] leading-[28px]">
-                        <div className="bb-sidebar-block-item relative">
-                          <input
-                            type="checkbox"
-                            className="w-full h-[calc(100%-5px)] absolute opacity-[0] cursor-pointer z-[999] top-[50%] left-[0] translate-y-[-50%] p-[10px] text-[14px] font-normal text-[#686e7d] border-[1px] border-solid border-[#eee] outline-[0] rounded-[10px]"
-                          />
-                          <a
-
-                            className="ml-[30px] block text-[#777] text-[14px] mt-[0] leading-[20px] font-normal capitalize cursor-pointer"
-                          >
-                            Event
-                          </a>
-                          <span className="checked absolute top-[0] left-[0] h-[18px] w-[18px] bg-[#fff] border-[1px] border-solid border-[#eee] rounded-[5px] overflow-hidden transition-all duration-[300ms] linear" />
-                        </div>
-                      </li>
-
-                    </ul>
-                  </div>
-                </div> */}
               </div>
             </div>
             <div className="min-[1200px]:w-[66.66%] min-[992px]:w-[58.33%] w-full px-[12px] mb-[24px]">
@@ -121,7 +95,7 @@ const BlogDetails = ({ blogData, relatedBlog }: ProductProps) => {
                 data-aos-delay={400}
               >
                 <div className="inner-blog-details-image mb-[24px]">
-                  <img                    src={blogData?.image?.url}
+                  <img src={blogData?.image?.url}
                     alt="details-one"
                     className="w-full rounded-[15px]"
                   />
@@ -134,7 +108,7 @@ const BlogDetails = ({ blogData, relatedBlog }: ProductProps) => {
                     {blogData?.title}
                   </h4>
                   <div className="mb-[16px] font-Poppins text-[15px] text-[#686e7d] font-light leading-[28px] tracking-[0.03rem]">
-                    <div dangerouslySetInnerHTML={{ __html: blogData?.description }} />
+                    <div dangerouslySetInnerHTML={{ __html: blogData?.description || "", }} />
                   </div>
 
                 </div>

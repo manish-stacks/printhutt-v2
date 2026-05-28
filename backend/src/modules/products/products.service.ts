@@ -204,33 +204,37 @@ export async function storefrontList(q: StorefrontListQueryDTO): Promise<unknown
 export async function storefrontByCategorySlug(
   q: StorefrontCategoryQueryDTO
 ): Promise<unknown> {
-  const limit =
-    q.limit === 'all' || !q.limit ? 48 : Math.max(parseInt(q.limit, 10) || 10, 1);
-
-  const result = await productRepo.findByCategorySlug(q.category, limit);
+  const result = await productRepo.findByCategorySlug(q.category, q.page, q.limit);
   if (!result) throw new NotFoundError('Category not found');
-  return { success: true, products: result.products };
+  return {
+    success: true,
+    products: result.products,
+    pagination: {
+      total: result.total,
+      page: q.page,
+      limit: q.limit,
+      totalPages: Math.ceil(result.total / q.limit),
+      hasMore: q.page * q.limit < result.total,
+    },
+  };
 }
 
 /* ──────────────── 6. Storefront: by sub-category slug ──────────────── */
 export async function storefrontBySubCategorySlug(
   q: StorefrontSubCategoryQueryDTO
 ): Promise<unknown> {
-  const page = q.page ? Math.max(1, parseInt(q.page, 10)) : 1;
-  const limit =
-    q.limit === 'all' || !q.limit ? 40 : Math.max(1, parseInt(q.limit, 10));
-
-  const result = await productRepo.findBySubCategorySlug(q.subCategory, page, limit);
+  const result = await productRepo.findBySubCategorySlug(q.subCategory, q.page, q.limit);
   if (!result) throw new NotFoundError('Subcategory not found');
-
   return {
     success: true,
     products: result.products,
+    categories: result.categories,
     pagination: {
       total: result.total,
-      page,
-      limit,
-      totalPages: Math.ceil(result.total / limit),
+      page: q.page,
+      limit: q.limit,
+      totalPages: Math.ceil(result.total / q.limit),
+      hasMore: q.page * q.limit < result.total,
     },
   };
 }

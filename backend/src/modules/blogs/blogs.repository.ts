@@ -23,15 +23,38 @@ export const blogsRepo = {
     return { blogs, total };
   },
 
-  storefrontList: () =>
-    Blog.find({ status: 'active' })
-      .populate({ path: 'category', model: BlogCategory })
-      .sort({ createdAt: -1 })
-      .lean(),
+  storefrontList: async (
+    page: number,
+    limit: number,
+    search: string
+  ): Promise<{ blogs: unknown[]; total: number }> => {
+    const query: FilterQuery<unknown> = {};
+    if (search) {
+      (query as Record<string, unknown>).title = { $regex: search, $options: 'i' };
+    }
+    const skip = (page - 1) * limit;
+    const [blogs, total] = await Promise.all([
+      Blog.find(query)
+        .populate({ path: 'category', model: BlogCategory })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Blog.countDocuments(query),
+    ]);
+    return { blogs, total };
+  },
 
   findBySlug: (slug: string) =>
     Blog.findOne({ slug })
       .populate({ path: 'category', model: BlogCategory })
+      .lean(),
+
+  findRelatedBlogs: (categoryId: string, excludeId: string) =>
+    Blog.find({ category: categoryId, _id: { $ne: excludeId } })  
+      .populate({ path: 'category', model: BlogCategory })
+      .sort({ createdAt: -1 })
+      .limit(3)
       .lean(),
 
   findById: (id: string) => Blog.findById(id),

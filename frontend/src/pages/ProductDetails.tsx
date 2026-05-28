@@ -78,6 +78,8 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
     [selectedVariantId, product?.varient]
   );
 
+  console.log('Selected Variant:', product);
+
   const activePrice = useMemo(() => {
     if (selectedVariant?.price) {
       return selectedVariant.price;
@@ -156,7 +158,7 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
 
   const keyHighlights = useMemo(() => [
     { label: 'Brand', value: product?.brand },
-    { label: 'Dimensions', value: product?.dimensions },
+    { label: 'Dimensions', value: ' '+product?.dimensions },
     { label: 'Delivery', value: '5-8 Days or Depends on Location' },
     { label: 'Outer Material', value: 'A-Grade Standard Quality' },
     { label: 'Shipping', value: product?.shippingFee ? `₹${product.shippingFee}` : 'Free Shipping' },
@@ -195,7 +197,7 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
 
     // custom_data build karo
     if (product.isTextBox || product.isImageBox || product.isVarientStatus) {
-      
+
       finalProduct = {
         ...finalProduct,
         custom_data: {
@@ -210,7 +212,7 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
       finalProduct = { ...finalProduct, price: selectedVariant.price, selectedVariant };
     }
 
-    console.log(finalProduct);
+    // console.log(finalProduct);
     addToCart(finalProduct, 1);
     openCartSidebarView();
     toast.success('Product added to cart successfully!');
@@ -559,15 +561,15 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
                     <div dangerouslySetInnerHTML={{ __html: product?.description }} className="mb-[12px] font-Poppins text-[#686e7d] leading-[28px] tracking-[0.03rem]" />
                     <ul className="list-disc pl-[20px] mb-0">
                       <li className="py-[5px] text-[15px] text-[#686e7d] font-Poppins leading-[28px] font-light">
-                        Warranty: {product?.warrantyInformation?.durationMonths} Months ({product?.warrantyInformation?.warrantyType?.toUpperCase() ?? 'N/A'}){' '}
+                        <span className="inline-flex font-medium min-w-[150px]">Warranty</span>{product?.warrantyInformation?.durationMonths ? product?.warrantyInformation?.durationMonths + 'Months' : 'No'} ({product?.warrantyInformation?.warrantyType?.toUpperCase() ?? 'N/A'}){' '}
                         <span title={product?.warrantyInformation?.claimProcess} className="text-blue-600">how?</span>
                       </li>
                       <li className="py-[5px] text-[15px] text-[#686e7d] font-Poppins leading-[28px] font-light">
-                        Shipping: {product?.shippingInformation?.shippingTime} ({product?.shippingInformation?.shippingMethod})
+                        <span className="inline-flex font-medium min-w-[150px]">Shipping</span>{product?.shippingInformation?.shippingTime} ({product?.shippingInformation?.shippingMethod})
                       </li>
                       {product?.offers && product.offers.length > 0 && (
                         <li className="py-[5px] text-[15px] text-[#686e7d] font-Poppins leading-[28px] font-light">
-                          Offers:{' '}{product.offers.map((o, i) => <span key={i} className="font-Poppins text-[#777] text-[14px]">{o.offerTitle} - {o.offerDescription}</span>)}
+                          <span className="inline-flex font-medium min-w-[150px]">Offers</span>{product.offers.map((o, i) => <span key={i} className="font-Poppins text-[#777] text-[14px]">{o.offerTitle} - {o.offerDescription}</span>)}
                         </li>
                       )}
                     </ul>
@@ -623,21 +625,50 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
                       {product?.reviews && product.reviews.length > 0 ? (
                         product.reviews.map((review, index) => (
                           <div key={index} className="border-t pt-4">
-                            <div className="reviews-bb-box flex mb-[24px] max-[575px]:flex-col">
-                              <div className="inner-image mr-[12px]">
-                                <img src="/img/dummy-image.jpg" alt="reviewer" className="w-[50px] h-[50px] rounded-[10px]" />
+                            <div className="reviews-bb-box flex gap-4 mb-6 max-[575px]:flex-col">
+
+                              {/* Reviewer Image */}
+                              <div className="inner-image flex-shrink-0">
+                                <img
+                                  src="/img/dummy-image.jpg"
+                                  alt="reviewer"
+                                  className="w-[50px] h-[50px] rounded-[10px] object-cover"
+                                />
                               </div>
-                              <div className="inner-contact">
-                                <h4 className="font-quicksand text-[16px] font-bold text-[#3d4750]">{review?.userId?.displayName || 'User'}</h4>
-                                <div className="bb-pro-rating flex">
-                                  {Array(review?.rating || 5).fill(0).map((_, i) => (
-                                    <i key={i} className={`${i < (review.rating ?? 5) ? 'ri-star-fill text-[#fea99a]' : 'ri-star-line text-[#777]'} float-left text-[15px] mr-[3px]`} />
+
+                              {/* Review Content */}
+                              <div className="inner-contact flex-1">
+                                <h4 className="font-quicksand text-[16px] font-bold text-[#3d4750]">
+                                  {review?.userId?.displayName || 'User'}
+                                </h4>
+
+                                <div className="bb-pro-rating flex items-center mb-2">
+                                  {Array(5).fill(0).map((_, i) => (
+                                    <i
+                                      key={i}
+                                      className={`${i < (review?.rating ?? 5)
+                                        ? 'ri-star-fill text-[#fea99a]'
+                                        : 'ri-star-line text-[#777]'
+                                        } text-[15px] mr-[3px]`}
+                                    />
                                   ))}
                                 </div>
-                                <p className="font-Poppins text-[14px] leading-[26px] font-light text-[#686e7d]">{review.review}</p>
-                                {review?.images && (
-                                  <div className="flex gap-2 mt-2">
-                                    {review.images.map((img, i) => <img key={i} src={img.url} alt={`review-img-${i}`} className="w-[50px] h-[50px] rounded-[10px]" />)}
+
+                                <p className="font-Poppins text-[14px] leading-[26px] font-light text-[#686e7d]">
+                                  {review.review}
+                                </p>
+
+                                {/* Review Images */}
+                                {review?.images?.length > 0 && (
+                                  <div className="flex flex-wrap gap-2 mt-3">
+                                    {review.images.map((img, i) => (
+                                      <img
+                                        key={i}
+                                        src={img.url}
+                                        alt={`review-img-${i}`}
+                                        className="w-[60px] h-[60px] rounded-[10px] object-cover border"
+                                      />
+                                    ))}
                                   </div>
                                 )}
                               </div>
@@ -661,7 +692,9 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
                     </div>
                   </div>
                 ) : (
-                  <p className="text-gray-600 mt-4">Brand Reviews section content goes here.</p>
+                  <p className="text-gray-600 mt-4">
+                    PrintHutt has received positive feedback from customers for its premium quality neon signs, personalized gifts, LED lamps, and custom décor products. Many buyers appreciate the product quality, unique designs, fast delivery, and responsive customer support. Customers have especially praised the durability and finishing of personalized lamps and neon products. The brand claims over 654K+ sales and highlights features like free shipping, customization options, and secure payments. However, as with most custom-printing businesses, some online discussions suggest that experiences may vary depending on product type and expectations. Overall, PrintHutt is considered a growing custom gifting and printing brand in India with generally positive customer satisfaction.
+                  </p>
                 )}
               </div>
             </div>

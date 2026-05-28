@@ -14,7 +14,11 @@ import {
   type UploadedAsset,
 } from '@/utils/storage';
 import { blogsRepo } from './blogs.repository';
-import type { ListBlogsQueryDTO, PatchBlogDTO } from './blogs.validation';
+import type {
+  ListBlogsQueryDTO,
+  PatchBlogDTO,
+  StorefrontBlogsQueryDTO,
+} from './blogs.validation';
 
 const CACHE_PREFIX = 'blogs:';
 const TTL_SECS = 300;
@@ -128,12 +132,24 @@ export async function patchBlog(id: string, body: PatchBlogDTO): Promise<unknown
   return updated;
 }
 
-export async function storefrontList(): Promise<unknown> {
-  const cacheKey = `${CACHE_PREFIX}storefront`;
+
+
+export async function storefrontList(q: StorefrontBlogsQueryDTO): Promise<unknown> {
+  const cacheKey = `${CACHE_PREFIX}storefront:${q.page}:${q.limit}:${q.search}`;
   const hit = await cacheGet<unknown>(cacheKey);
   if (hit) return hit;
-  const blogs = await blogsRepo.storefrontList();
-  const payload = { success: true, blogs };
+
+  const { blogs, total } = await blogsRepo.storefrontList(q.page, q.limit, q.search);
+  const payload = {
+    success: true,
+    blogs,
+    pagination: {
+      total,
+      pages: Math.ceil(total / q.limit),
+      page: q.page,
+      limit: q.limit,
+    },
+  };
   await cacheSet(cacheKey, payload, TTL_SECS);
   return payload;
 }
@@ -141,5 +157,10 @@ export async function storefrontList(): Promise<unknown> {
 export async function bySlug(slug: string): Promise<unknown> {
   const blog = await blogsRepo.findBySlug(slug);
   if (!blog) throw new NotFoundError('Blog not found');
-  return blog;
+
+  const relatedBlogs = await blogsRepo.findRelatedBlogs(
+    (blog.category as { _id: { toString(): string } })._id.toString(),
+    (blog._id as { toString(): string }).toString()
+  );
+  return { success: true, blogPost: blog, relatedBlogs };
 }

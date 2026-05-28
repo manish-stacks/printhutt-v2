@@ -41,13 +41,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function BlogDetailsPage({ params }: Props) {
   try {
     const { slug } =await params;
-    const blog = await blogFrontService.getBlogDetails(slug);
+    const response = await blogFrontService.getBlogDetails(slug);
 
-    if (!blog) {
+    if (!response) {
       return notFound();
     }
 
-    return <BlogDetails blogData={blog.blogPost} relatedBlog={blog.relatedBlogs} />;
+    return <BlogDetails blogData={response.blogPost} relatedBlog={response.relatedBlogs} />;
   } catch {
     return notFound();
   }

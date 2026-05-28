@@ -58,6 +58,12 @@ export async function requestOtp(emailOrMobile: string): Promise<void> {
 
   let user = await authRepo.findByEmailOrNumber(queryKey, emailOrMobile);
 
+  if (user?.isBlocked) {
+    throw new ForbiddenError(
+      'Your account has been blocked. Contact support.'
+    );
+  }
+
   if (!user) {
     const data: Record<string, unknown> = {
       [queryKey]: emailOrMobile,

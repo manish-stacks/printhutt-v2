@@ -6,8 +6,6 @@ import AppLayout from "./App";
 import AdminLayout from "./Admin";
 import { APP_VERSION } from "@/config/appVersion";
 
-
-
 interface LayoutProps {
   children: ReactNode;
 }

@@ -11,6 +11,9 @@ import { formatCurrency } from '@/utils/helpers';
 import { NotFoundError } from '@/utils/errors';
 import { usersRepo } from './users.repository';
 import type { ListUsersQueryDTO, UpdateProfileDTO } from './users.validation';
+import mongoose from 'mongoose';
+import ExcelJS from 'exceljs';
+import { BadRequestError } from '@/utils/errors';
 
 /* ──────────────── 1. Admin list ──────────────── */
 export async function adminList(q: ListUsersQueryDTO): Promise<unknown> {
@@ -79,4 +82,97 @@ export async function updateProfile(
   const obj = user.toObject() as unknown as Record<string, unknown>;
   delete obj.password;
   return obj;
+}
+
+
+
+/* ──────────────── 4. Full user detail (all tabs) ──────────────── */
+export async function userFullDetail(userId: string): Promise<unknown> {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new BadRequestError('Invalid user ID');
+  }
+  const user = await usersRepo.findByIdLean(userId);
+  if (!user) throw new NotFoundError('User not found');
+
+  const [addresses, orders, reviews, wishlist] = await Promise.all([
+    usersRepo.addressesByUser(userId),
+    usersRepo.ordersByUser(userId),
+    usersRepo.reviewsByUser(userId),
+    usersRepo.wishlistByUser(userId),
+  ]);
+
+  // Payments = orders me se payment object nikaalo
+  const payments = (orders as Array<Record<string, unknown>>).map((o) => ({
+    orderId: o.orderId,
+    payAmt: o.payAmt,
+    status: o.status,
+    payment: o.payment,
+    createdAt: o.createdAt,
+  }));
+
+  return {
+    success: true,
+    user,
+    addresses,
+    orders,
+    payments,
+    reviews,
+    wishlist: (wishlist as { items?: unknown[] } | null)?.items ?? [],
+  };
+}
+
+/* ──────────────── 5. Excel export (all users) ──────────────── */
+export async function exportUsersExcel(search: string): Promise<ExcelJS.Buffer> {
+  const users = (await usersRepo.allForExport(search)) as Array<Record<string, unknown>>;
+
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'PrintHutt Admin';
+  workbook.created = new Date();
+  const sheet = workbook.addWorksheet('Users');
+
+  sheet.columns = [
+    { header: 'Name', key: 'username', width: 25 },
+    { header: 'Email', key: 'email', width: 30 },
+    { header: 'Number', key: 'number', width: 18 },
+    { header: 'Verified', key: 'isVerified', width: 12 },
+    { header: 'Blocked', key: 'isBlocked', width: 12 },
+    { header: 'Role', key: 'role', width: 12 },
+    { header: 'Created At', key: 'createdAt', width: 22 },
+  ];
+
+  // Header style
+  sheet.getRow(1).font = { bold: true };
+  sheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF6C7FD8' },
+  };
+  sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+  users.forEach((u) => {
+    sheet.addRow({
+      username: u.username ?? 'N/A',
+      email: u.email ?? 'N/A',
+      number: u.number ?? 'N/A',
+      isVerified: u.isVerified ? 'Yes' : 'No',
+      isBlocked: u.isBlocked ? 'Yes' : 'No',
+      role: u.role ?? 'user',
+      createdAt: u.createdAt ? new Date(u.createdAt as string).toLocaleString('en-IN') : '',
+    });
+  });
+
+  return workbook.xlsx.writeBuffer();
+}
+
+/* ──────────────── 6. Block / unblock user ──────────────── */
+export async function setBlockStatus(
+  userId: string,
+  isBlocked: boolean
+): Promise<unknown> {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new BadRequestError('Invalid user ID');
+  }
+  const user = await usersRepo.setBlockStatus(userId, isBlocked);
+  if (!user) throw new NotFoundError('User not found');
+  return user;
 }

@@ -18,6 +18,7 @@ interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
   couponCollection: string[];
+  isBlocked: boolean;
 }
 
 interface IUserMethods {
@@ -54,6 +55,10 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
       type: String,
       enum: ["user", "admin"],
       default: "user",
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false,
     },
     couponCollection: [String],
     otpVerification: Number,

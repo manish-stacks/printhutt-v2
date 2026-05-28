@@ -31,15 +31,16 @@ export type ByCategoryQueryDTO = z.infer<typeof byCategoryQuerySchema>;
 /* ─────────── GET /api/products/storefront/category ─────────── */
 export const storefrontCategoryQuerySchema = z.object({
   category: z.string().min(1, 'Category slug is required'),
-  limit: z.string().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(12),
 });
 export type StorefrontCategoryQueryDTO = z.infer<typeof storefrontCategoryQuerySchema>;
 
 /* ─────────── GET /api/products/storefront/sub-category ─────────── */
 export const storefrontSubCategoryQuerySchema = z.object({
   subCategory: z.string().min(1, 'Subcategory slug is required'),
-  page: z.string().optional(),
-  limit: z.string().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(12),
 });
 export type StorefrontSubCategoryQueryDTO = z.infer<typeof storefrontSubCategoryQuerySchema>;
 

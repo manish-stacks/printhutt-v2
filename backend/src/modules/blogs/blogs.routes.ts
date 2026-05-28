@@ -3,12 +3,12 @@ import { requireAdmin } from '@/middlewares/auth.middleware';
 import { validate } from '@/middlewares/validate.middleware';
 import { upload } from '@/middlewares/upload.middleware';
 import * as controller from './blogs.controller';
-import { listBlogsQuerySchema, patchBlogSchema } from './blogs.validation';
+import { listBlogsQuerySchema, patchBlogSchema, storefrontBlogsQuerySchema } from './blogs.validation';
 
 const router = Router();
 
 // Storefront
-router.get('/storefront', controller.storefrontList);
+router.get('/storefront', validate(storefrontBlogsQuerySchema, 'query'), controller.storefrontList);
 router.get('/slug/:slug', controller.bySlug);
 
 // Admin

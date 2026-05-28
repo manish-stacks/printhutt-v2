@@ -40,7 +40,7 @@ export async function overview(): Promise<unknown> {
         value: {
           $sum: {
             $subtract: [
-              { $add: ['$totalAmount.discountPrice', '$totalAmount.shippingTotal'] },
+              { $add: ['$totalAmount.discountPrice', '$totalAmount.shippingTotal', '$totalAmount.coupon_discount'] },
               '$totalAmount.coupon_discount',
             ],
           },
@@ -131,7 +131,7 @@ export async function overview(): Promise<unknown> {
     { title: 'Total Users', value: totalUsers, icon: 'ri-user-3-line', color: 'bg-blue-500' },
     { title: 'Orders', value: totalOrders, icon: 'ri-shopping-cart-2-line', color: 'bg-purple-500' },
     { title: 'New Orders', value: newOrders, icon: 'ri-shopping-cart-2-line', color: 'bg-pink-500' },
-    { title: 'Daily Orders', value: dailyOrders, icon: 'ri-calendar-check-line', color: 'bg-indigo-500' },
+    { title: 'Daily Orders', value: dailyOrders, icon: 'ri-calendar-check-line', color: 'bg-rose-500' },
     { title: 'Products', value: totalProducts, icon: 'ri-shopping-bag-3-line', color: 'bg-orange-500' },
     { title: 'Custom Products', value: totalCustomProducts, icon: 'ri-tools-line', color: 'bg-yellow-500' },
     { title: 'Blogs', value: totalBlogs, icon: 'ri-news-line', color: 'bg-pink-500' },

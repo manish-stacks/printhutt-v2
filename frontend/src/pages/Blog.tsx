@@ -24,12 +24,14 @@ const Blog = () => {
     fetchBlogs();
   }, [page, search]);
 
+
+
   async function fetchBlogs() {
     try {
       setIsLoading(true);
       const response = await blogFrontService.getAll(page, search);
 
-      setBlogs(response?.data);
+      setBlogs(response?.blogs);
       setPagination(response?.pagination);
     } catch (error) {
       console.error('Failed to fetch blogs:', error);
@@ -42,24 +44,36 @@ const Blog = () => {
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams!);
     params.set('page', newPage.toString());
-    return router.push(`?${params.toString()}`);
+    router.push(`?${params.toString()}`);
   };
-  // function handleSearch(value: string) {
-  //   const params = new URLSearchParams(searchParams!);
-  //   if (value) {
-  //     params.set('search', value);
-  //   } else {
-  //     params.delete('search');
-  //   }
-  //   params.set('page', '1');
-  //   router.push(`?${params.toString()}`);
-  // }
 
-  // console.log(blogs)
+  function handleSearch(value: string) {
+    const params = new URLSearchParams(searchParams!);
+    if (value) {
+      params.set('search', value);
+    } else {
+      params.delete('search');
+    }
+    params.set('page', '1');
+    router.push(`?${params.toString()}`);
+  }
+
   return (
     <>
       <Breadcrumb title={"Blog"} />
-
+      <section className="py-[20px]">
+        <div className="mx-auto min-[1400px]:max-w-[1320px] min-[1200px]:max-w-[1140px] min-[992px]:max-w-[960px] min-[768px]:max-w-[720px] min-[576px]:max-w-[540px] px-[12px]">
+          <input
+            type="text"
+            defaultValue={search}
+            placeholder="Search blogs..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearch((e.target as HTMLInputElement).value);
+            }}
+            className="w-full max-w-[400px] border border-[#eee] rounded-[10px] px-[16px] py-[10px] text-[14px] outline-none focus:border-[#6c7fd8]"
+          />
+        </div>
+      </section>
       <section className="section-blog py-[50px] max-[1199px]:py-[35px]">
         <div className="flex flex-wrap justify-between relative items-center mx-auto min-[1400px]:max-w-[1320px] min-[1200px]:max-w-[1140px] min-[992px]:max-w-[960px] min-[768px]:max-w-[720px] min-[576px]:max-w-[540px]">
           <div className="flex flex-wrap w-full mb-[-24px]">
@@ -138,8 +152,6 @@ const Blog = () => {
 
                 )
             }
-
-
 
             <div className="w-full px-[12px]">
               {pagination && (
