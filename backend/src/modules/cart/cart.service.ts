@@ -1,12 +1,3 @@
-/**
- * Cart (session-cart) service. Direct port of:
- *   src/app/api/session-cart/route.ts   POST + GET
- *
- * The original endpoint records add-to-cart events (for analytics) and
- * returns the recent additions populated with the product. Behaviour
- * preserved exactly — including the 204 No Content when there are no
- * recent entries (handled in the controller).
- */
 import { BadRequestError } from '@/utils/errors';
 import { cartRepo } from './cart.repository';
 
@@ -17,4 +8,25 @@ export async function addToSessionCart(productId: string): Promise<void> {
 
 export async function recentSessionCart(): Promise<unknown[]> {
   return cartRepo.listRecent();
+}
+
+/* ─── Admin: paginated list ─── */
+export async function listPaginated(page: number, limit: number): Promise<unknown> {
+  const { items, total } = await cartRepo.listPaginated(page, limit);
+  return {
+    success: true,
+    data: items,
+    pagination: {
+      total,
+      pages: Math.ceil(total / limit),
+      page,
+      limit,
+    },
+  };
+}
+
+/* ─── Admin: bulk delete ─── */
+export async function bulkDelete(ids: string[]): Promise<{ deletedCount: number }> {
+  const result = await cartRepo.bulkDelete(ids);
+  return { deletedCount: result.deletedCount ?? 0 };
 }

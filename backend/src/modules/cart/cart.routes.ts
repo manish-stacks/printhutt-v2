@@ -1,13 +1,22 @@
 import { Router } from 'express';
+import { requireAdmin } from '@/middlewares/auth.middleware';
 import { validate } from '@/middlewares/validate.middleware';
 import * as controller from './cart.controller';
-import { addToSessionCartSchema } from './cart.validation';
+import {
+  addToSessionCartSchema,
+  bulkDeleteSchema,
+  listCartQuerySchema,
+} from './cart.validation';
 
 const router = Router();
 
-/* Original: POST /api/session-cart */
+/* Public: POST /api/cart (add-to-cart analytics) */
 router.post('/', validate(addToSessionCartSchema), controller.addToSessionCart);
-/* Original: GET /api/session-cart */
-router.get('/', controller.recentSessionCart);
+
+/* Admin: bulk delete — :id jaisa kuch nahi, but rakho POST se pehle clean */
+router.post('/bulk-delete', ...requireAdmin, validate(bulkDeleteSchema), controller.bulkDelete);
+
+/* Admin: GET /api/cart (paginated) */
+router.get('/', ...requireAdmin, validate(listCartQuerySchema, 'query'), controller.listCart);
 
 export default router;

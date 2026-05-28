@@ -75,6 +75,7 @@ export const ordersRepo = {
                   $add: [
                     { $ifNull: ['$totalAmount.discountPrice', 0] },
                     { $ifNull: ['$totalAmount.shippingTotal', 0] },
+                    { $ifNull: ['$totalAmount.coupon_discount', 0] },
                   ],
                 },
                 { $ifNull: ['$totalAmount.coupon_discount', 0] },

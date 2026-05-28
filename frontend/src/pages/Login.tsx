@@ -40,35 +40,53 @@ const Login = () => {
   // SEND OTP
   // =============================
   const handleSubmitSendOtp = async (e: FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!emailOrMobile.trim()) {
-      setErrorMessage('Please enter Email or Mobile Number');
-      toast.error('Please enter Email or Mobile Number');
-      return;
-    }
+  if (!emailOrMobile.trim()) {
+    setErrorMessage('Please enter Email or Mobile Number');
+    toast.error('Please enter Email or Mobile Number');
+    return;
+  }
 
-    try {
-      setLoading(true);
+  // Email regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-      await axiosInstance.post('/auth/login', {
-        emailOrMobile,
-      });
+  // Mobile regex (exactly 10 digits)
+  const mobileRegex = /^[0-9]{10}$/;
 
-      toast.success(`OTP sent to ${emailOrMobile}`);
+  const value = emailOrMobile.trim();
 
-      setStep('otp');
-      setTimer(30);
-      setIsResendEnabled(false);
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message || 'Failed to send OTP'
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Validate email or mobile
+  const isValid =
+    emailRegex.test(value) || mobileRegex.test(value);
 
+  if (!isValid) {
+    toast.error(
+      'Please enter a valid Email or 10-digit Mobile Number'
+    );
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    await axiosInstance.post('/auth/login', {
+      emailOrMobile: value,
+    });
+
+    toast.success(`OTP sent to ${value}`);
+
+    setStep('otp');
+    setTimer(30);
+    setIsResendEnabled(false);
+  } catch (error: any) {
+    toast.error(
+      error?.response?.data?.message || 'Failed to send OTP'
+    );
+  } finally {
+    setLoading(false);
+  }
+};
   // =============================
   // OTP CHANGE
   // =============================
