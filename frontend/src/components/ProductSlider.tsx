@@ -1,9 +1,7 @@
-
 "use client";
 
-import { Product } from "@/lib/types/product";
 import React from "react";
-
+import { Product } from "@/lib/types/product";
 import Slider from "react-slick";
 import ProductCardTwo from "./products/ProductCardTwo";
 
@@ -14,10 +12,11 @@ import {
 
 interface PopupProps {
   products: Product[];
+  title: string;
 }
 
 const ProductSlider = ({
-  products,
+  products, title
 }: PopupProps) => {
 
   const sliderRef = React.useRef<any>(null);
@@ -79,19 +78,32 @@ const ProductSlider = ({
 
   return (
     <div className="relative">
-
       {/* Top Controls */}
       <div className="flex items-center justify-between mb-8">
 
         {/* Left */}
-        <div className="hidden sm:flex items-center gap-3">
-
-          <div className="w-12 h-[1px] bg-gradient-to-r from-amber-400 to-transparent" />
-
-          <span className="text-[#0d0d1a]/40 uppercase tracking-[0.2em] text-[11px] font-semibold">
-            Premium Products
-          </span>
-
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-10 sm:mb-14">
+          <div>
+            <div className="hidden sm:flex items-center gap-3">
+              <h2
+                className="text-3xl sm:text-5xl text-[#0d0d1a] font-bold leading-tight"
+                style={{
+                  fontFamily:
+                    "'Cormorant Garamond', serif",
+                }}
+              >
+                <div className="w-12 h-[1px] bg-gradient-to-r from-amber-400 to-transparent" />
+                <span className="text-[#0d0d1a]/40 uppercase tracking-[0.2em] text-2xl font-semibold">
+                  {title}
+                </span>
+              </h2>
+            </div>
+            <p className="text-[#0d0d1a]/60 text-sm sm:text-base mt-4 max-w-xl leading-relaxed">
+              Discover premium handcrafted products,
+              glowing gifts and personalized designs
+              curated specially for you.
+            </p>
+          </div>
         </div>
 
         {/* Right */}

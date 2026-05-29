@@ -1,18 +1,37 @@
 /**
- * Shipping service. Ports:
- *   src/app/api/shipping/*
- *   src/app/api/fship/track/route.ts
- *   src/app/api/shiprocket/*
+ * Shipping service. Unified provider integration:
+ *   - FShip  (create / track / cancel / webhook)
+ *   - Shiprocket (create / track / cancel / webhook)
+ *
+ * Ports:
+ *   src/app/api/fship/* and src/app/api/shiprocket/*
  */
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { BadRequestError, NotFoundError } from '@/utils/errors';
 import { fshipToken, shiprocketAuth } from '@/utils/helpers';
+import { logger } from '@/config/logger';
+import Order from '@/db/models/orderModel';
 import { shippingRepo } from './shipping.repository';
-import type { ListQueryDTO, UpsertDTO } from './shipping.validation';
+import type {
+  CreateShipmentDTO,
+  ListQueryDTO,
+  UpsertDTO,
+} from './shipping.validation';
 
+/* ============================================================
+ * Admin CRUD (unchanged)
+ * ============================================================ */
 export async function adminList(q: ListQueryDTO): Promise<unknown> {
   const { shipping, total } = await shippingRepo.adminList(q.page, q.limit, q.search);
-  return { shipping, pagination: { total, pages: Math.ceil(total / q.limit), page: q.page, limit: q.limit } };
+  return {
+    shipping,
+    pagination: {
+      total,
+      pages: Math.ceil(total / q.limit),
+      page: q.page,
+      limit: q.limit,
+    },
+  };
 }
 export async function byId(id: string): Promise<unknown> {
   if (!shippingRepo.isValidObjectId(id)) throw new BadRequestError('Invalid id');
@@ -38,41 +57,411 @@ export async function options(): Promise<unknown[]> {
   return shippingRepo.options();
 }
 
-/* ─── fship/shiprocket integration ─── */
+/* ============================================================
+ * Helpers
+ * ============================================================ */
+interface ShipmentDetails {
+  length: string | number;
+  width: string | number;
+  height: string | number;
+  weight: string | number;
+}
+
+interface OrderDoc {
+  _id: unknown;
+  orderId: string;
+  paymentType: 'online' | 'offline';
+  payAmt: number;
+  shipping: {
+    userName?: string;
+    mobileNumber?: string;
+    email?: string;
+    addressLine?: string;
+    city?: string;
+    state?: string;
+    postCode?: string;
+  };
+  totalAmount: { discountPrice: number };
+  items: Array<{
+    productId: string;
+    name: string;
+    sku?: string;
+    price: number;
+    quantity: number;
+    discountPrice?: number;
+    discountType?: 'percentage' | 'flat';
+  }>;
+  status?: string;
+  shipment?: Record<string, unknown>;
+  save: () => Promise<unknown>;
+}
+
+/** Best-effort error message extraction from axios / api errors */
+const extractApiError = (err: unknown): { message: string; details: unknown } => {
+  const ax = err as AxiosError<{ error?: string; message?: string; errors?: unknown }>;
+  const data = ax.response?.data;
+  return {
+    message:
+      data?.message ||
+      data?.error ||
+      ax.message ||
+      'Provider API error',
+    details: data ?? null,
+  };
+};
+
+/* ============================================================
+ * FSHIP integration
+ * ============================================================ */
+async function fshipCreate(order: OrderDoc, shipmentDetails: ShipmentDetails): Promise<unknown> {
+  const token = fshipToken();
+
+  const payload = {
+    customer_Name: order.shipping.userName,
+    customer_Mobile: order.shipping.mobileNumber,
+    customer_EmailId: order.shipping.email || '',
+    customer_Address: order.shipping.addressLine,
+    landMark: '',
+    customer_Address_Type: 'Home',
+    customer_PinCode: order.shipping.postCode,
+    customer_City: order.shipping.city,
+    orderId: order.orderId,
+    invoice_Number: `INV-${order._id}`,
+    payment_Mode: order.paymentType === 'online' ? 2 : 1, // 1=COD, 2=Prepaid
+    express_Type: 'surface',
+    is_Ndd: 0,
+    order_Amount: order.totalAmount.discountPrice,
+    tax_Amount: 0,
+    extra_Charges: 0,
+    total_Amount: order.totalAmount.discountPrice,
+    cod_Amount:
+      order.paymentType === 'online' ? 0 : order.totalAmount.discountPrice - order.payAmt,
+    shipment_Weight: shipmentDetails.weight,
+    shipment_Length: shipmentDetails.length,
+    shipment_Width: shipmentDetails.width,
+    shipment_Height: shipmentDetails.height,
+    volumetric_Weight: 0,
+    latitude: 0,
+    longitude: 0,
+    pick_Address_ID: Number(process.env.FSHIP_PICKUP_ADDRESS_ID ?? 207907),
+    return_Address_ID: 0,
+    products: order.items.map((item) => {
+      let discount = 0;
+      if (item.discountPrice) {
+        discount =
+          item.discountType === 'percentage'
+            ? Math.round((item.price * item.discountPrice) / 100)
+            : Math.round(item.discountPrice);
+      }
+      return {
+        productId: item.productId,
+        productName: item.name,
+        unitPrice: item.price,
+        quantity: item.quantity,
+        productCategory: 'PrintHutt',
+        hsnCode: '441122',
+        sku: item.sku || `SKU${item.productId}`,
+        taxRate: 18,
+        productDiscount: discount,
+      };
+    }),
+    courierId: 0,
+  };
+
+  try {
+    const { data } = await axios.post('https://capi.fship.in/api/createforwardorder', payload, {
+      headers: { 'Content-Type': 'application/json', signature: token },
+      maxBodyLength: Infinity,
+    });
+
+    if (!data?.status) {
+      // FShip returned 200 OK but business-level failure
+      throw new BadRequestError(data?.message || 'FShip rejected the shipment');
+    }
+
+    order.status = 'shipped';
+    order.shipment = {
+      provider: 'fship',
+      trackingId: data.waybill || '',
+      order_id: data.apiorderid || '',
+      ...shipmentDetails,
+    };
+    await order.save();
+
+    // Fire-and-forget mail
+    try {
+      const mailer = (await import('@/utils/mail/mailer')) as unknown as {
+        sendOrderStatus?: (o: unknown) => Promise<unknown>;
+      };
+      await mailer.sendOrderStatus?.(order);
+    } catch (mailErr) {
+      logger.error('FShip shipment mail failed', mailErr);
+    }
+
+    return { success: true, provider: 'fship', data };
+  } catch (err) {
+    if (err instanceof BadRequestError) throw err;
+    const { message, details } = extractApiError(err);
+    logger.error('FShip create failed', { message, details });
+    throw new BadRequestError(`FShip: ${message}`, details);
+  }
+}
+
+async function fshipCancel(order: OrderDoc): Promise<unknown> {
+  const token = fshipToken();
+  const waybill = (order.shipment as { trackingId?: string } | undefined)?.trackingId;
+  if (!waybill) throw new BadRequestError('No waybill found on this order');
+
+  try {
+    const { data } = await axios.post(
+      'https://capi.fship.in/api/cancelorder',
+      { waybill },
+      { headers: { 'Content-Type': 'application/json', signature: token } }
+    );
+
+    if (!data?.status) {
+      throw new BadRequestError(data?.message || 'FShip cancel failed');
+    }
+
+    order.status = 'cancelled';
+    await order.save();
+    return { success: true, data };
+  } catch (err) {
+    if (err instanceof BadRequestError) throw err;
+    const { message, details } = extractApiError(err);
+    throw new BadRequestError(`FShip cancel: ${message}`, details);
+  }
+}
+
 export async function fshipTrack(waybill: string): Promise<unknown> {
   if (!waybill) throw new BadRequestError('waybill is required');
   const token = fshipToken();
-  const { data } = await axios.post(
-    'https://capi.fship.in/api/Tracking',
-    JSON.stringify({ waybill }),
-    { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
-  );
-  return data;
+  try {
+    const { data } = await axios.post(
+      'https://capi.fship.in/api/Tracking',
+      JSON.stringify({ waybill }),
+      { headers: { 'Content-Type': 'application/json', signature: token } }
+    );
+    return data;
+  } catch (err) {
+    const { message, details } = extractApiError(err);
+    throw new BadRequestError(`FShip track: ${message}`, details);
+  }
+}
+
+/* ============================================================
+ * SHIPROCKET integration
+ * ============================================================ */
+async function shiprocketCreate(order: OrderDoc, shipmentDetails: ShipmentDetails): Promise<unknown> {
+  const token = await shiprocketAuth();
+
+  const payload = {
+    order_id: order.orderId,
+    order_date: new Date().toISOString(),
+    pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION ?? 'Primary',
+    billing_customer_name: order.shipping.userName,
+    billing_last_name: '',
+    billing_address: order.shipping.addressLine,
+    billing_address_2: '',
+    billing_city: order.shipping.city,
+    billing_pincode: order.shipping.postCode,
+    billing_state: order.shipping.state,
+    billing_country: 'India',
+    billing_email: order.shipping.email || '',
+    billing_phone: order.shipping.mobileNumber,
+    shipping_is_billing: true,
+    order_items: order.items.map((item) => {
+      let discount = 0;
+      if (item.discountPrice) {
+        discount =
+          item.discountType === 'percentage'
+            ? Math.round((item.price * item.discountPrice) / 100)
+            : Math.round(item.discountPrice);
+      }
+      return {
+        name: item.name,
+        sku: item.sku || `SKU${item.productId}`,
+        units: item.quantity,
+        selling_price: item.price,
+        discount,
+        tax: 18,
+        hsn: 441122,
+      };
+    }),
+    payment_method: order.paymentType === 'online' ? 'Prepaid' : 'COD',
+    shipping_charges: 0,
+    giftwrap_charges: 0,
+    transaction_charges: 0,
+    total_discount: 0,
+    sub_total: order.totalAmount.discountPrice,
+    length: shipmentDetails.length,
+    breadth: shipmentDetails.width,
+    height: shipmentDetails.height,
+    weight: shipmentDetails.weight,
+  };
+
+  try {
+    const { data } = await axios.post(
+      'https://apiv2.shiprocket.in/v1/external/orders/create/adhoc',
+      payload,
+      { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
+    );
+
+    if (data?.status_code !== 1) {
+      throw new BadRequestError(data?.message || 'Shiprocket rejected the shipment');
+    }
+
+    order.status = 'shipped';
+    order.shipment = {
+      provider: 'shiprocket',
+      trackingId: data.shipment_id,
+      order_id: data.order_id,
+      ...shipmentDetails,
+    };
+    await order.save();
+
+    try {
+      const mailer = (await import('@/utils/mail/mailer')) as unknown as {
+        sendOrderStatus?: (o: unknown) => Promise<unknown>;
+      };
+      await mailer.sendOrderStatus?.(order);
+    } catch (mailErr) {
+      logger.error('Shiprocket shipment mail failed', mailErr);
+    }
+
+    return { success: true, provider: 'shiprocket', data };
+  } catch (err) {
+    if (err instanceof BadRequestError) throw err;
+    const { message, details } = extractApiError(err);
+    logger.error('Shiprocket create failed', { message, details });
+    throw new BadRequestError(`Shiprocket: ${message}`, details);
+  }
+}
+
+async function shiprocketCancel(order: OrderDoc): Promise<unknown> {
+  const token = await shiprocketAuth();
+  const shipmentOrderId = (order.shipment as { order_id?: string } | undefined)?.order_id;
+  if (!shipmentOrderId) throw new BadRequestError('No shipment order_id found');
+
+  try {
+    const { data } = await axios.post(
+      'https://apiv2.shiprocket.in/v1/external/orders/cancel',
+      { ids: [shipmentOrderId] },
+      { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
+    );
+    order.status = 'cancelled';
+    await order.save();
+    return { success: true, data };
+  } catch (err) {
+    const { message, details } = extractApiError(err);
+    throw new BadRequestError(`Shiprocket cancel: ${message}`, details);
+  }
 }
 
 export async function shiprocketTrack(awb: string): Promise<unknown> {
   if (!awb) throw new BadRequestError('awb is required');
   const token = await shiprocketAuth();
-  const { data } = await axios.get(
-    `https://apiv2.shiprocket.in/v1/external/courier/track/awb/${awb}`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-  return data;
+  try {
+    const { data } = await axios.get(
+      `https://apiv2.shiprocket.in/v1/external/courier/track/awb/${awb}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return data;
+  } catch (err) {
+    const { message, details } = extractApiError(err);
+    throw new BadRequestError(`Shiprocket track: ${message}`, details);
+  }
 }
 
-export async function shiprocketCreateOrder(body: unknown): Promise<unknown> {
-  const token = await shiprocketAuth();
-  const { data } = await axios.post(
-    'https://apiv2.shiprocket.in/v1/external/orders/create/adhoc',
-    body,
-    { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
-  );
-  return data;
+/* ============================================================
+ * UNIFIED PUBLIC API (used by controller)
+ * ============================================================ */
+export async function createShipment(body: CreateShipmentDTO): Promise<unknown> {
+  const order = (await Order.findById(body.orderId)) as unknown as OrderDoc | null;
+  if (!order) throw new NotFoundError('Order not found');
+
+  if (order.status === 'shipped') {
+    throw new BadRequestError('Order is already shipped');
+  }
+
+  if (body.provider === 'fship') {
+    return fshipCreate(order, body.shipmentDetails);
+  }
+  return shiprocketCreate(order, body.shipmentDetails);
 }
 
-// Shiprocket webhook — caller passes raw body; we don't validate signature here
-// (env vars + IP allowlisting handled at the gateway).
-export async function shiprocketWebhook(body: unknown): Promise<unknown> {
-  // log + return ack — actual order-status update is done via /api/orders/:id/status
-  return { ok: true, received: !!body };
+export async function cancelShipment(orderId: string): Promise<unknown> {
+  const order = (await Order.findById(orderId)) as unknown as OrderDoc | null;
+  if (!order) throw new NotFoundError('Order not found');
+
+  const provider = (order.shipment as { provider?: string } | undefined)?.provider;
+  if (!provider) throw new BadRequestError('No shipment exists for this order');
+
+  if (provider === 'fship') return fshipCancel(order);
+  if (provider === 'shiprocket') return shiprocketCancel(order);
+  throw new BadRequestError(`Unknown shipment provider: ${provider}`);
+}
+
+export async function track(provider: 'fship' | 'shiprocket', waybill: string): Promise<unknown> {
+  if (provider === 'fship') return fshipTrack(waybill);
+  return shiprocketTrack(waybill);
+}
+
+/* ============================================================
+ * Webhooks — unified handler
+ * Both providers POST status updates; we update order.status accordingly.
+ * ============================================================ */
+const FSHIP_STATUS_MAP: Record<string, string> = {
+  'IN-TRANSIT': 'shipped',
+  'OUT-FOR-DELIVERY': 'shipped',
+  DELIVERED: 'delivered',
+  RTO: 'refunded',
+  'RTO-DELIVERED': 'refunded',
+  CANCELLED: 'cancelled',
+};
+
+const SHIPROCKET_STATUS_MAP: Record<string, string> = {
+  PICKED_UP: 'shipped',
+  IN_TRANSIT: 'shipped',
+  OUT_FOR_DELIVERY: 'shipped',
+  DELIVERED: 'delivered',
+  RTO_INITIATED: 'refunded',
+  RTO_DELIVERED: 'refunded',
+  CANCELED: 'cancelled',
+};
+
+export async function handleWebhook(
+  provider: 'fship' | 'shiprocket',
+  body: Record<string, unknown>
+): Promise<unknown> {
+  logger.info(`Webhook received [${provider}]`, body);
+
+  try {
+    if (provider === 'fship') {
+      const waybill = (body.waybill ?? body.AWB) as string | undefined;
+      const status = String(body.status ?? body.current_status ?? '').toUpperCase();
+      if (!waybill) return { ok: true, ignored: true };
+
+      const mapped = FSHIP_STATUS_MAP[status];
+      if (!mapped) return { ok: true, ignored: true };
+
+      await Order.updateOne({ 'shipment.trackingId': waybill }, { status: mapped });
+      return { ok: true, status: mapped };
+    }
+
+    // Shiprocket
+    const awb = (body.awb ?? body.shipment_awb) as string | undefined;
+    const status = String(body.current_status ?? body.status ?? '').toUpperCase();
+    if (!awb) return { ok: true, ignored: true };
+
+    const mapped = SHIPROCKET_STATUS_MAP[status];
+    if (!mapped) return { ok: true, ignored: true };
+
+    await Order.updateOne({ 'shipment.trackingId': awb }, { status: mapped });
+    return { ok: true, status: mapped };
+  } catch (err) {
+    logger.error(`Webhook ${provider} processing failed`, err);
+    // Acknowledge 200 anyway so provider doesn't retry forever
+    return { ok: false, error: (err as Error).message };
+  }
 }

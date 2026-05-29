@@ -15,6 +15,7 @@ import Swal from 'sweetalert2';
 import Image from 'next/image';
 import CustomizeOderModel from '@/components/admin/order/CustomizeOderModel';
 import { RiArrowLeftFill, RiArrowRightFill } from 'react-icons/ri';
+import { shipmentService } from '@/_services/admin/shipment';
 
 
 const statusConfig = {
@@ -59,6 +60,7 @@ export default function OrderDetailsPage() {
         width: '',
         height: '',
         weight: '',
+        provider: 'fship' as 'fship' | 'shiprocket',
     });
 
     const [showEditCustomer, setShowEditCustomer] = useState(false);
@@ -222,24 +224,60 @@ export default function OrderDetailsPage() {
         }
     };
 
+
     const handleShipmentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         try {
             setLoading(true);
-            const response = await axiosInstance.post(`/shipping/shiprocket/create-order`, {
-                orderId: id,
-                shipmentDetails,
+
+            const response: any = await shipmentService.create({
+                orderId: id as string,
+                provider: shipmentDetails.provider,
+                shipmentDetails: {
+                    length: shipmentDetails.length,
+                    width: shipmentDetails.width,
+                    height: shipmentDetails.height,
+                    weight: shipmentDetails.weight,
+                },
             });
 
-            if (!response || (response as { success?: boolean })?.success === false) {
-                throw new Error('Failed to create shipment');
+            if (!response?.success) {
+                throw new Error(response?.message || 'Failed to create shipment');
             }
-            // console.log(response);
-            toast.success('Shipment created successfully');
+
+            Swal.fire({
+                title: 'Shipment Created',
+                html: `
+        <p><strong>Provider:</strong> ${response.provider}</p>
+        <p><strong>Tracking ID:</strong> ${response.data?.waybill || response.data?.shipment_id || '—'}</p>
+      `,
+                icon: 'success',
+            });
+
             setShowShipmentForm(false);
-        } catch (error) {
-            console.error('Error creating shipment:', error);
+            fetchOrder();
+        } catch (error: any) {
+            const apiMsg = error?.response?.data?.message || error.message;
+            const apiDetails = error?.response?.data?.details;
+
+            Swal.fire({
+                title: 'Shipment Failed',
+                html: `
+        <div style="text-align:left;">
+          <p style="color:#dc2626;"><strong>${apiMsg}</strong></p>
+          ${apiDetails ? `
+            <details style="margin-top:10px;">
+              <summary style="cursor:pointer; color:#666;">Show details</summary>
+              <pre style="background:#f5f5f5; padding:10px; border-radius:5px; font-size:12px; max-height:300px; overflow:auto; margin-top:8px;">${typeof apiDetails === 'string' ? apiDetails : JSON.stringify(apiDetails, null, 2)
+                        }</pre>
+            </details>
+          ` : ''}
+        </div>
+      `,
+                icon: 'error',
+                confirmButtonText: 'Got it',
+                width: 600,
+            });
         } finally {
             setLoading(false);
         }
@@ -392,75 +430,102 @@ export default function OrderDetailsPage() {
 
                             {/* Shipment Form */}
                             {showShipmentForm && (
-                                <div className="mt-4 border-t pt-4">
-                                    <h3 className="text-lg font-medium mb-4">Shipment Details</h3>
-                                    <form onSubmit={handleShipmentSubmit} className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">Length (cm)</label>
-                                            <input
-                                                type="number"
-                                                value={shipmentDetails.length}
-                                                onChange={(e) =>
-                                                    setShipmentDetails((prev) => ({
-                                                        ...prev,
-                                                        length: e.target.value,
-                                                    }))
-                                                }
-                                                className="w-full rounded-md border p-2"
-                                                required
-                                            />
+                                <div className="mt-4 border rounded-lg p-4 bg-white">
+                                    <h3 className="text-lg font-semibold mb-4 text-gray-800">
+                                        Shipment Details
+                                    </h3>
+
+                                    <form
+                                        onSubmit={handleShipmentSubmit}
+                                        className="grid grid-cols-1 md:grid-cols-2 gap-3"
+                                    >
+                                        {/* Provider */}
+                                        <div className="md:col-span-2">
+                                            <label className="text-sm font-medium text-gray-700 mb-1 block">
+                                                Shipping Provider
+                                            </label>
+
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <label
+                                                    className={`flex items-center justify-center p-2 border rounded-md cursor-pointer text-sm
+              ${shipmentDetails.provider === "fship"
+                                                            ? "border-blue-500 bg-blue-50"
+                                                            : "border-gray-200"
+                                                        }`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="provider"
+                                                        value="fship"
+                                                        checked={shipmentDetails.provider === "fship"}
+                                                        onChange={() =>
+                                                            setShipmentDetails((p) => ({ ...p, provider: "fship" }))
+                                                        }
+                                                        className="hidden"
+                                                    />
+                                                    FShip
+                                                </label>
+
+                                                <label
+                                                    className={`flex items-center justify-center p-2 border rounded-md cursor-pointer text-sm
+              ${shipmentDetails.provider === "shiprocket"
+                                                            ? "border-blue-500 bg-blue-50"
+                                                            : "border-gray-200"
+                                                        }`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="provider"
+                                                        value="shiprocket"
+                                                        checked={shipmentDetails.provider === "shiprocket"}
+                                                        onChange={() =>
+                                                            setShipmentDetails((p) => ({
+                                                                ...p,
+                                                                provider: "shiprocket",
+                                                            }))
+                                                        }
+                                                        className="hidden"
+                                                    />
+                                                    Shiprocket
+                                                </label>
+                                            </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">Width (cm)</label>
-                                            <input
-                                                type="number"
-                                                value={shipmentDetails.width}
-                                                onChange={(e) =>
-                                                    setShipmentDetails((prev) => ({
-                                                        ...prev,
-                                                        width: e.target.value,
-                                                    }))
-                                                }
-                                                className="w-full rounded-md border p-2"
-                                                required
-                                            />
+
+                                        {/* Inputs */}
+                                        {[
+                                            { label: "Length", key: "length" },
+                                            { label: "Width", key: "width" },
+                                            { label: "Height", key: "height" },
+                                            { label: "Weight", key: "weight" },
+                                        ].map((field) => (
+                                            <div key={field.key} className="space-y-1">
+                                                <label className="text-xs font-medium text-gray-600">
+                                                    {field.label}
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={shipmentDetails[field.key]}
+                                                    onChange={(e) =>
+                                                        setShipmentDetails((prev) => ({
+                                                            ...prev,
+                                                            [field.key]: e.target.value,
+                                                        }))
+                                                    }
+                                                    className="w-full border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:outline-none"
+                                                    required
+                                                />
+                                            </div>
+                                        ))}
+
+                                        {/* Button */}
+                                        <div className="md:col-span-2">
+                                            <button
+                                                type="submit"
+                                                className="w-full md:w-auto px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                            >
+                                                {loading ? "Creating..." : "Create Shipment"}
+                                            </button>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">Height (cm)</label>
-                                            <input
-                                                type="number"
-                                                value={shipmentDetails.height}
-                                                onChange={(e) =>
-                                                    setShipmentDetails((prev) => ({
-                                                        ...prev,
-                                                        height: e.target.value,
-                                                    }))
-                                                }
-                                                className="w-full rounded-md border p-2"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">Weight (kg)</label>
-                                            <input
-                                                type="number"
-                                                value={shipmentDetails.weight}
-                                                onChange={(e) =>
-                                                    setShipmentDetails((prev) => ({
-                                                        ...prev,
-                                                        weight: e.target.value,
-                                                    }))
-                                                }
-                                                className="w-full rounded-md border p-2"
-                                                required
-                                            />
-                                        </div>
-                                        <button
-                                            type="submit"
-                                            className="col-span-2 mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-                                        >
-                                            {loading ? 'Creating Shipment...' : 'Create Shipment'}
-                                        </button>
                                     </form>
                                 </div>
                             )}

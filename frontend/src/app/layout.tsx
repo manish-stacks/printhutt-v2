@@ -12,6 +12,7 @@ import "slick-carousel/slick/slick-theme.css";
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 import Script from "next/script";
+import 'quill/dist/quill.core.css';
 
 // Dynamic metadata — DB se aata hai
 export async function generateMetadata(): Promise<Metadata> {

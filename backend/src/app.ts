@@ -36,6 +36,7 @@ import paymentRoutes from './modules/payment/payment.routes';
 import userCartRoutes from './modules/usercart/usercart.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import seoRoutes from './modules/seo/seo.routes';
+import pageRoutes from './modules/pages/pages.routes';
 
 export function buildApp(): Express {
   const app = express();
@@ -84,6 +85,7 @@ export function buildApp(): Express {
   app.use('/api/payment', paymentRoutes);
   app.use('/api/usercart', userCartRoutes);
   app.use('/api/settings', settingsRoutes);
+  app.use('/api/pages', pageRoutes);
   app.use('/', seoRoutes);
 
   app.use(notFoundHandler);

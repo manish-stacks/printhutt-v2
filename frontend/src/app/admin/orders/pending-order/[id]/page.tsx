@@ -15,6 +15,7 @@ import Swal from 'sweetalert2';
 import Image from 'next/image';
 import CustomizeOderModel from '@/components/admin/order/CustomizeOderModel';
 import { RiArrowLeftFill, RiArrowRightFill } from 'react-icons/ri';
+import { shipmentService } from '@/_services/admin/shipment';
 
 const statusConfig = {
     pending: {
@@ -58,6 +59,7 @@ export default function OrderDetailsPage() {
         width: '',
         height: '',
         weight: '',
+        provider: 'fship' as 'fship' | 'shiprocket',
     });
 
     const fetchOrder = async () => {
@@ -173,24 +175,60 @@ export default function OrderDetailsPage() {
         }
     };
 
+
     const handleShipmentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         try {
             setLoading(true);
-            const response = await axiosInstance.post(`/shipping/shiprocket/create-order`, {
-                orderId: id,
-                shipmentDetails,
+
+            const response: any = await shipmentService.create({
+                orderId: id as string,
+                provider: shipmentDetails.provider,
+                shipmentDetails: {
+                    length: shipmentDetails.length,
+                    width: shipmentDetails.width,
+                    height: shipmentDetails.height,
+                    weight: shipmentDetails.weight,
+                },
             });
 
-            if (!response || (response as { success?: boolean })?.success === false) {
-                throw new Error('Failed to create shipment');
+            if (!response?.success) {
+                throw new Error(response?.message || 'Failed to create shipment');
             }
-            // console.log(response);
-            toast.success('Shipment created successfully');
+
+            Swal.fire({
+                title: 'Shipment Created',
+                html: `
+        <p><strong>Provider:</strong> ${response.provider}</p>
+        <p><strong>Tracking ID:</strong> ${response.data?.waybill || response.data?.shipment_id || '—'}</p>
+      `,
+                icon: 'success',
+            });
+
             setShowShipmentForm(false);
-        } catch (error) {
-            console.error('Error creating shipment:', error);
+            fetchOrder();
+        } catch (error: any) {
+            const apiMsg = error?.response?.data?.message || error.message;
+            const apiDetails = error?.response?.data?.details;
+
+            Swal.fire({
+                title: 'Shipment Failed',
+                html: `
+        <div style="text-align:left;">
+          <p style="color:#dc2626;"><strong>${apiMsg}</strong></p>
+          ${apiDetails ? `
+            <details style="margin-top:10px;">
+              <summary style="cursor:pointer; color:#666;">Show details</summary>
+              <pre style="background:#f5f5f5; padding:10px; border-radius:5px; font-size:12px; max-height:300px; overflow:auto; margin-top:8px;">${typeof apiDetails === 'string' ? apiDetails : JSON.stringify(apiDetails, null, 2)
+                        }</pre>
+            </details>
+          ` : ''}
+        </div>
+      `,
+                icon: 'error',
+                confirmButtonText: 'Got it',
+                width: 600,
+            });
         } finally {
             setLoading(false);
         }
@@ -340,6 +378,40 @@ export default function OrderDetailsPage() {
                                 <div className="mt-4 border-t pt-4">
                                     <h3 className="text-lg font-medium mb-4">Shipment Details</h3>
                                     <form onSubmit={handleShipmentSubmit} className="grid grid-cols-2 gap-4">
+                                        <div className="col-span-2 space-y-2">
+                                            <label className="text-sm font-medium">Shipping Provider</label>
+                                            <div className="flex gap-3">
+                                                <label className={`flex-1 flex items-center gap-2 p-3 border-2 rounded-lg cursor-pointer transition ${shipmentDetails.provider === 'fship'
+                                                    ? 'border-blue-500 bg-blue-50'
+                                                    : 'border-gray-200 hover:border-gray-300'
+                                                    }`}>
+                                                    <input
+                                                        type="radio"
+                                                        name="provider"
+                                                        value="fship"
+                                                        checked={shipmentDetails.provider === 'fship'}
+                                                        onChange={() => setShipmentDetails((p) => ({ ...p, provider: 'fship' }))}
+                                                        className="hidden"
+                                                    />
+                                                    <span className="font-medium">FShip</span>
+                                                </label>
+
+                                                <label className={`flex-1 flex items-center gap-2 p-3 border-2 rounded-lg cursor-pointer transition ${shipmentDetails.provider === 'shiprocket'
+                                                    ? 'border-blue-500 bg-blue-50'
+                                                    : 'border-gray-200 hover:border-gray-300'
+                                                    }`}>
+                                                    <input
+                                                        type="radio"
+                                                        name="provider"
+                                                        value="shiprocket"
+                                                        checked={shipmentDetails.provider === 'shiprocket'}
+                                                        onChange={() => setShipmentDetails((p) => ({ ...p, provider: 'shiprocket' }))}
+                                                        className="hidden"
+                                                    />
+                                                    <span className="font-medium">Shiprocket</span>
+                                                </label>
+                                            </div>
+                                        </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium">Length (cm)</label>
                                             <input

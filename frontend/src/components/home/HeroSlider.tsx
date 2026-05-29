@@ -52,14 +52,16 @@ const HeroSlider = () => {
                             <SwiperSlide key={slider._id}>
                                 <Link href={slider.link}>
                                     <Image
-                                        src={slider.imageUrl.url}
+                                        src={slider.imageUrl?.url}
                                         alt={slider.title}
-                                        className="w-full"
                                         width={1900}
                                         height={550}
+                                        priority           
+                                        fetchPriority="high"
+                                        sizes="100vw"
+                                        quality={85}
                                         placeholder="blur"
                                         blurDataURL="https://via.placeholder.com/1900x545.png?text=1900*545"
-                                        onError={fail}
                                     />
                                 </Link>
                             </SwiperSlide>

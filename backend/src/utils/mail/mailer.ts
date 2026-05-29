@@ -417,6 +417,7 @@ export async function sendOrderConfirmationEmail(order: any) {
     console.error("Mail send failed:", err);
   }
 
+  
   if (order.shipping?.mobileNumber) {
     const itemsList = order.items
       .map((i: { name: string; quantity: number }, idx: number) => `${idx + 1}. ${i.name} x ${i.quantity}`)

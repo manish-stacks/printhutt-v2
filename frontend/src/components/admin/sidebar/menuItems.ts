@@ -41,7 +41,7 @@ export const menuItems = {
   manageSite: [
     { id: 'slider', label: 'Slider', path: '/admin/hero-banner' },
     { id: 'testimonials', label: 'Testimonials', path: '/admin/testimonials' },
-    // { id: 'banner', label: 'Banner', path: '/admin/banner' },
+    { id: 'Pages', label: 'Pages', path: '/admin/pages' },
   ]
 };
 // Ecommerce

@@ -16,7 +16,7 @@ import siteLogo from '/public/print-hutt-logo.webp';
 import { useCartStore } from "@/store/useCartStore";
 import { useUserStore } from "@/store/useUserStore";
 import { categoryService } from "@/_services/common/categoryService";
-import { productService } from "@/_services/common/productService";
+// import { productService } from "@/_services/common/productService";
 import HeaderCategoryList from "./category-list";
 import CategoryPopup from "../CategoryPopup";
 // import Headerlocation from "./location";
@@ -34,20 +34,21 @@ export default function Header() {
   const totalItem = items.length;
   const isLoggedIn = useUserStore((state) => state.isLoggedIn);
   const [categoriesData, setCategoriesData] = useState([]);
-  const [productData, setProductData] = useState([]);
+  // const [productData, setProductData] = useState([]);
   const [wishlistCount, setWishlistCount] = useState(0);
   const { openCartSidebarView } = useCartSidebarStore();
   const [mobileCategoryOpen, setMobileCategoryOpen] = useState(false);
 
   const fetchData = async () => {
     try {
-      const [categories, products] = await Promise.all([
+      const [categories] = await Promise.all([
         categoryService.getAll("all"),
-        productService.getTopProducts(6, "all"),
+        // productService.getTopProducts(6, "all"),
       ]);
+      // console.log('categories response', categories);
 
       setCategoriesData(categories?.categories);
-      setProductData(products?.products);
+      // setProductData(products?.products);
 
       const response = await wishlistService.getAll();
       setWishlistCount(response.data?.items?.length || 0);
@@ -106,7 +107,7 @@ export default function Header() {
                     </div>
                     <div className="cols px-[12px]">
                       <a
-                        href="https://www.shiprocket.in/shipment-tracking/"
+                        href="/user/orders"
                         className="transition-all duration-[0.3s] ease-in-out font-Poppins text-[16px] text-[#fff] font-light leading-[28px] tracking-[0.03rem]"
                       >
                         Track Order
@@ -598,11 +599,9 @@ export default function Header() {
 
       {isOpen && (
         <Suspense fallback={null}>
-          <CategoryPopup onClose={toggleClose} category={categoriesData.slice(0, 9)} products={productData} />
+          <CategoryPopup onClose={toggleClose} category={categoriesData.slice(0, 15)}  />
         </Suspense>
       )}
-
-
     </>
   );
 };

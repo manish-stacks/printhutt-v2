@@ -2,6 +2,7 @@ import { FilterQuery, UpdateQuery } from 'mongoose';
 import Category from '@/db/models/categoryModel';
 import SubCategory from '@/db/models/subCategoryModel';
 import Product from '@/db/models/productModel';
+import { level } from 'winston';
 
 export const categoriesRepo = {
   /* ─── Admin list (paginated + search by name) ─── */
@@ -36,32 +37,47 @@ export const categoriesRepo = {
 
   /* ─── Featured (storefront) ─── */
   findFeatured: () =>
-    Category.find({ featured: true }, { name: 1, _id: 1 })
+    Category.find({ featured: true, status: true }, { name: 1, _id: 1 })
       .sort({ level: 1 })
       .lean(),
 
   /* ─── Storefront with subcategory + product counts ─── */
   findAllWithSubAndCounts: async (limit: number | null): Promise<unknown[]> => {
-    let q = Category.find().sort({ createdAt: -1 }).lean<Array<{ _id: unknown; [k: string]: unknown }>>();
+    let q = Category.find({ status: true }) // ya 1
+      .sort({ level: 1 })
+      .lean<Array<{ _id: unknown;[k: string]: unknown }>>();
+
     if (limit) q = q.limit(limit);
+
     const categories = await q;
 
     return Promise.all(
       categories.map(async (category) => {
+
+        // active subcategories
         const subcategories = await SubCategory.find({
           parentCategory: category._id,
+          status: true,
         }).lean();
 
+        // active products
         const totalCategoryProducts = await Product.countDocuments({
           category: category._id,
+          status: true,
         });
 
         const subcategoriesWithProductCount = await Promise.all(
           subcategories.map(async (subcategory) => {
+
             const totalSubcategoryProducts = await Product.countDocuments({
               subcategory: subcategory._id,
+              status: true,
             });
-            return { ...subcategory, totalProducts: totalSubcategoryProducts };
+
+            return {
+              ...subcategory,
+              totalProducts: totalSubcategoryProducts,
+            };
           })
         );
 
@@ -85,7 +101,7 @@ export const categoriesRepo = {
     if (!category) return null;
 
     let q = SubCategory.find({ parentCategory: category._id }).lean<
-      Array<{ _id: unknown; [k: string]: unknown }>
+      Array<{ _id: unknown;[k: string]: unknown }>
     >();
     if (limit) q = q.limit(limit);
     const subcategories = await q;

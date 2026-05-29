@@ -59,59 +59,6 @@ const DayoftheWeek = ({
 
       <div className="relative max-w-[1320px] mx-auto px-4 sm:px-6">
 
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-10 sm:mb-14">
-
-          {/* Left */}
-          <div>
-
-            {/* <span className="inline-flex items-center gap-2 bg-pink-500/10 border border-pink-500/20 text-pink-300 text-[11px] uppercase tracking-[0.2em] font-bold px-4 py-2 rounded-full mb-5">
-              <RiFlashlightLine size={14} />
-              Featured Products
-            </span> */}
-
-            <h2
-              className="text-3xl sm:text-5xl text-[#0d0d1a] font-bold leading-tight"
-              style={{
-                fontFamily:
-                  "'Cormorant Garamond', serif",
-              }}
-            >
-              {title}
-            </h2>
-
-            <p className="text-[#0d0d1a]/60 text-sm sm:text-base mt-4 max-w-xl leading-relaxed">
-              Discover premium handcrafted products,
-              glowing gifts and personalized designs
-              curated specially for you.
-            </p>
-
-          </div>
-
-          {/* Right */}
-          {/*<div className="flex items-center gap-3">
-
-            <div className="w-12 h-12 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center">
-              <RiFireLine
-                size={22}
-                className="text-amber-300"
-              />
-            </div>
-
-             <div>
-              <p className="text-white text-sm font-semibold">
-                Trending Collection
-              </p>
-
-              <p className="text-white/40 text-xs mt-1">
-                Updated Daily
-              </p>
-            </div> 
-
-          </div>*/}
-
-        </div>
-
         {/* Content */}
         {loading ? (
 
@@ -161,6 +108,7 @@ const DayoftheWeek = ({
           >
             <ProductSlider
               products={productData}
+              title={title}
             />
           </Suspense>
 
