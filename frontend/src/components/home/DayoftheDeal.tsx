@@ -10,11 +10,6 @@ import React, {
 import ProductSlider from "../ProductSlider";
 import { productService } from "@/_services/common/productService";
 
-import {
-  RiFlashlightLine,
-  RiFireLine,
-} from "react-icons/ri";
-
 const DayoftheWeek = ({
   title,
   catID,

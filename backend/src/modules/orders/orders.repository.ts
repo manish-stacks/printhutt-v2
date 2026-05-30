@@ -128,4 +128,24 @@ export const ordersRepo = {
   deleteById: (id: string) => Order.findByIdAndDelete(id),
 
   isValidObjectId: (id: string): boolean => mongoose.Types.ObjectId.isValid(id),
+
+  /** Count pending orders in date range (for preview) */
+  countPendingInRange: (startDate: Date, endDate: Date) =>
+    Order.countDocuments(buildPendingDateQuery(startDate, endDate)),
+
+  /** Find pending orders in date range (with items for S3 cleanup) */
+  findPendingInRange: (startDate: Date, endDate: Date) =>
+    Order.find(buildPendingDateQuery(startDate, endDate))
+      .select('_id orderId items createdAt')
+      .lean(),
+
+  /** Bulk delete pending orders in date range */
+  deletePendingInRange: (startDate: Date, endDate: Date) =>
+    Order.deleteMany(buildPendingDateQuery(startDate, endDate)),
 };
+
+
+const buildPendingDateQuery = (startDate: Date, endDate: Date): FilterQuery<unknown> => ({
+  status: 'pending',
+  createdAt: { $gte: startDate, $lte: endDate },
+});

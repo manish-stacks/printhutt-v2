@@ -1,68 +1,74 @@
+"use client";
+
 import { formatCurrency } from "@/helpers/helpers";
 import { useCartStore } from "@/store/useCartStore";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
-import { RiArrowRightSLine, RiCloseLine } from "react-icons/ri";
+import {
+  RiArrowRightSLine,
+  RiCloseLine,
+  RiAddLine,
+  RiSubtractLine,
+  RiDeleteBin6Line,
+  RiShoppingCart2Line,
+  RiGift2Line,
+} from "react-icons/ri";
 import { toast } from "react-toastify";
-// import CheckOutPopUp from "./CheckOutPopUp";
 import CheckOutPopUpV2 from "./CheckOutPopUpV2";
 import confetti from "canvas-confetti";
 import GiftCustomizeModal from "./GiftCustomizeModal";
-import { get_product_by_id } from "@/_services/admin/product";
 import { Product } from "@/lib/types/product";
 import { productService } from "@/_services/common/productService";
 
+const FREE_THRESHOLD = 1000;
+const FREE_GIFT_ID = "67b4756b5e05b7be01d85ea2";
+
 const CartSidebar = ({ onClose }: { onClose: () => void }) => {
-  const popupRef = useRef(null);
-  const [totalPrice, setTotalPrice] = useState({ totalPrice: 0, discountPrice: 0, shippingTotal: 0 });
+  const popupRef = useRef<HTMLDivElement | null>(null);
+  const [totalPrice, setTotalPrice] = useState({
+    totalPrice: 0,
+    discountPrice: 0,
+    shippingTotal: 0,
+  });
   const { items, updateQuantity, removeFromCart, getTotalPrice } = useCartStore();
   const [showMailModal, setShowMailModal] = useState(false);
-  const addToCart = useCartStore(state => state.addToCart);
-  const [showGiftModal, setShowGiftModal] = useState<boolean>(false);
+  const addToCart = useCartStore((state) => state.addToCart);
+  const [showGiftModal, setShowGiftModal] = useState(false);
   const [product, setProduct] = useState<Product>();
 
-  const handleQuantityChange = (productId: string, newQuantity: number) => {
-    if (newQuantity < 1) {
-      removeFromCart(productId);
-    } else {
-      updateQuantity(productId, newQuantity);
-    }
-    toast.info('Updated quantity');
-  };
-
-
+  /* ── Update totals when items change ── */
   useEffect(() => {
     setTotalPrice(getTotalPrice());
   }, [items]);
 
-
+  /* ── Fetch free-gift product once ── */
   useEffect(() => {
     (async () => {
       try {
-        const productResp = await productService.getById('67b4756b5e05b7be01d85ea2');
-        setProduct(productResp?.product || productResp);
-      } catch (error) {
-        console.error('Error fetching product:', error);
+        const resp: any = await productService.getById(FREE_GIFT_ID);
+        setProduct(resp?.product || resp);
+      } catch (e) {
+        console.error("Error fetching free-gift product:", e);
       }
     })();
   }, []);
 
+  /* ── Free gift auto-add / remove on threshold cross ── */
   useEffect(() => {
     if (!product) return;
-
-    const FREE_THRESHOLD = 1000;
-    const FREE_ID = "67b4756b5e05b7be01d85ea2";
-
     const { discountPrice = 0 } = getTotalPrice();
-    const hasFreeGift = items.some(i => i._id === FREE_ID);
+    const hasFreeGift = items.some((i) => i._id === FREE_GIFT_ID);
 
     if (discountPrice >= FREE_THRESHOLD && !hasFreeGift) {
       addToCart(
         {
           ...product,
-          thumbnail: { ...product.thumbnail, url: "https://cdn.shopify.com/app-store/listing_images/08313cab5d04fcc9a59ffc39eefa1521/icon/CPuHmrL0lu8CEAE=.png" },
-          title: "Free Acrylic photo Keychain With NFC tag",
+          thumbnail: {
+            ...product.thumbnail,
+            url: "https://cdn.shopify.com/app-store/listing_images/08313cab5d04fcc9a59ffc39eefa1521/icon/CPuHmrL0lu8CEAE=.png",
+          },
+          title: "Free Acrylic Photo Keychain With NFC Tag",
           price: 0,
           discountPrice: 0,
           isGift: true,
@@ -70,268 +76,327 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
         },
         1
       );
-
       confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
       toast.success("🎁 Free gift unlocked!");
     }
 
     if (discountPrice < FREE_THRESHOLD && hasFreeGift) {
-      removeFromCart(FREE_ID);
+      removeFromCart(FREE_GIFT_ID);
     }
   }, [items, product]);
-  // getTotalPrice().discountPrice, product
 
+  /* ── ESC + scroll lock ── */
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onEsc);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onEsc);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
 
-  // const cartPage = () => {
-  //   onClose();
-  //   return router.push('/cart');
-  // }
+  const handleQuantityChange = (productId: string, newQty: number) => {
+    if (newQty < 1) {
+      removeFromCart(productId);
+      toast.info("Item removed");
+    } else {
+      updateQuantity(productId, newQty);
+    }
+  };
+
   const checkoutPage = () => {
     if (!items.length) {
-      toast.error('Please add items to cart');
+      toast.error("Please add items to cart");
       return;
     }
     setShowMailModal(true);
-    // onClose();
-    //return router.push('/checkout');
+  };
 
-  }
-  // console.log("cart items",items)
+  /* ── Item-level discounted price ── */
+  const itemFinalPrice = (item: any) => {
+    if (!item?.price || !item?.discountType || !item?.discountPrice) return item.price;
+    return item.discountType === "percentage"
+      ? item.price - (item.price * item.discountPrice) / 100
+      : item.price - item.discountPrice;
+  };
+
+  /* ── Free gift progress ── */
+  const progressPercent = Math.min(
+    100,
+    Math.round((totalPrice.discountPrice / FREE_THRESHOLD) * 100)
+  );
+  const remainingForGift = Math.max(0, FREE_THRESHOLD - totalPrice.discountPrice);
 
   return (
     <>
-      {/* Cart sidebar */}
-      <div className="bb-side-cart-overlay  w-full h-screen fixed top-[0] left-[0] bg-[#00000080] z-[17]" />
-      <div className="bb-side-cart w-[770px] h-[calc(100%-30px)] my-[15px] ml-[15px] pt-[15px] px-[8px] text-[14px] font-normal fixed z-[99] top-[0] right-[0] left-[auto] block transition-all duration-[0.5s] ease delay-[0s] translate-x-[100%] bg-[#fff] overflow-auto opacity-[0] rounded-tl-[20px] rounded-bl-[20px] max-[991px]:w-[740px] max-[767px]:w-[350px] max-[575px]:w-[300px] bb-open-cart">
-        <div className="flex flex-wrap h-full" ref={popupRef}>
-          <div className="min-[768px]:w-[41.66%] w-full px-[12px] max-[767px]:hidden">
-            <div className="bb-top-contact">
-              <div className="bb-cart-title w-full mb-[20px] flex flex-wrap justify-between">
-                <h4 className="font-quicksand text-[18px] font-extrabold text-[#3d4750] tracking-[0.03rem] leading-[1.2]">
-                  Related Items
-                </h4>
-              </div>
-            </div>
-            <div className="bb-cart-box cart-related bb-border-right flex flex-col pr-[24px] border-r-[1px] border-solid border-[#eee] overflow-auto mb-[-24px]">
+      {/* Overlay */}
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-[17]"
+        onClick={onClose}
+      />
 
-              <div className="bb-cart-banner mb-[24px]">
-                <div className="banner rounded-[20px] relative overflow-hidden">
-                  <img src="https://s3.ap-south-1.amazonaws.com/printhutt.dev.bucket/others/loi5p36j7ezhhgk32ply_dek6kp.png"
-                    alt="cart-banner"
-                    className="w-full transition-all duration-[0.3s] ease-in-out"
-                  />
-                  <div className="detail w-full p-[15px] absolute left-[0] bottom-[0] bg-[#000000b3] flex flex-col">
-                    <h4 className="font-Poppins text-[15px] mb-[5px] leading-[22px] font-light text-[#fff] tracking-[0.03rem]">
-                      Couple &amp; Lamp
-                    </h4>
-                    <h3 className="font-quicksand font-semibold tracking-[0.03rem] text-[#fff] text-[22px] leading-[30px]">
-                      Customize
-                    </h3>
-                    <Link
-                      href="/category/lamps"
-                      className="transition-all duration-[0.3s] ease-in-out w-[100px] mt-[15px] py-[5px] px-[10px] border-[1px] border-solid border-[#fff] rounded-[10px] text-[#fff] font-Poppins text-[15px] font-light leading-[28px] tracking-[0.03rem] flex items-center justify-center hover:bg-[#fff] hover:text-[#3d4750]"
-                    >
-                      Buy Now
-                    </Link>
-                  </div>
-                </div>
-              </div>
-              <div className="bb-cart-banner mb-[24px]">
-                <div className="banner rounded-[20px] relative overflow-hidden">
-                  <img src="https://s3.ap-south-1.amazonaws.com/printhutt.dev.bucket/others/aaabwgrbbmfnd6km1ksq_vpndun.jpg"
-                    alt="cart-banner"
-                    className="w-full transition-all duration-[0.3s] ease-in-out"
-                  />
-                  <div className="detail w-full p-[15px] absolute left-[0] bottom-[0] bg-[#000000b3] flex flex-col">
-                    <h4 className="font-Poppins text-[15px] mb-[5px] leading-[22px] font-light text-[#fff] tracking-[0.03rem]">
-                      Neon &amp; Light
-                    </h4>
-                    <h3 className="font-quicksand font-semibold tracking-[0.03rem] text-[#fff] text-[22px] leading-[30px]">
-                      Customize
-                    </h3>
-                    <Link
-                      href="/category/neon"
-                      className="transition-all duration-[0.3s] ease-in-out w-[100px] mt-[15px] py-[5px] px-[10px] border-[1px] border-solid border-[#fff] rounded-[10px] text-[#fff] font-Poppins text-[15px] font-light leading-[28px] tracking-[0.03rem] flex items-center justify-center hover:bg-[#fff] hover:text-[#3d4750]"
-                    >
-                      Buy Now
-                    </Link>
-                  </div>
-                </div>
-              </div>
+      {/* Sidebar */}
+      <div
+        ref={popupRef}
+        className="fixed top-0 right-0 h-screen w-full max-w-[440px] bg-white z-[99] shadow-2xl flex flex-col animate-slide-in"
+      >
+        {/* ─── HEADER ─── */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center">
+              <RiShoppingCart2Line className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 text-base leading-tight">My Cart</h3>
+              <p className="text-xs text-gray-500">
+                {items.length} {items.length === 1 ? "item" : "items"}
+              </p>
             </div>
           </div>
-          <div className="min-[768px]:w-[58.33%] w-full px-[12px]">
-            <div className="bb-inner-cart relative z-[9] flex flex-col h-full justify-between">
-              <div className="bb-top-contact">
-                <div className="bb-cart-title w-full mb-[20px] flex flex-wrap justify-between">
-                  <h4 className="font-quicksand text-[18px] font-extrabold text-[#3d4750] tracking-[0.03rem] leading-[1.2]">
-                    My cart
-                  </h4>
-                  {/* <a onClick={onClose} className="bb-cart-close transition-all duration-[0.3s] ease-in-out w-[16px] h-[20px] absolute top-[-20px] right-[0] bg-[#e04e4eb3] rounded-[10px] cursor-pointer" title="Close Cart" /> */}
 
-                  <button
-                    onClick={onClose}
-                    title="Close Cart"
-                    className="absolute -top-4 right-0 z-20 flex items-center justify-center w-10 h-10  text-red-500 transition-all duration-300"
-                  >
-                    <RiCloseLine size={24} className="text-rose-500 w-16 h-16" />
-                  </button>
-                </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="w-9 h-9 rounded-full hover:bg-gray-100 text-gray-500 hover:text-red-500 flex items-center justify-center transition"
+          >
+            <RiCloseLine size={22} />
+          </button>
+        </div>
+
+        {/* ─── FREE GIFT PROGRESS ─── */}
+        {items.length > 0 && (
+          <div className="px-5 py-3 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100 flex-shrink-0">
+            <div className="flex items-center gap-2 mb-1.5">
+              <RiGift2Line className="w-4 h-4 text-purple-600" />
+              <p className="text-xs font-medium text-gray-700 flex-1">
+                {remainingForGift > 0 ? (
+                  <>
+                    Add <strong className="text-purple-600">{formatCurrency(remainingForGift)}</strong> more for a{" "}
+                    <strong>FREE gift</strong> 🎁
+                  </>
+                ) : (
+                  <span className="text-green-600 font-semibold">🎉 Free gift unlocked!</span>
+                )}
+              </p>
+            </div>
+            <div className="h-1.5 bg-white rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ─── ITEMS LIST ─── */}
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center py-10">
+              <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                <RiShoppingCart2Line className="w-10 h-10 text-gray-300" />
               </div>
-              <div className="bb-cart-box item h-full flex flex-col max-[767px]:justify-start">
-                <ul className="bb-cart-items mb-[-24px]">
+              <h4 className="text-base font-semibold text-gray-800">Your cart is empty</h4>
+              <p className="text-sm text-gray-500 mt-1">Add items to get started</p>
+              <Link
+                href="/products"
+                onClick={onClose}
+                className="mt-5 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition"
+              >
+                Continue Shopping
+              </Link>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {items.map((item) => (
+                <li
+                  key={item._id}
+                  className={`relative rounded-2xl p-3 border transition ${
+                    item.isGift
+                      ? "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200"
+                      : "bg-gray-50 border-gray-100 hover:bg-white hover:shadow-sm"
+                  }`}
+                >
+                  <div className="flex gap-3">
+                    {/* Thumbnail */}
+                    <Link
+                      href={`/product-details/${item.slug}`}
+                      onClick={onClose}
+                      className="flex-shrink-0"
+                    >
+                      <Image
+                        src={item.thumbnail.url}
+                        alt={item.title}
+                        width={80}
+                        height={80}
+                        className="w-20 h-20 rounded-xl object-cover bg-white border border-gray-100"
+                      />
+                    </Link>
 
-                  {items.length === 0 ? (
-                    <li className="cart-sidebar-list mb-[24px] p-[20px] flex bg-[#f8f8fb] rounded-[20px] border-[1px] border-solid border-[#eee] relative max-[575px]:p-[10px]">
-                      Your cart is empty
-                    </li>
-                  ) : (
-                    items.map(item => (
-                      <li className="cart-sidebar-list mb-[24px] p-[20px] flex bg-[#f8f8fb] rounded-[20px] border-[1px] border-solid border-[#eee] relative max-[575px]:p-[10px]" key={item._id}>
-                        <button
-                          // onClick={() => removeFromCart(item._id)}
-                          onClick={() => !item.isGift && removeFromCart(item._id)}
-                          disabled={item.isGift}
-                          className="cart-remove-item transition-all duration-[0.3s] ease-in-out bg-[#3d4750] w-[20px] h-[20px] text-[#fff] absolute top-[-3px] right-[-3px] rounded-[50%] flex items-center justify-center opacity-[0.5] text-[15px]"
+                    <div className="flex-1 min-w-0">
+                      {/* Title */}
+                      {item.isGift ? (
+                        <>
+                          <div className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full mb-1">
+                            <RiGift2Line className="w-3 h-3" /> Free Gift
+                          </div>
+                          <p className="text-sm font-medium text-gray-900 line-clamp-2 leading-snug">
+                            {item.title}
+                          </p>
+                          <button
+                            onClick={() => setShowGiftModal(true)}
+                            className="text-xs text-purple-600 hover:text-purple-700 underline mt-1 font-medium"
+                          >
+                            Customize / Upload photo
+                          </button>
+                        </>
+                      ) : (
+                        <Link
+                          href={`/product-details/${item.slug}`}
+                          onClick={onClose}
+                          className="block"
                         >
-                          <i className="ri-close-line" />
-                        </button>
-                        <Link href={`/product-details/${item.slug}`}
-
-                          className="bb-cart-pro-img flex grow-[1] shrink-[0] basis-[25%] items-center max-[575px]:flex-[initial]"
-                        >
-                          <Image
-                            src={item.thumbnail.url}
-                            alt={item.title}
-                            width={100} height={100}
-                            className="w-[85px] rounded-[10px] border-[1px] border-solid border-[#eee] max-[575px]:w-[50px]"
+                          <p
+                            className="text-sm font-medium text-gray-900 line-clamp-2 leading-snug hover:text-purple-600 transition"
+                            dangerouslySetInnerHTML={{ __html: item.title }}
                           />
                         </Link>
-                        <div className="bb-cart-contact pl-[15px] relative grow-[1] shrink-[0] basis-[70%] overflow-hidden">
-                          {item.isGift ? (
-                            <div className="mb-2">
-                              <div className="font-medium text-[#3d4750] text-sm">
-                                {item.title}
-                              </div>
+                      )}
 
-                              <button
-                                onClick={() => setShowGiftModal(true)}
-                                className="text-blue-500 underline text-xs mt-1"
-                              >
-                                Customize / Upload Photo
-                              </button>
-
-                            </div>
-                          ) : (
-                            <Link
-                              href={`/product-details/${item.slug}`}
-                              className="bb-cart-sub-title w-full mb-[8px] font-Poppins tracking-[0.03rem] text-[#3d4750] whitespace-nowrap overflow-hidden text-ellipsis block text-[14px] leading-[18px] font-medium"
-                            >
-                              <div dangerouslySetInnerHTML={{ __html: item.title }} />
-                            </Link>
-                          )}
-                          {
-                            item.price !== 0 &&
-                            <p className="cart-price mb-[8px] text-[14px] leading-[18px] block font-Poppins text-[#686e7d] font-light tracking-[0.03rem]">
-                              <span className="new-price px-[3px] text-[15px] leading-[18px] text-[#686e7d] font-bold">
-                                {item?.price &&
-                                  item?.discountType &&
-                                  item?.discountPrice
-                                  ? item.discountType === 'percentage'
-                                    ? formatCurrency(
-                                      item.price -
-                                      (item.price * item.discountPrice) / 100
-                                    )
-                                    : formatCurrency(item.price - item.discountPrice)
-                                  : ""
-                                }
-                              </span>
-
-                              <span className="text-[15px] line-through">{formatCurrency(item.price)}</span>
-                            </p>
-                          }
-                          {!item.isGift ? (
-                            <div className="qty-plus-minus h-[28px] w-[85px] py-[7px] border-[1px] border-solid border-[#eee] overflow-hidden relative flex items-center justify-between bg-[#fff] rounded-[10px]">
-                              <div className="dec bb-qtybtn" onClick={() => handleQuantityChange(item._id, item.quantity - 1)}>-</div>
-                              <input
-                                className="qty-input text-center"
-                                type="text"
-                                name="bb-qtybtn"
-                                min="1"
-                                readOnly
-                                value={item.quantity}
-                              />
-                              <div className="inc bb-qtybtn" onClick={() => handleQuantityChange(item._id, item.quantity + 1)}>+</div>
-                            </div>
-                          ) : (
-                            <div className="text-sm italic text-amber-700">Free gift</div>
-                          )}
+                      {/* Price */}
+                      {item.price !== 0 && (
+                        <div className="flex items-baseline gap-2 mt-1.5">
+                          <span className="text-sm font-bold text-gray-900">
+                            {formatCurrency(itemFinalPrice(item))}
+                          </span>
+                          {item.discountPrice ? (
+                            <span className="text-xs text-gray-400 line-through">
+                              {formatCurrency(item.price)}
+                            </span>
+                          ) : null}
                         </div>
-                      </li>
-                    )))}
-                </ul>
+                      )}
+
+                      {/* Quantity controls */}
+                      <div className="flex items-center justify-between mt-2">
+                        {!item.isGift ? (
+                          <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden">
+                            <button
+                              onClick={() => handleQuantityChange(item._id, item.quantity - 1)}
+                              className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 text-gray-600 transition"
+                              aria-label="Decrease"
+                            >
+                              <RiSubtractLine className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="w-8 text-center text-sm font-semibold text-gray-900">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => handleQuantityChange(item._id, item.quantity + 1)}
+                              className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 text-gray-600 transition"
+                              aria-label="Increase"
+                            >
+                              <RiAddLine className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs italic text-amber-700">Complimentary</span>
+                        )}
+
+                        {!item.isGift && (
+                          <button
+                            onClick={() => removeFromCart(item._id)}
+                            className="text-gray-400 hover:text-red-500 transition p-1.5 rounded-lg hover:bg-red-50"
+                            aria-label="Remove"
+                          >
+                            <RiDeleteBin6Line className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* ─── FOOTER (totals + checkout) ─── */}
+        {items.length > 0 && (
+          <div className="border-t border-gray-100 px-5 py-4 bg-white flex-shrink-0">
+            {/* Totals */}
+            <div className="space-y-1.5 mb-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Subtotal</span>
+                <div className="text-right">
+                  {totalPrice.totalPrice !== totalPrice.discountPrice && (
+                    <span className="text-xs text-gray-400 line-through mr-2">
+                      {formatCurrency(totalPrice.totalPrice)}
+                    </span>
+                  )}
+                  <span className="text-gray-900 font-medium">
+                    {formatCurrency(totalPrice.discountPrice)}
+                  </span>
+                </div>
               </div>
-              <div className="bb-bottom-cart">
-                <div className="cart-sub-total mt-[20px] pb-[8px] flex flex-wrap justify-between border-t-[1px] border-solid border-[#eee]">
-                  <table className="table cart-table mt-[10px] w-full align-top">
-                    <tbody>
-                      <tr>
-                        <td className="title font-medium text-[#777] p-[.5rem]">
-                          Sub-Total :
-                        </td>
-                        <td className="price text-[#777] text-right p-[.5rem] text-green-800">
-                          <span className="text-[15px] line-through text-rose-600">{formatCurrency(totalPrice.totalPrice)}</span> {formatCurrency(totalPrice.discountPrice)}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="title font-medium text-[#777] p-[.5rem]">
-                          Shipping :
-                        </td>
-                        <td className="price text-[#777] text-right p-[.5rem]">
-                          {totalPrice.shippingTotal > 0 ? `${formatCurrency(totalPrice.shippingTotal)}` : 'Free'}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="title font-medium text-[#777] p-[.5rem]">
-                          Total :
-                        </td>
-                        <td className="price text-right p-[.5rem] text-green-800">
-                          {formatCurrency(totalPrice.discountPrice + totalPrice.shippingTotal)}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <div className="cart-btn flex justify-between mb-[20px]">
-                  {/* <button
-                    onClick={cartPage}
-                    className="bb-btn-1 transition-all duration-[0.3s] ease-in-out font-Poppins leading-[28px] tracking-[0.03rem] py-[5px] px-[15px] text-[14px] font-normal text-[#3d4750] bg-transparent rounded-[10px] border-[1px] border-solid border-[#3d4750] hover:bg-[#6c7fd8] hover:border-[#6c7fd8] hover:text-[#fff]"
-                  >
-                    View Cart
-                  </button> */}
-                  <button
-                    onClick={checkoutPage}
-                    className="w-full flex items-center justify-center bb-btn-2 transition-all duration-[0.3s] ease-in-out font-Poppins leading-[28px] tracking-[0.03rem] py-[10px] px-[20px] text-[18px] font-normal text-[#fff] bg-[#000000] rounded-[5px] border-[1px] border-solid border-[#000000] hover:bg-transparent hover:border-[#3d4750] hover:text-[#3d4750]"
-                  >
-                    CHECKOUT &nbsp;&nbsp;<Image src={"/img/shape/upi_options.svg"} alt="arrow" width={40} height={40} /> <RiArrowRightSLine className="text-[20px] ml-[5px]" />
-                  </button>
-                </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Shipping</span>
+                <span className="text-gray-900 font-medium">
+                  {totalPrice.shippingTotal > 0
+                    ? formatCurrency(totalPrice.shippingTotal)
+                    : <span className="text-green-600">Free</span>}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-100">
+                <span className="text-base font-semibold text-gray-900">Total</span>
+                <span className="text-xl font-bold text-purple-600">
+                  {formatCurrency(totalPrice.discountPrice + totalPrice.shippingTotal)}
+                </span>
               </div>
             </div>
+
+            {/* Checkout button */}
+            <button
+              onClick={checkoutPage}
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3.5 rounded-xl text-base font-semibold shadow-md shadow-purple-200 transition active:scale-[0.99]"
+            >
+              Proceed to Checkout
+              <RiArrowRightSLine className="w-5 h-5" />
+            </button>
+
+            {/* UPI payments info */}
+            <div className="flex items-center justify-center gap-2 mt-3 text-xs text-gray-400">
+              <span>Pay with</span>
+              <Image
+                src="/img/shape/upi_options.svg"
+                alt="Payment options"
+                width={120}
+                height={20}
+                className="h-5 w-auto opacity-70"
+              />
+            </div>
           </div>
-        </div>
-      </div >
+        )}
+      </div>
 
+      {/* Animations */}
+      <style jsx>{`
+        @keyframes slide-in {
+          from { transform: translateX(100%); opacity: 0; }
+          to   { transform: translateX(0);    opacity: 1; }
+        }
+        .animate-slide-in {
+          animation: slide-in 0.35s ease-out;
+        }
+      `}</style>
 
-      {
-        showMailModal && (
-          // <CheckOutPopUp isOpen={showMailModal} onClose={() => setShowMailModal(false)} />
-          <CheckOutPopUpV2 isOpen={showMailModal} onClose={() => setShowMailModal(false)} />
-        )
-      }
-      {showGiftModal && (
-        <GiftCustomizeModal onClose={() => setShowGiftModal(false)} />
+      {/* Modals */}
+      {showMailModal && (
+        <CheckOutPopUpV2 isOpen={showMailModal} onClose={() => setShowMailModal(false)} />
       )}
+      {showGiftModal && <GiftCustomizeModal onClose={() => setShowGiftModal(false)} />}
     </>
   );
 };

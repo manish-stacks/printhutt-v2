@@ -12,9 +12,12 @@ import { toast } from 'react-toastify';
 import { formatCurrency } from '@/helpers/helpers';
 import { axiosInstance } from '@/utils/axios';
 import confetti from 'canvas-confetti';
+import Swal from 'sweetalert2';
+import { getSiteSettings } from '@/lib/getSettings';
 
 
 export default function OrderPage() {
+    const s = async () => await getSiteSettings();
     const searchParams = useSearchParams();
     const [orders, setOrders] = useState<IOrder[]>([]);
     const [pagination, setPagination] = useState(null);
@@ -35,19 +38,6 @@ export default function OrderPage() {
     const endDate = searchParams?.get('endDate') || '';
     const filterStatus = searchParams?.get('status') || '';
 
-    // const fetchOrders = useCallback(async () => {
-    //     try {
-    //         setIsLoading(true);
-    //         const data = await get_all_orders_of_user(page, search, status);
-    //         setOrders(data.orders);
-    //         setPagination(data.pagination);
-    //     } catch (error) {
-    //         console.error('Failed to fetch orders:', error);
-    //         toast.error('Failed to fetch orders');
-    //     } finally {
-    //         setIsLoading(false);
-    //     }
-    // }, [page, search, status]);
 
     const fetchOrders = useCallback(async () => {
         try {
@@ -59,7 +49,6 @@ export default function OrderPage() {
                 startDate,
                 endDate
             );
-            // console.log('pagination', data.pagination)
             setOrders(data.orders);
             setPagination(data.pagination);
             setRevenue(data.revenue);
@@ -217,6 +206,51 @@ export default function OrderPage() {
         });
     };
 
+
+    // Step 1 — preview
+    const handleBulkDelete = async () => {
+        if (!startDate || !endDate) {
+            toast.error('Please select both start and end dates');
+            return;
+        }
+        const preview: any = await axiosInstance.get(
+            `/orders/bulk-delete/preview?startDate=${startDate}&endDate=${endDate}`
+        );
+
+        if (preview.count === 0) {
+            Swal.fire('Nothing to delete', 'No pending orders in this range.', 'info');
+            return;
+        }
+
+        // Step 2 — confirm with count
+        const result = await Swal.fire({
+            title: `Delete ${preview.count} pending orders?`,
+            html: `
+      <p>This will permanently delete <strong>${preview.count}</strong> pending order(s) from:</p>
+      <p class="text-gray-600 text-sm mt-2">${startDate} to ${endDate}</p>
+      <p class="text-red-600 text-sm mt-3"><strong>This cannot be undone.</strong></p>
+    `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            confirmButtonText: `Yes, delete ${preview.count} orders`,
+            input: 'text',
+            inputPlaceholder: 'Type DELETE to confirm',
+            inputValidator: (value) => value !== 'DELETE' ? 'Type DELETE to confirm' : null,
+        });
+
+        if (!result.isConfirmed) return;
+
+        // Step 3 — execute
+        const res: any = await axiosInstance.post('/orders/bulk-delete', {
+            startDate,
+            endDate,
+            confirmCount: preview.count,  // safety check
+        });
+
+        toast.success(res.message);
+    };
+
     return (
         <>
             <div className="max-w-10xl mx-auto lg:px-10 py-20">
@@ -225,6 +259,17 @@ export default function OrderPage() {
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900">Orders</h2>
                             <p className="text-gray-600">Manage orders and shipping </p>
+                            {
+                                s.bulkDeleteEnabled && (
+                                    <button
+                                        onClick={handleBulkDelete}
+                                        className="mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md"
+                                    >
+                                        Bulk Delete
+                                    </button>
+                                )
+                            }
+
                         </div>
                         <div>
                             <h2 className="text-xl font-bold text-gray-900">Total revenue</h2>
@@ -472,7 +517,7 @@ export default function OrderPage() {
                                                         <RiMessageFill />
                                                     </button>
                                                     {
-                                                        (order.status == 'pending' || order.status == 'cancelled' ) &&(
+                                                        (order.status == 'pending' || order.status == 'cancelled') && (
                                                             <>
 
                                                                 <button

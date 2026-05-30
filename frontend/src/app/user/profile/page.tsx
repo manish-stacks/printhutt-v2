@@ -7,11 +7,13 @@ import { useUserStore } from "@/store/useUserStore";
 import { userService } from "@/_services/common/userService";
 import { axiosInstance } from '@/utils/axios';
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { RiUser2Line, RiMailLine, RiPhoneLine, RiShieldCheckLine, RiSaveLine } from "react-icons/ri";
 
-const Address = () => {
+const Profile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const fetchUserDetails = useUserStore((state) => state.fetchUserDetails);
   const [loading, setLoading] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
+  const fetchUserDetails = useUserStore((state) => state.fetchUserDetails);
 
   const [formData, setFormData] = useState({
     displayName: '',
@@ -21,23 +23,22 @@ const Address = () => {
   });
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    (async () => {
       try {
-        const data = await axiosInstance.post('/auth/me');
+        const data: any = await axiosInstance.post('/auth/me');
         setFormData({
-          displayName: data.user.displayName,
-          email: data.user.email,
-          number: data.user.number,
+          displayName: data.user.displayName || '',
+          email: data.user.email || '',
+          number: data.user.number || '',
           userId: data.user._id,
         });
-      } catch (error) {
-        console.error('Error fetching user data:', error);
+        setIsVerified(!!data.user.isVerified);
+      } catch (err) {
+        console.error('Error fetching user data:', err);
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchUserData();
+    })();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,115 +46,103 @@ const Address = () => {
     setIsSubmitting(true);
     try {
       await userService.updateProfile(formData);
-      // console.log(response);
       fetchUserDetails();
       toast.success("Profile updated successfully");
-    } catch (error) {
-      console.log(error.message);
-      toast.error("Failed to update address");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to update profile");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
+  if (loading) return <LoadingSpinner />;
+
+  const initials = (formData.displayName || 'U').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
   return (
     <>
-      <Breadcrumb title={"Address"} />
-      <section className="py-8 lg:py-12">
+      <Breadcrumb title="Profile" />
+      <section className="py-6 sm:py-8 bg-gray-50 min-h-screen">
         <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-6">
 
-          {/* Sidebar */}
-          <div className="w-full lg:w-1/4">
-            <UserSidebar activemenu={'profile'} />
+          <div className="lg:w-[280px] flex-shrink-0">
+            <UserSidebar activemenu="profile" />
           </div>
 
-          {/* Content */}
-          <div className="flex-1 space-y-6">
+          <div className="flex-1 space-y-5 min-w-0">
 
-            {/* Header */}
-            <div className="bg-purple-600 text-white rounded-lg p-4 sm:p-6 flex justify-between items-center">
-              <h2 className="text-lg sm:text-xl font-semibold">Profile</h2>
+            {/* Banner with avatar */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 text-white rounded-2xl p-6 sm:p-8 shadow-md">
+              <div className="relative z-10 flex items-center gap-4 flex-wrap">
+                <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur border-2 border-white/40 flex items-center justify-center text-3xl font-bold flex-shrink-0">
+                  {initials}
+                </div>
+                <div>
+                  <p className="text-purple-100 text-sm">My Profile</p>
+                  <h2 className="text-2xl sm:text-3xl font-bold mt-1 break-words">
+                    {formData.displayName || 'Unnamed User'}
+                  </h2>
+                  {isVerified && (
+                    <span className="inline-flex items-center gap-1 text-xs bg-green-400/20 text-green-100 px-2.5 py-1 rounded-full mt-2 backdrop-blur">
+                      <RiShieldCheckLine /> Verified Account
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+              <div className="absolute -right-20 -bottom-10 w-48 h-48 bg-pink-300/20 rounded-full blur-3xl" />
             </div>
 
-            {/* Alert */}
-            {!formData?.email && (
-              <p className="text-red-500 bg-red-100 py-2 px-4 rounded-md text-sm">
-                Please Update Your Profile
-              </p>
-            )}
-
             {/* Form */}
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
-              <form onSubmit={handleSubmit}>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Personal Information</h3>
+              <p className="text-sm text-gray-500 mb-5">Update your name, email and phone number</p>
 
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                  {/* Name */}
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      Name *
-                    </label>
-                    <input
-                      type="text"
-                      name="displayName"
-                      placeholder="Enter your Name"
-                      className="w-full p-2 border rounded-md text-sm"
-                      value={formData.displayName}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  {/* Number */}
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      Number *
-                    </label>
-                    <input
-                      type="text"
-                      name="number"
-                      placeholder="Enter your Number"
-                      className="w-full p-2 border rounded-md text-sm"
-                      value={formData.number}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  {/* Email */}
+                  <IconField
+                    label="Full Name *"
+                    name="displayName"
+                    icon={RiUser2Line}
+                    value={formData.displayName}
+                    onChange={handleChange}
+                    placeholder="Enter your name"
+                  />
+                  <IconField
+                    label="Mobile Number *"
+                    name="number"
+                    icon={RiPhoneLine}
+                    value={formData.number}
+                    onChange={handleChange}
+                    placeholder="10-digit mobile"
+                  />
                   <div className="md:col-span-2">
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      Email *
-                    </label>
-                    <input
-                      type="email"
+                    <IconField
+                      label="Email *"
                       name="email"
-                      placeholder="Enter your Email"
-                      className="w-full p-2 border rounded-md text-sm"
+                      type="email"
+                      icon={RiMailLine}
                       value={formData.email}
                       onChange={handleChange}
+                      placeholder="you@example.com"
                     />
                   </div>
-
                 </div>
 
-                {/* Button */}
-                <div className="mt-4">
+                <div className="pt-2">
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full sm:w-auto bg-purple-600 text-white px-6 py-2 rounded-md text-sm hover:bg-purple-700 transition"
+                    className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition"
                   >
-                    {isSubmitting ? 'Saving...' : 'Save Address'}
+                    <RiSaveLine className="w-4 h-4" />
+                    {isSubmitting ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
-
               </form>
             </div>
 
@@ -164,4 +153,21 @@ const Address = () => {
   );
 };
 
-export default Address;
+const IconField = ({ label, name, icon: Icon, value, onChange, placeholder, type = 'text' }: any) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+    <div className="relative">
+      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:bg-white focus:outline-none focus:border-purple-500 transition"
+      />
+    </div>
+  </div>
+);
+
+export default Profile;

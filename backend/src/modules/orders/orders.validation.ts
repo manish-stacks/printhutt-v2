@@ -86,3 +86,19 @@ export const updateOrderShippingSchema = z.object({
     .passthrough(),
 });
 export type UpdateOrderShippingDTO = z.infer<typeof updateOrderShippingSchema>;
+
+export const bulkDeleteOrdersSchema = z.object({
+  startDate: z.string().refine((v) => !isNaN(Date.parse(v)), {
+    message: 'Invalid startDate (expected ISO date string)',
+  }),
+  endDate: z.string().refine((v) => !isNaN(Date.parse(v)), {
+    message: 'Invalid endDate (expected ISO date string)',
+  }),
+  // Optional safety: require admin to confirm count first
+  confirmCount: z.number().int().nonnegative().optional(),
+}).refine(
+  (d) => new Date(d.startDate) <= new Date(d.endDate),
+  { message: 'startDate must be before endDate' }
+);
+
+export type BulkDeleteOrdersDTO = z.infer<typeof bulkDeleteOrdersSchema>;

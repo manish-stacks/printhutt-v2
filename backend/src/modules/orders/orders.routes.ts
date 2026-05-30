@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { requireAuth } from '@/middlewares/auth.middleware';
+import { requireAdmin, requireAuth } from '@/middlewares/auth.middleware';
 import { validate } from '@/middlewares/validate.middleware';
 import * as controller from './orders.controller';
 import {
+  bulkDeleteOrdersSchema,
   createOrderSchema,
   listOrdersQuerySchema,
   updateOrderShippingSchema,
@@ -55,5 +56,22 @@ router.get('/:id', requireAuth, controller.byId);
 
 /* Original: DELETE /api/order/[id] */
 router.delete('/:id', requireAuth, controller.deleteOrder);
+
+
+
+// Preview — kitne delete honge
+router.get(
+  '/bulk-delete/preview',
+  ...requireAdmin,
+  controller.previewBulkDelete
+);
+
+// Actual bulk delete
+router.post(
+  '/bulk-delete',
+  ...requireAdmin,
+  validate(bulkDeleteOrdersSchema),
+  controller.bulkDeletePendingOrders
+);
 
 export default router;

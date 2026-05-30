@@ -18,6 +18,7 @@ export interface SiteSettings {
   bodyScripts?: string;
   siteUrl?: string;
   [k: string]: unknown;
+  bulkDeleteEnabled?: boolean;
 }
 
 export async function getSiteSettings(): Promise<SiteSettings> {

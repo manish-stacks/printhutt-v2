@@ -90,6 +90,54 @@ const Footer = () => {
                       Premium quality. The best quality materials used to create the perfect sign for you.  Replacement or fixing facility in case of damage during installation.
                     </p>
                   </div>
+                  <div className="bb-footer-social">
+                    <div className="bb-footer-widget">
+                      <div className="bb-footer-links bb-footer-dropdown hidden max-[991px]:mb-[35px]">
+                        <ul className="align-items-center flex flex-wrap items-center">
+                          <li className="bb-footer-link leading-[1.5] flex items-center pr-[5px]">
+                            <a
+                              href="https://www.facebook.com/printhutt"
+                              className="transition-all duration-[0.3s] ease-in-out w-[30px] h-[30px] rounded-[5px] bg-[#3d4750] hover:bg-[#6c7fd8] capitalize flex items-center justify-center text-[15px] leading-[20px] text-[#686e7d] relative break-all font-normal"
+                            >
+                              <FaFacebookF className="text-[16px] text-[#fff]" />
+                            </a>
+                          </li>
+                          <li className="bb-footer-link leading-[1.5] flex items-center pr-[5px]">
+                            <a
+
+                              className="transition-all duration-[0.3s] ease-in-out w-[30px] h-[30px] rounded-[5px] bg-[#3d4750] hover:bg-[#6c7fd8] capitalize flex items-center justify-center text-[15px] leading-[20px] text-[#686e7d] relative break-all font-normal"
+                            >
+                              <FaTwitter className="text-[16px] text-[#fff]" />
+                            </a>
+                          </li>
+                          <li className="bb-footer-link leading-[1.5] flex items-center pr-[5px]">
+                            <a
+
+                              className="transition-all duration-[0.3s] ease-in-out w-[30px] h-[30px] rounded-[5px] bg-[#3d4750] hover:bg-[#6c7fd8] capitalize flex items-center justify-center text-[15px] leading-[20px] text-[#686e7d] relative break-all font-normal"
+                            >
+                              <FaLinkedinIn className="text-[16px] text-[#fff]" />
+                            </a>
+                          </li>
+                          <li className="bb-footer-link leading-[1.5] flex items-center pr-[5px]">
+                            <a
+                              href="https://www.instagram.com/printhutt/"
+                              className="transition-all duration-[0.3s] ease-in-out w-[30px] h-[30px] rounded-[5px] bg-[#3d4750] hover:bg-[#6c7fd8] capitalize flex items-center justify-center text-[15px] leading-[20px] text-[#686e7d] relative break-all font-normal"
+                            >
+                              <FaInstagram className="text-[16px] text-[#fff]" />
+                            </a>
+                          </li>
+                          <li className="bb-footer-link leading-[1.5] flex items-center pr-[5px]">
+                            <a
+                              href="https://www.youtube.com/@printhutt7917"
+                              className="transition-all duration-[0.3s] ease-in-out w-[30px] h-[30px] rounded-[5px] bg-[#3d4750] hover:bg-[#6c7fd8] capitalize flex items-center justify-center text-[15px] leading-[20px] text-[#686e7d] relative break-all font-normal"
+                            >
+                              <FaYoutube className="text-[16px] text-[#fff]" />
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div className="min-[992px]:w-[16.66%] max-[991px]:w-full w-full px-[12px] bb-footer-toggle bb-footer-info max-[480px]:hidden">
                   <div className="bb-footer-widget">
@@ -176,7 +224,7 @@ const Footer = () => {
                             href="/user/orders"
                             className="transition-all duration-[0.3s] ease-in-out font-Poppins text-[14px] leading-[20px] text-[#686e7d] hover:text-[#6c7fd8] mb-[0] inline-block break-all tracking-[0] font-normal"
                           >
-                           My Order
+                            My Order
                           </Link>
                         </li>
                         <li className="bb-footer-link leading-[1.5] flex items-center mb-[16px] max-[991px]:mb-[15px]">
@@ -319,63 +367,21 @@ const Footer = () => {
                               printhutt05@gmail.com
                             </a>
                           </li>
-                          <li className="bb-footer-link bb-foo-mail flex ">
-                            <span className="text-gray-800"> Live Visitors:{"  "}</span>
-                            <span className="font-bold text-green-800">{visitors}</span>
-                          </li>
+                          <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-100 rounded-full">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                            </span>
+                            <span className="text-xs text-gray-600">
+                              <strong className="text-green-700">{visitors.toLocaleString()}</strong> people viewing now
+                            </span>
+                          </div>
                         </ul>
 
                       </div>
                     </div>
                   </div>
-                  <div className="bb-footer-social">
-                    <div className="bb-footer-widget">
-                      <div className="bb-footer-links bb-footer-dropdown hidden max-[991px]:mb-[35px]">
-                        <ul className="align-items-center flex flex-wrap items-center">
-                          <li className="bb-footer-link leading-[1.5] flex items-center pr-[5px]">
-                            <a
-                              href="https://www.facebook.com/printhutt"
-                              className="transition-all duration-[0.3s] ease-in-out w-[30px] h-[30px] rounded-[5px] bg-[#3d4750] hover:bg-[#6c7fd8] capitalize flex items-center justify-center text-[15px] leading-[20px] text-[#686e7d] relative break-all font-normal"
-                            >
-                              <FaFacebookF className="text-[16px] text-[#fff]" />
-                            </a>
-                          </li>
-                          <li className="bb-footer-link leading-[1.5] flex items-center pr-[5px]">
-                            <a
 
-                              className="transition-all duration-[0.3s] ease-in-out w-[30px] h-[30px] rounded-[5px] bg-[#3d4750] hover:bg-[#6c7fd8] capitalize flex items-center justify-center text-[15px] leading-[20px] text-[#686e7d] relative break-all font-normal"
-                            >
-                              <FaTwitter className="text-[16px] text-[#fff]" />
-                            </a>
-                          </li>
-                          <li className="bb-footer-link leading-[1.5] flex items-center pr-[5px]">
-                            <a
-
-                              className="transition-all duration-[0.3s] ease-in-out w-[30px] h-[30px] rounded-[5px] bg-[#3d4750] hover:bg-[#6c7fd8] capitalize flex items-center justify-center text-[15px] leading-[20px] text-[#686e7d] relative break-all font-normal"
-                            >
-                              <FaLinkedinIn className="text-[16px] text-[#fff]" />
-                            </a>
-                          </li>
-                          <li className="bb-footer-link leading-[1.5] flex items-center pr-[5px]">
-                            <a
-                              href="https://www.instagram.com/printhutt/"
-                              className="transition-all duration-[0.3s] ease-in-out w-[30px] h-[30px] rounded-[5px] bg-[#3d4750] hover:bg-[#6c7fd8] capitalize flex items-center justify-center text-[15px] leading-[20px] text-[#686e7d] relative break-all font-normal"
-                            >
-                              <FaInstagram className="text-[16px] text-[#fff]" />
-                            </a>
-                          </li>
-                          <li className="bb-footer-link leading-[1.5] flex items-center pr-[5px]">
-                            <a
-                              href="https://www.youtube.com/@printhutt7917"
-                              className="transition-all duration-[0.3s] ease-in-out w-[30px] h-[30px] rounded-[5px] bg-[#3d4750] hover:bg-[#6c7fd8] capitalize flex items-center justify-center text-[15px] leading-[20px] text-[#686e7d] relative break-all font-normal"
-                            >
-                              <FaYoutube className="text-[16px] text-[#fff]" />
-                            </a>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

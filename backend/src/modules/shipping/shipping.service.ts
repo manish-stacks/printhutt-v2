@@ -116,7 +116,17 @@ const extractApiError = (err: unknown): { message: string; details: unknown } =>
 async function fshipCreate(order: OrderDoc, shipmentDetails: ShipmentDetails): Promise<unknown> {
   const token = fshipToken();
 
+  /* ─── Amount calculations (tax-inclusive pricing) ─── */
+  const finalTotal = order.totalAmount.discountPrice;             // 800 (customer pays this)
+  const baseAmount = +(finalTotal / 1.18).toFixed(2);             // 677.97 (without GST)
+  const taxAmount = +(finalTotal - baseAmount).toFixed(2);        // 122.03 (18% GST)
+
+  const codAmount = order.paymentType === 'online'
+    ? 0
+    : Math.max(0, finalTotal - (order.payAmt || 0));              // 800 - 160 = 640
+
   const payload = {
+    /* ─── Customer details ─── */
     customer_Name: order.shipping.userName,
     customer_Mobile: order.shipping.mobileNumber,
     customer_EmailId: order.shipping.email || '',
@@ -125,27 +135,39 @@ async function fshipCreate(order: OrderDoc, shipmentDetails: ShipmentDetails): P
     customer_Address_Type: 'Home',
     customer_PinCode: order.shipping.postCode,
     customer_City: order.shipping.city,
+
+    /* ─── Order identifiers ─── */
     orderId: order.orderId,
-    invoice_Number: `INV-${order._id}`,
-    payment_Mode: order.paymentType === 'online' ? 2 : 1, // 1=COD, 2=Prepaid
+    invoice_Number: `INV-${order.orderId}`,
+
+    /* ─── Payment & express type ─── */
+    payment_Mode: order.paymentType === 'online' ? 2 : 1,         // 1=COD, 2=Prepaid
     express_Type: 'surface',
     is_Ndd: 0,
-    order_Amount: order.totalAmount.discountPrice,
-    tax_Amount: 0,
+
+    /* ─── Amounts (must satisfy: total = order + tax + extra) ─── */
+    order_Amount: baseAmount,                                      // 677.97 (base, without GST)
+    tax_Amount: taxAmount,                                          // 122.03 (18% GST)
     extra_Charges: 0,
-    total_Amount: order.totalAmount.discountPrice,
-    cod_Amount:
-      order.paymentType === 'online' ? 0 : order.totalAmount.discountPrice - order.payAmt,
+    total_Amount: finalTotal,                                       // 800 ✓
+    cod_Amount: codAmount,                                          // 640 (offline) | 0 (online)
+
+    /* ─── Shipment dimensions ─── */
     shipment_Weight: shipmentDetails.weight,
     shipment_Length: shipmentDetails.length,
     shipment_Width: shipmentDetails.width,
     shipment_Height: shipmentDetails.height,
     volumetric_Weight: 0,
+
+    /* ─── Geo & warehouse ─── */
     latitude: 0,
     longitude: 0,
     pick_Address_ID: Number(process.env.FSHIP_PICKUP_ADDRESS_ID ?? 207907),
     return_Address_ID: 0,
+
+    /* ─── Product line items ─── */
     products: order.items.map((item) => {
+      // 1. Compute discount in currency
       let discount = 0;
       if (item.discountPrice) {
         discount =
@@ -153,26 +175,38 @@ async function fshipCreate(order: OrderDoc, shipmentDetails: ShipmentDetails): P
             ? Math.round((item.price * item.discountPrice) / 100)
             : Math.round(item.discountPrice);
       }
+
+      // 2. Final price after discount (tax-inclusive)
+      const priceAfterDiscount = item.price - discount;
+
+      // 3. Reverse-calc base price (without GST)
+      const productBase = +(priceAfterDiscount / 1.18).toFixed(2);
+
       return {
         productId: item.productId,
         productName: item.name,
-        unitPrice: item.price,
+        unitPrice: productBase,        // 677.97 (base, no tax)
         quantity: item.quantity,
         productCategory: 'PrintHutt',
         hsnCode: '441122',
         sku: item.sku || `SKU${item.productId}`,
-        taxRate: 18,
-        productDiscount: discount,
+        taxRate: 18,                    // 18% GST shown on invoice
+        productDiscount: 0,             // discount already baked into productBase
       };
     }),
+
     courierId: 0,
   };
 
   try {
-    const { data } = await axios.post('https://capi.fship.in/api/createforwardorder', payload, {
-      headers: { 'Content-Type': 'application/json', signature: token },
-      maxBodyLength: Infinity,
-    });
+    const { data } = await axios.post(
+      'https://capi.fship.in/api/createforwardorder',
+      payload,
+      {
+        headers: { 'Content-Type': 'application/json', signature: token },
+        maxBodyLength: Infinity,
+      }
+    );
 
     if (!data?.status) {
       // FShip returned 200 OK but business-level failure
@@ -255,10 +289,17 @@ export async function fshipTrack(waybill: string): Promise<unknown> {
 async function shiprocketCreate(order: OrderDoc, shipmentDetails: ShipmentDetails): Promise<unknown> {
   const token = await shiprocketAuth();
 
+  // Final tax-inclusive amount customer pays
+  const finalTotal = order.totalAmount.discountPrice;        // e.g. 800
+  // Advance already paid (for partial-COD offline orders)
+  const advancePaid = order.paymentType === 'offline' ? (order.payAmt || 0) : 0; // e.g. 160
+
   const payload = {
     order_id: order.orderId,
     order_date: new Date().toISOString(),
     pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION ?? 'Primary',
+
+    /* ─── Billing details ─── */
     billing_customer_name: order.shipping.userName,
     billing_last_name: '',
     billing_address: order.shipping.addressLine,
@@ -270,7 +311,10 @@ async function shiprocketCreate(order: OrderDoc, shipmentDetails: ShipmentDetail
     billing_email: order.shipping.email || '',
     billing_phone: order.shipping.mobileNumber,
     shipping_is_billing: true,
+
+    /* ─── Order items ─── */
     order_items: order.items.map((item) => {
+      // 1. Compute discount (in currency, not %)
       let discount = 0;
       if (item.discountPrice) {
         discount =
@@ -278,22 +322,33 @@ async function shiprocketCreate(order: OrderDoc, shipmentDetails: ShipmentDetail
             ? Math.round((item.price * item.discountPrice) / 100)
             : Math.round(item.discountPrice);
       }
+
+      // 2. Price after discount — this is the final customer-facing price (tax-inclusive)
+      const priceAfterDiscount = item.price - discount;
+
+      // 3. Reverse-calc: split into base + 18% GST
+      const basePrice = +(priceAfterDiscount / 1.18).toFixed(2);
+
       return {
         name: item.name,
         sku: item.sku || `SKU${item.productId}`,
         units: item.quantity,
-        selling_price: item.price,
-        discount,
-        tax: 18,
+        selling_price: basePrice,   // base price (without tax)
+        discount: 0,                // discount already baked into basePrice
+        tax: 18,                    // GST % shown on invoice
         hsn: 441122,
       };
     }),
+
+    /* ─── Payment + totals ─── */
     payment_method: order.paymentType === 'online' ? 'Prepaid' : 'COD',
     shipping_charges: 0,
     giftwrap_charges: 0,
     transaction_charges: 0,
-    total_discount: 0,
-    sub_total: order.totalAmount.discountPrice,
+    total_discount: advancePaid,   // deduct advance from COD (160 → COD becomes 640)
+    sub_total: finalTotal,         // 800 (tax-inclusive final amount)
+
+    /* ─── Package dimensions ─── */
     length: shipmentDetails.length,
     breadth: shipmentDetails.width,
     height: shipmentDetails.height,
@@ -337,7 +392,6 @@ async function shiprocketCreate(order: OrderDoc, shipmentDetails: ShipmentDetail
     throw new BadRequestError(`Shiprocket: ${message}`, details);
   }
 }
-
 async function shiprocketCancel(order: OrderDoc): Promise<unknown> {
   const token = await shiprocketAuth();
   const shipmentOrderId = (order.shipment as { order_id?: string } | undefined)?.order_id;

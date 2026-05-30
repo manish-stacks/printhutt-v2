@@ -30,6 +30,7 @@ import { logger } from '@/config/logger';
 import { authRepo } from '@/modules/auth/auth.repository';
 import { ordersRepo } from './orders.repository';
 import type {
+  BulkDeleteOrdersDTO,
   CreateOrderDTO,
   ListOrdersQueryDTO,
   UpdateOrderShippingDTO,
@@ -440,3 +441,97 @@ export async function updateOrderStatus(
 }
 
 export { REVENUE_STATUSES };
+
+
+/**
+ * GET /orders/bulk-delete/preview?startDate=...&endDate=...
+ */
+export async function previewBulkDelete(
+  startDate: string,
+  endDate: string
+): Promise<unknown> {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999); // include full end day
+
+  if (start > end) throw new BadRequestError('startDate must be before endDate');
+
+  const count = await ordersRepo.countPendingInRange(start, end);
+  return {
+    success: true,
+    count,
+    startDate: start.toISOString(),
+    endDate: end.toISOString(),
+    message: `${count} pending order(s) will be deleted`,
+  };
+}
+
+/**
+ * Bulk delete pending orders in date range.
+ */
+export async function bulkDeletePendingOrders(
+  body: BulkDeleteOrdersDTO
+): Promise<unknown> {
+  const start = new Date(body.startDate);
+  const end = new Date(body.endDate);
+  end.setHours(23, 59, 59, 999); // include full end day
+
+  // 1. Find matching orders (need items for S3 cleanup)
+  const orders = (await ordersRepo.findPendingInRange(start, end)) as Array<{
+    _id: unknown;
+    orderId: string;
+    items?: Array<{ custom_data?: Record<string, unknown> }>;
+  }>;
+
+  if (orders.length === 0) {
+    return {
+      success: true,
+      deleted: 0,
+      message: 'No pending orders found in selected date range',
+    };
+  }
+
+  // Safety check — admin must confirm count
+  if (
+    body.confirmCount !== undefined &&
+    body.confirmCount !== orders.length
+  ) {
+    throw new BadRequestError(
+      `Count mismatch — expected ${body.confirmCount}, found ${orders.length}. Please refresh and try again.`
+    );
+  }
+
+  // 2. Collect all S3 public_ids from items.custom_data
+  const publicIds: string[] = [];
+  for (const order of orders) {
+    if (!Array.isArray(order.items)) continue;
+    for (const item of order.items) {
+      const data = item.custom_data;
+      if (!data) continue;
+      for (const k of Object.keys(data)) {
+        const v = data[k] as { public_id?: string } | undefined;
+        if (v?.public_id) publicIds.push(v.public_id);
+      }
+    }
+  }
+
+  // 3. Delete S3 images in parallel (don't fail on individual errors)
+  if (publicIds.length > 0) {
+    logger.info(`Bulk delete: cleaning up ${publicIds.length} S3 assets`);
+    await Promise.allSettled(publicIds.map((id) => deleteImage(id)));
+  }
+
+  // 4. Delete orders from DB
+  const result = await ordersRepo.deletePendingInRange(start, end);
+
+  logger.info(
+    `Bulk delete: removed ${result.deletedCount} pending orders between ${start.toISOString()} - ${end.toISOString()}`
+  );
+
+  return {
+    success: true,
+    deleted: result.deletedCount,
+    assetsCleared: publicIds.length,
+    message: `${result.deletedCount} pending order(s) deleted successfully`,
+  };
+}

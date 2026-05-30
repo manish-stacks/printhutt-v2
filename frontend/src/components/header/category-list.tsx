@@ -1,346 +1,244 @@
+'use client';
 
 import Link from "next/link";
-import React, { useState } from "react";
+import Image from "next/image";
+import React, { useRef, useState, useEffect, useCallback } from "react";
+import { RiArrowLeftSLine, RiArrowRightSLine } from "react-icons/ri";
 
-interface CategoryProps {
-  categories: {
-    name: string;
-    slug: string;
-    subcategories: {
-      name: string;
-      slug: string;
-    }[];
-  }[];
+interface SubCategory {
+  name: string;
+  slug: string;
+  image?: { url: string };
 }
 
-const HeaderCategoryList = ({
-  categories,
-}: CategoryProps) => {
+interface Category {
+  _id?: string;
+  name: string;
+  slug: string;
+  subcategories: SubCategory[];
+}
 
-  const [activeCategory, setActiveCategory] =
-    useState<any>(null);
+interface Props {
+  categories: Category[];
+}
+
+const HeaderCategoryList = ({ categories }: Props) => {
+  const [activeCategory, setActiveCategory] = useState<Category | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ left: number; top: number } | null>(null);
+
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  /* ───── scroll arrows visibility ───── */
+  const checkScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 5);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 5);
+  };
+
+  useEffect(() => {
+    checkScroll();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    window.addEventListener('resize', checkScroll);
+    return () => {
+      el.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [categories]);
+
+  const scrollBy = (dir: 'left' | 'right') => {
+    scrollRef.current?.scrollBy({ left: dir === 'left' ? -300 : 300, behavior: 'smooth' });
+  };
+
+  /* ───── hover handlers with grace timeout ───── */
+  const cancelClose = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  const openDropdown = useCallback((category: Category) => {
+    cancelClose();
+    if (!category.subcategories?.length) return;
+
+    const el = itemRefs.current.get(category.slug);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+
+    setActiveCategory(category);
+    setDropdownPos({
+      left: rect.left,
+      top: rect.bottom,
+    });
+  }, []);
+
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimerRef.current = setTimeout(() => {
+      setActiveCategory(null);
+      setDropdownPos(null);
+    }, 150);  // grace period so user can move mouse to dropdown
+  };
+
+  /* Close dropdown on scroll (position becomes stale) */
+  useEffect(() => {
+    const onScroll = () => {
+      setActiveCategory(null);
+      setDropdownPos(null);
+    };
+    const el = scrollRef.current;
+    el?.addEventListener('scroll', onScroll);
+    window.addEventListener('scroll', onScroll);
+    return () => {
+      el?.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, []);
+
+  if (!categories?.length) return null;
 
   return (
     <>
-      {categories
-        ?.slice(0, 9)
-        ?.map((category, index) => (
-
-          <li
-            key={index}
-            className="relative mr-[38px] group"
-            onMouseEnter={() =>
-              setActiveCategory(category)
-            }
+      <div className="relative">
+        {/* Left arrow */}
+        {canScrollLeft && (
+          <button
+            onClick={() => scrollBy('left')}
+            className="absolute -left-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white border border-[#eee] rounded-full shadow-sm flex items-center justify-center hover:bg-gray-50"
+            aria-label="Scroll left"
           >
+            <RiArrowLeftSLine size={18} />
+          </button>
+        )}
 
-            {/* Main Category Tab */}
-            <Link
-              href={`/category/${category.slug}`}
-              className="flex items-center gap-[4px] py-[10px] text-[15px] font-medium text-[#3d4750] hover:text-[#6c7fd8] transition-all duration-300"
+        {/* Right arrow */}
+        {canScrollRight && (
+          <button
+            onClick={() => scrollBy('right')}
+            className="absolute -right-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white border border-[#eee] rounded-full shadow-sm flex items-center justify-center hover:bg-gray-50"
+            aria-label="Scroll right"
+          >
+            <RiArrowRightSLine size={18} />
+          </button>
+        )}
+
+        {/* Scrollable strip */}
+        <div
+          ref={scrollRef}
+          className="flex items-center gap-1 overflow-x-auto scroll-smooth scrollbar-hide py-1"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          {categories.slice(0, 15).map((category, index) => (
+            <div
+              key={category._id || index}
+              ref={(el) => itemRefs.current.set(category.slug, el)}
+              className="flex-shrink-0"
+              onMouseEnter={() => openDropdown(category)}
+              onMouseLeave={scheduleClose}
             >
+              <Link
+                href={`/category/${category.slug}`}
+                className={`flex items-center gap-1 px-4 py-3 text-[14px] font-medium whitespace-nowrap capitalize transition-colors ${
+                  activeCategory?.slug === category.slug
+                    ? 'text-[#6c7fd8]'
+                    : 'text-[#3d4750] hover:text-[#6c7fd8]'
+                }`}
+              >
+                {category.name.toLowerCase()}
 
-              {category.name}
+                {category.subcategories?.length > 0 && (
+                  <svg
+                    className={`w-3.5 h-3.5 transition-transform duration-300 ${
+                      activeCategory?.slug === category.slug ? 'rotate-180' : ''
+                    }`}
+                    fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                )}
+              </Link>
+            </div>
+          ))}
+        </div>
 
-              {category.subcategories
-                ?.length > 0 && (
+        <style jsx>{`
+          .scrollbar-hide::-webkit-scrollbar { display: none; }
+        `}</style>
+      </div>
 
-                <svg
-                  className="w-[14px] h-[14px] transition-transform duration-300 group-hover:rotate-180"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
+      {/* ─── DROPDOWN — rendered outside scrollable container (fixed position) ─── */}
+      {activeCategory && dropdownPos && activeCategory.subcategories?.length > 0 && (
+        <div
+          className="fixed z-[9999]"
+          style={{ left: `${dropdownPos.left}px`, top: `${dropdownPos.top}px` }}
+          onMouseEnter={cancelClose}
+          onMouseLeave={scheduleClose}
+        >
+          <div className="pt-2">
+            <div className="min-w-[300px] max-w-[360px] bg-white border border-[#eee] rounded-2xl shadow-[0_15px_50px_rgba(0,0,0,0.08)] overflow-hidden">
+
+              {/* Header */}
+              <div className="px-4 py-3 border-b border-[#f1f1f1] bg-[#fafafa] flex items-center justify-between">
+                <h4 className="text-[14px] font-semibold text-[#3d4750] capitalize">
+                  {activeCategory.name.toLowerCase()}
+                </h4>
+                <Link
+                  href={`/category/${activeCategory.slug}`}
+                  className="text-[12px] text-[#6c7fd8] hover:underline"
+                  onClick={() => {
+                    setActiveCategory(null);
+                    setDropdownPos(null);
+                  }}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              )}
-
-            </Link>
-
-            {/* Dropdown */}
-            {activeCategory?.slug ===
-              category.slug &&
-              category.subcategories
-                ?.length > 0 && (
-
-              <div className="absolute left-0 top-full z-[999] pt-[12px] opacity-0 invisible translate-y-[10px] group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300">
-
-                <div className="min-w-[280px] bg-white border border-[#eee] rounded-[20px] shadow-[0_15px_50px_rgba(0,0,0,0.08)] overflow-hidden">
-
-                  {/* Header */}
-                  <div className="px-[18px] py-[14px] border-b border-[#f1f1f1] bg-[#fafafa]">
-
-                    <h4 className="text-[15px] font-semibold text-[#3d4750]">
-
-                      {category.name}
-
-                    </h4>
-
-                  </div>
-
-                  {/* Subcategories */}
-                  <div className="p-[12px]">
-
-                    <div className="space-y-[4px]">
-
-                      {category.subcategories.map(
-                        (
-                          subCategory,
-                          subIndex
-                        ) => (
-
-                          <Link
-                            key={subIndex}
-                            href={`/category/${category.slug}/${subCategory.slug}`}
-                            className="group/sub flex items-center justify-between rounded-[12px] px-[14px] py-[12px] text-[14px] text-[#686e7d] hover:bg-[#f5f7ff] hover:text-[#6c7fd8] transition-all duration-300"
-                          >
-
-                            <div className="flex items-center gap-3">
-
-                                <img
-                                    src={subCategory?.image?.url || "/placeholder.jpg"}
-                                    alt={subCategory.name}
-                                    className="w-10 h-10 rounded-xl object-cover border border-[#eee]"
-                                />
-
-                                <span>
-                                    {subCategory.name}
-                                </span>
-
-                            </div>
-
-                            <svg
-                              className="w-[14px] h-[14px] opacity-0 -translate-x-1 group-hover/sub:opacity-100 group-hover/sub:translate-x-0 transition-all duration-300"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth={2}
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 5l7 7-7 7"
-                              />
-                            </svg>
-
-                          </Link>
-                        )
-                      )}
-
-                    </div>
-
-                  </div>
-
-                </div>
-
+                  View All →
+                </Link>
               </div>
-            )}
 
-          </li>
-        ))}
+              {/* Subcategories */}
+              <div className="p-2 max-h-[420px] overflow-y-auto">
+                <div className="space-y-1">
+                  {activeCategory.subcategories.map((sub, i) => (
+                    <Link
+                      key={i}
+                      href={`/category/${activeCategory.slug}/${sub.slug}`}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] text-[#686e7d] hover:bg-[#f5f7ff] hover:text-[#6c7fd8] transition-colors"
+                      onClick={() => {
+                        setActiveCategory(null);
+                        setDropdownPos(null);
+                      }}
+                    >
+                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-100 border border-[#eee] flex-shrink-0">
+                        {sub.image?.url ? (
+                          <Image
+                            src={sub.image.url}
+                            alt={sub.name}
+                            width={40}
+                            height={40}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200" />
+                        )}
+                      </div>
+                      <span className="capitalize flex-1">{sub.name.toLowerCase()}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
 
 export default HeaderCategoryList;
-
-
-// import Link from "next/link";
-// import React, { useState } from "react";
-
-// interface CategoryProps {
-//   categories: {
-//     name: string;
-//     slug: string;
-//     subcategories: {
-//       name: string;
-//       slug: string;
-//     }[];
-//   }[];
-// }
-
-// const HeaderCategoryList = ({
-//   categories,
-// }: CategoryProps) => {
-
-//   const [activeCategory, setActiveCategory] =
-//     useState(
-//       categories?.[0] || null
-//     );
-
-//   return (
-//     <li className="nav-item bb-main-dropdown relative flex items-center mr-[45px] group">
-
-//       {/* Main Button */}
-//       <button className="flex items-center gap-[6px] font-Poppins text-[15px] font-medium text-[#3d4750] hover:text-[#6c7fd8] transition-all duration-300">
-
-//         Categories
-
-//         <svg
-//           className="w-[14px] h-[14px] transition-transform duration-300 group-hover:rotate-180"
-//           fill="none"
-//           stroke="currentColor"
-//           strokeWidth={2}
-//           viewBox="0 0 24 24"
-//         >
-//           <path
-//             strokeLinecap="round"
-//             strokeLinejoin="round"
-//             d="M19 9l-7 7-7-7"
-//           />
-//         </svg>
-
-//       </button>
-
-//       {/* Mega Menu */}
-//       <div className="absolute left-0 top-full pt-[22px] opacity-0 invisible translate-y-[10px] group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[999]">
-
-//         <div className="w-[1050px] min-h-[480px] bg-white border border-[#eee] rounded-[22px] shadow-[0_15px_60px_rgba(0,0,0,0.08)] overflow-hidden flex">
-
-//           {/* LEFT SIDE MAIN CATEGORIES */}
-//           <div className="w-[260px] border-r border-[#f1f1f1] bg-[#fafafa] p-[18px] overflow-y-auto">
-
-//             <div className="space-y-[6px]">
-
-//               {categories.map(
-//                 (category, index) => (
-
-//                   <button
-//                     key={index}
-//                     onMouseEnter={() =>
-//                       setActiveCategory(
-//                         category
-//                       )
-//                     }
-//                     className={`w-full flex items-center justify-between rounded-[14px] px-[16px] py-[13px] text-left transition-all duration-300 group/tab
-                      
-//                     ${
-//                       activeCategory?.slug ===
-//                       category.slug
-//                         ? "bg-[#6c7fd8] text-white shadow-lg"
-//                         : "text-[#3d4750] hover:bg-[#f3f5ff]"
-//                     }`}
-//                   >
-
-//                     <span className="text-[14px] font-medium">
-//                       {category.name}
-//                     </span>
-
-//                     <svg
-//                       className={`w-[15px] h-[15px] transition-all duration-300 ${
-//                         activeCategory?.slug ===
-//                         category.slug
-//                           ? "text-white"
-//                           : "text-[#999]"
-//                       }`}
-//                       fill="none"
-//                       stroke="currentColor"
-//                       strokeWidth={2}
-//                       viewBox="0 0 24 24"
-//                     >
-//                       <path
-//                         strokeLinecap="round"
-//                         strokeLinejoin="round"
-//                         d="M9 5l7 7-7 7"
-//                       />
-//                     </svg>
-
-//                   </button>
-//                 )
-//               )}
-
-//             </div>
-
-//           </div>
-
-//           {/* RIGHT SIDE SUBCATEGORIES */}
-//           <div className="flex-1 p-[30px]">
-
-//             {activeCategory && (
-//               <>
-
-//                 {/* Heading */}
-//                 <div className="flex items-center justify-between mb-[25px]">
-
-//                   <div>
-
-//                     <h3 className="text-[24px] font-bold text-[#3d4750]">
-//                       {activeCategory.name}
-//                     </h3>
-
-//                     <p className="text-[14px] text-[#888] mt-[4px]">
-//                       Explore premium collections
-//                     </p>
-
-//                   </div>
-
-//                   <Link
-//                     href={`/category/${activeCategory.slug}`}
-//                     className="px-[18px] py-[10px] rounded-full bg-[#f5f7ff] text-[#6c7fd8] text-[13px] font-semibold hover:bg-[#6c7fd8] hover:text-white transition-all duration-300"
-//                   >
-//                     View All
-//                   </Link>
-
-//                 </div>
-
-//                 {/* Subcategories Grid */}
-//                 <div className="grid grid-cols-3 gap-[14px]">
-
-//                   {activeCategory.subcategories.map(
-//                     (
-//                       subCategory,
-//                       subIndex
-//                     ) => (
-
-//                       <Link
-//                         key={subIndex}
-//                         href={`/category/${activeCategory.slug}/${subCategory.slug}`}
-//                         className="group/sub flex items-center justify-between rounded-[16px] border border-[#f1f1f1] bg-[#fff] px-[18px] py-[16px] hover:border-[#6c7fd8] hover:bg-[#f8f9ff] transition-all duration-300"
-//                       >
-
-//                         <span className="text-[14px] font-medium text-[#555] group-hover/sub:text-[#6c7fd8] transition-all duration-300">
-
-//                           {subCategory.name}
-
-//                         </span>
-
-//                         <svg
-//                           className="w-[15px] h-[15px] text-[#bbb] group-hover/sub:text-[#6c7fd8] group-hover/sub:translate-x-[2px] transition-all duration-300"
-//                           fill="none"
-//                           stroke="currentColor"
-//                           strokeWidth={2}
-//                           viewBox="0 0 24 24"
-//                         >
-//                           <path
-//                             strokeLinecap="round"
-//                             strokeLinejoin="round"
-//                             d="M9 5l7 7-7 7"
-//                           />
-//                         </svg>
-
-//                       </Link>
-//                     )
-//                   )}
-
-//                 </div>
-
-//               </>
-//             )}
-
-//           </div>
-
-//         </div>
-
-//       </div>
-
-//     </li>
-//   );
-// };
-
-// export default HeaderCategoryList;
-

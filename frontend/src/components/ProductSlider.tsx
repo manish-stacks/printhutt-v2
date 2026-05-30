@@ -1,252 +1,157 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import { Product } from "@/lib/types/product";
-import Slider from "react-slick";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Autoplay, Pagination } from "swiper/modules";
+import type { Swiper as SwiperType } from "swiper";
 import ProductCardTwo from "./products/ProductCardTwo";
+import { RiArrowLeftSLine, RiArrowRightSLine, RiArrowRightLine } from "react-icons/ri";
+import Link from "next/link";
 
-import {
-  RiArrowLeftLine,
-  RiArrowRightLine,
-} from "react-icons/ri";
+import "swiper/css";
+import "swiper/css/pagination";
 
-interface PopupProps {
+interface Props {
   products: Product[];
   title: string;
+  description?: string;
 }
 
-const ProductSlider = ({
-  products, title
-}: PopupProps) => {
+const ProductSlider = ({ products, title, description }: Props) => {
+  const swiperRef = useRef<SwiperType | null>(null);
 
-  const sliderRef = React.useRef<any>(null);
+  if (!products?.length) return null;
 
-  const settings = {
-    dots: true,
-    infinite: true,
-    autoplay: true,
-    speed: 800,
-    autoplaySpeed: 4000,
-    slidesToShow: 4,
-    slidesToScroll: 1,
-    arrows: false,
-    pauseOnHover: true,
-    cssEase: "ease-in-out",
-
-    appendDots: (dots: React.ReactNode) => (
-      <div>
-        <ul className="flex justify-center gap-2 mt-10">
-          {dots}
-        </ul>
-      </div>
-    ),
-
-    customPaging: () => (
-      <div className="w-2.5 h-2.5 rounded-full bg-white/20 hover:bg-amber-400 transition-all duration-300" />
-    ),
-
-    responsive: [
-      {
-        breakpoint: 1400,
-        settings: {
-          slidesToShow: 4,
-        },
-      },
-
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 2.5,
-        },
-      },
-
-      {
-        breakpoint: 768,
-        settings: {
-          slidesToShow: 2,
-        },
-      },
-
-      {
-        breakpoint: 576,
-        settings: {
-          slidesToShow: 2,
-        },
-      },
-    ],
-  };
+  const categorySlug = products[0]?.category?.slug;
+  const defaultDesc =
+    "Discover premium handcrafted products, glowing gifts and personalized designs curated specially for you.";
 
   return (
-    <div className="relative">
-      {/* Top Controls */}
-      <div className="flex items-center justify-between mb-8">
+    <section className="relative py-10 sm:py-14 overflow-hidden">
+      <div className="container mx-auto px-4 relative z-10">
 
-        {/* Left */}
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-10 sm:mb-14">
-          <div>
-            <div className="hidden sm:flex items-center gap-3">
-              <h2
-                className="text-3xl sm:text-5xl text-[#0d0d1a] font-bold leading-tight"
-                style={{
-                  fontFamily:
-                    "'Cormorant Garamond', serif",
-                }}
+        {/* ─── HEADER ─── */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5 mb-8 sm:mb-10">
+
+          {/* Title block */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="h-0.5 w-8 sm:w-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" />
+              <Link
+                href={categorySlug ? `/category/${categorySlug}` : '#'}
+                className="text-xs sm:text-sm lg:text-2xl uppercase tracking-[0.25em] font-semibold text-purple-600 hover:text-purple-700 transition"
               >
-                <div className="w-12 h-[1px] bg-gradient-to-r from-amber-400 to-transparent" />
-                <span className="text-[#0d0d1a]/40 uppercase tracking-[0.2em] text-2xl font-semibold">
-                  {title}
-                </span>
-              </h2>
+                {title}
+              </Link>
             </div>
-            <p className="text-[#0d0d1a]/60 text-sm sm:text-base mt-4 max-w-xl leading-relaxed">
-              Discover premium handcrafted products,
-              glowing gifts and personalized designs
-              curated specially for you.
+
+            <p className="text-gray-500 text-sm sm:text-base max-w-xl leading-relaxed">
+              {description || defaultDesc}
             </p>
+          </div>
+
+          {/* Right: View All + nav arrows */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {categorySlug && (
+              <Link
+                href={`/category/${categorySlug}`}
+                className="hidden sm:flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-purple-600 transition group"
+              >
+                View All
+                <RiArrowRightLine className="w-4 h-4 group-hover:translate-x-0.5 transition" />
+              </Link>
+            )}
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => swiperRef.current?.slidePrev()}
+                aria-label="Previous"
+                className="w-10 h-10 rounded-full bg-white border border-gray-200 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md text-gray-700 hover:text-purple-600 flex items-center justify-center transition-all active:scale-95"
+              >
+                <RiArrowLeftSLine className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => swiperRef.current?.slideNext()}
+                aria-label="Next"
+                className="w-10 h-10 rounded-full bg-white border border-gray-200 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md text-gray-700 hover:text-purple-600 flex items-center justify-center transition-all active:scale-95"
+              >
+                <RiArrowRightSLine className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Right */}
-        <div className="flex items-center gap-3 ml-auto">
+        {/* ─── SLIDER ─── */}
+        <Swiper
+          onSwiper={(s) => { swiperRef.current = s; }}
+          modules={[Navigation, Autoplay, Pagination]}
+          spaceBetween={16}
+          slidesPerView={2}
+          autoplay={{
+            delay: 4000,
+            disableOnInteraction: false,
+            pauseOnMouseEnter: true,
+          }}
+          loop={products.length > 4}
+          speed={700}
+          pagination={{
+            clickable: true,
+            el: '.product-slider-pagination',
+          }}
+          breakpoints={{
+            640: { slidesPerView: 2, spaceBetween: 16 },
+            768: { slidesPerView: 3, spaceBetween: 18 },
+            1024: { slidesPerView: 4, spaceBetween: 20 },
+          }}
+          className="!overflow-visible"
+        >
+          {products.map((product, i) => (
+            <SwiperSlide key={product._id || i} className="h-auto">
+              <div className="h-full">
+                <ProductCardTwo product={product} />
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
 
-          <button
-            onClick={() =>
-              sliderRef.current?.slickPrev()
-            }
-            className="group relative overflow-hidden w-11 h-11 rounded-2xl border border-white/10 bg-[#13132a] hover:border-amber-400 transition-all duration-300 flex items-center justify-center"
-          >
+        {/* Custom pagination container */}
+        <div className="product-slider-pagination flex justify-center gap-2 mt-6 sm:mt-8" />
 
-            <div className="absolute inset-0 bg-amber-400 scale-0 group-hover:scale-100 transition-transform duration-300 rounded-2xl" />
-
-            <RiArrowLeftLine
-              size={18}
-              className="relative z-10 text-white group-hover:text-black transition-colors"
-            />
-
-          </button>
-
-          <button
-            onClick={() =>
-              sliderRef.current?.slickNext()
-            }
-            className="group relative overflow-hidden w-11 h-11 rounded-2xl border border-white/10 bg-[#13132a] hover:border-amber-400 transition-all duration-300 flex items-center justify-center"
-          >
-
-            <div className="absolute inset-0 bg-amber-400 scale-0 group-hover:scale-100 transition-transform duration-300 rounded-2xl" />
-
-            <RiArrowRightLine
-              size={18}
-              className="relative z-10 text-white group-hover:text-black transition-colors"
-            />
-
-          </button>
-
-        </div>
-
+        {/* Mobile: view all link */}
+        {categorySlug && (
+          <div className="sm:hidden text-center mt-4">
+            <Link
+              href={`/category/${categorySlug}`}
+              className="inline-flex items-center gap-1 text-sm font-medium text-purple-600"
+            >
+              View All Products <RiArrowRightLine className="w-4 h-4" />
+            </Link>
+          </div>
+        )}
       </div>
 
-      {/* Slider */}
-      <Slider
-        ref={sliderRef}
-        {...settings}
-      >
-        {products &&
-          products.map((product, index) => (
-            <div
-              key={index}
-              className="px-2 pb-4"
-            >
+      {/* Decorative blur */}
+      <div className="absolute -z-0 top-1/2 right-0 -translate-y-1/2 w-[300px] h-[300px] bg-purple-200/20 blur-3xl rounded-full pointer-events-none" />
+      <div className="absolute -z-0 top-1/3 left-0 w-[200px] h-[200px] bg-pink-200/15 blur-3xl rounded-full pointer-events-none" />
 
-              <div className="relative h-full">
-
-                {/* Glow */}
-                <div className="absolute inset-0 bg-gradient-to-b from-amber-400/0 via-amber-400/0 to-amber-400/5 opacity-0 hover:opacity-100 transition duration-500 rounded-[30px]" />
-
-                {/* Product */}
-                <div className="relative z-10">
-                  <ProductCardTwo
-                    product={product}
-                  />
-                </div>
-
-              </div>
-
-            </div>
-          ))}
-      </Slider>
-
-      {/* Bottom Blur */}
-      <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-[300px] h-[120px] bg-amber-400/10 blur-3xl rounded-full pointer-events-none" />
-
-    </div>
+      {/* Custom pagination dots */}
+      <style jsx global>{`
+        .product-slider-pagination .swiper-pagination-bullet {
+          width: 8px;
+          height: 8px;
+          background: #d1d5db;
+          opacity: 1;
+          border-radius: 9999px;
+          transition: all 0.3s ease;
+        }
+        .product-slider-pagination .swiper-pagination-bullet-active {
+          background: linear-gradient(to right, #9333ea, #ec4899);
+          width: 24px;
+        }
+      `}</style>
+    </section>
   );
 };
 
 export default ProductSlider;
-
-
-
-
-// import { Product } from "@/lib/types/product";
-// import React from "react";
-// import Slider from "react-slick";
-// import ProductCardTwo from "./products/ProductCardTwo";
-
-
-// interface PopupProps {
-//   products: Product[];
-// }
-
-// const ProductSlider = ({ products }: PopupProps) => {
-
-
-//   const settings = {
-//     dots: false,
-//     infinite: true,
-//     autoplay: true,
-//     speed: 500,
-//     slidesToShow: 4,
-//     slidesToScroll: 1,
-//     arrows: false,
-//     responsive: [
-//       {
-//         breakpoint: 1400,
-//         settings: {
-//           slidesToShow: 4,
-//           slidesToScroll: 1,
-//         },
-//       },
-//       {
-//         breakpoint: 1024,
-//         settings: {
-//           slidesToShow: 2,
-//           slidesToScroll: 1,
-//         },
-//       },
-//       {
-//         breakpoint: 768,
-//         settings: {
-//           slidesToShow: 2,
-//           slidesToScroll: 1,
-//         },
-//       },
-//     ],
-
-
-//   };
-
-
-//   return (
-//     <>
-//       <Slider {...settings}>
-//         {products && products.map((product, index) => (
-//           <div key={index}>
-//             <ProductCardTwo product={product} />
-//           </div>
-//         ))}
-//       </Slider>
-//     </>
-//   );
-// };
-
-// export default ProductSlider;

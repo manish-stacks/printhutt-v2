@@ -5,6 +5,7 @@ import { sendOk } from '@/utils/api-response';
 import { UnauthorizedError } from '@/utils/errors';
 import * as service from './orders.service';
 import type {
+  BulkDeleteOrdersDTO,
   CreateOrderDTO,
   ListOrdersQueryDTO,
   UpdateOrderShippingDTO,
@@ -62,4 +63,20 @@ export const updateStatus = asyncHandler(async (req: Request, res: Response) => 
     req.body as UpdateOrderStatusDTO
   );
   return sendOk(res, result as Record<string, unknown>);
+});
+
+/* GET /orders/bulk-delete/preview?startDate=...&endDate=... */
+export const previewBulkDelete = asyncHandler(async (req: Request, res: Response) => {
+  const { startDate, endDate } = req.query as { startDate?: string; endDate?: string };
+  if (!startDate || !endDate) {
+    return res.status(400).json({ success: false, message: 'startDate and endDate are required' });
+  }
+  const data = await service.previewBulkDelete(startDate, endDate);
+  return sendOk(res, data as Record<string, unknown>);
+});
+
+/* POST /orders/bulk-delete */
+export const bulkDeletePendingOrders = asyncHandler(async (req: Request, res: Response) => {
+  const data = await service.bulkDeletePendingOrders(req.body as BulkDeleteOrdersDTO);
+  return sendOk(res, data as Record<string, unknown>);
 });
