@@ -72,6 +72,7 @@ export default function MessageComposerModal({ user, onClose, onSent }: Props) {
         </div>
 
         {/* Body */}
+        
         <div className="p-5 space-y-4">
           {/* Channel picker */}
           <div>

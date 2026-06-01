@@ -65,7 +65,7 @@ export async function phonePeCallback(merchantTransactionId: string): Promise<Ph
 
   const response = await phonePe.checkStatus(merchantTransactionId);
   console.log('PhonePe callback response:', response);
-  if (!response.success) {
+  if (!response.success || response.code == 'PAYMENT_PENDING') {
     return { redirectTo: `${base}/orders/payment-failure`, status: 301 };
   }
 

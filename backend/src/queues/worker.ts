@@ -41,34 +41,25 @@ async function main(): Promise<void> {
    */
   async function scheduleReminders() {
     const existing = await reminderQueue.getRepeatableJobs();
-
     for (const job of existing) {
       await reminderQueue.removeRepeatableByKey(job.key);
     }
 
-    // Every hour
+    // 🔥 Order pending — every 15 min
     await reminderQueue.add(
       'order-pending',
       {},
-      {
-        repeat: {
-          pattern: '0 * * * *',
-        },
-      }
+      { repeat: { pattern: '*/15 * * * *' } }  // ← every 15 min
     );
 
-    // Daily at 10 AM
+    // Wishlist abandoned — daily at 10 AM
     await reminderQueue.add(
       'wishlist-abandoned',
       {},
-      {
-        repeat: {
-          pattern: '0 10 * * *',
-        },
-      }
+      { repeat: { pattern: '0 10 * * *' } }
     );
 
-    logger.info('Reminder cron jobs scheduled');
+    logger.info('Reminder cron jobs scheduled (15min/daily)');
   }
 
   const workers: Worker[] = [

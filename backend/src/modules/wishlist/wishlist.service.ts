@@ -112,13 +112,22 @@ export async function adminListAll(opts: {
   ]);
 
   const result = aggregate[0];
-  return {
+  const responseData = {
     success: true,
     total: result.meta[0]?.total || 0,
     page,
     limit,
     data: result.data,
   };
+
+  // 🔍 DEBUG
+  console.log('[wishlist] adminListAll →', {
+    total: responseData.total,
+    page: responseData.page,
+    dataLength: responseData.data.length,
+  });
+
+  return responseData;
 }
 
 /* GET /api/wishlist/admin/user/:userId — single user's full wishlist with product info */
@@ -134,6 +143,12 @@ export async function adminGetUserWishlist(userId: string): Promise<unknown> {
     })
     .sort({ createdAt: -1 })
     .lean();
+
+  // 🔍 DEBUG — server logs me dekhne ke liye
+  console.log(`[wishlist] admin fetch for ${userId}, items: ${items.length}`);
+  if (items.length > 0) {
+    console.log('[wishlist] first item productId:', items[0].productId);
+  }
 
   return { success: true, items };
 }
