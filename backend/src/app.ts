@@ -3,7 +3,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import { allowedOrigins, env } from './config/env';
+import { env } from './config/env';
 import { globalLimiter } from './middlewares/rate-limit.middleware';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
 import { logger } from './config/logger';
@@ -37,16 +37,16 @@ import userCartRoutes from './modules/usercart/usercart.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import seoRoutes from './modules/seo/seo.routes';
 import pageRoutes from './modules/pages/pages.routes';
-
+const allowedOrigins = env.CORS_ORIGIN
+  .split(',')
+  .map((s) => s.trim());
 export function buildApp(): Express {
   const app = express();
   app.set('trust proxy', 1);
 
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-  // app.use(cors({ origin: env.CORS_ORIGIN.split(',').map((s) => s.trim()), credentials: true }));
   app.use(cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (server-to-server, Postman, mobile apps)
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
@@ -56,7 +56,7 @@ export function buildApp(): Express {
         callback(new Error('Not allowed by CORS'));
       }
     },
-    credentials: true,  // ← important — cookies/auth ke liye
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   }));
