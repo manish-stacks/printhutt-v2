@@ -120,9 +120,10 @@ export const mainMenuItems = [
   //   path: '/admin/manage-page',
   // },
   {
+    id: 'wishlists',
     label: 'Wishlists',
     icon: RiHeart3Line,
-    href: '/admin/wishlists',
+    path: '/admin/wishlists',
   },
   {
     id: 'Settings',

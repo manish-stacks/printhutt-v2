@@ -64,6 +64,7 @@ export async function phonePeCallback(merchantTransactionId: string): Promise<Ph
   if (!merchantTransactionId) throw new BadRequestError('merchantTransactionId is required');
 
   const response = await phonePe.checkStatus(merchantTransactionId);
+  console.log('PhonePe callback response:', response);
   if (!response.success) {
     return { redirectTo: `${base}/orders/payment-failure`, status: 301 };
   }
