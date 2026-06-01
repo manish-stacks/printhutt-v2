@@ -67,9 +67,3 @@ if (!parsed.success) {
 export const env = parsed.data;
 export type Env = typeof env;
 
-export const allowedOrigins = [
-  'http://localhost:3000',          // dev
-  'http://localhost:3001',          // dev alt
-  'https://printhutt.com',          // production (no www)
-  'https://www.printhutt.com',      // production (with www)
-];

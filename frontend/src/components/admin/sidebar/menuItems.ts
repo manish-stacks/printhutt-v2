@@ -1,5 +1,5 @@
 import { FaBroom, FaCartPlus, FaCog, FaGifts, FaHome, FaLayerGroup, FaRssSquare, FaStar, FaTag, FaTasks, FaUsers } from "react-icons/fa";
-import { RiLuggageCartFill, RiReceiptFill } from "react-icons/ri";
+import { RiHeart3Line, RiLuggageCartFill, RiReceiptFill } from "react-icons/ri";
 
 
 export const menuItems = {
@@ -119,6 +119,11 @@ export const mainMenuItems = [
   //   label: 'Manages Pages',
   //   path: '/admin/manage-page',
   // },
+  {
+    label: 'Wishlists',
+    icon: RiHeart3Line,
+    href: '/admin/wishlists',
+  },
   {
     id: 'Settings',
     icon: FaCog,

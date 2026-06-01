@@ -302,83 +302,6 @@ export const sendOtpBySms = async (mobile: string, otp: string) => {
 };
 
 
-// export async function sendOrderConfirmationEmail(orderData: {
-//   userId: { email: string };
-//   orderId: string;
-//   items: { name: string; quantity: number; price: number }[];
-//   totalAmount: { discountPrice: number; shippingTotal: number; totalPrice: number };
-//   payment: string;
-//   shipping: ShippingInformation;
-//   coupon?: string;
-//   paymentType: string;
-//   payAmt: number;
-//   status: string;
-// }) {
-//   const { orderId, items, totalAmount, payment, shipping, coupon, paymentType, payAmt, userId, status } = orderData;
-
-//   const commonData = { orderId, items, totalAmount, payment, shipping, coupon, paymentType, payAmt, formatCurrency };
-
-//   const email = order?.shipping?.email || userId.email;
-
-//   if (!email) {
-//     console.log("No customer email, skipping mail");
-//     return;
-//   }
-
-//   const emails = [
-//     {
-//       to: userId.email,
-//       subject: `Order Confirmation - ${orderId}`,
-//       html: getCustomerEmailTemplate(commonData),
-//     },
-//     {
-//       to: process.env.SHOP_OWNER_EMAIL,
-//       subject: `New Order Received - ${orderId}`,
-//       html: getOwnerEmailTemplate(commonData),
-//     },
-//   ];
-
-//   await Promise.all(emails.map(mail => transporter.sendMail({ from: process.env.SMTP_FROM, ...mail })));
-
-//   if (shipping?.mobileNumber) {
-//     const itemsList = items.map((item, i) => `${i + 1}. ${item.name} x ${item.quantity}`).join('\n');
-
-//     const wappMsg = `
-// Hi ${shipping.userName},
-
-// Thank you for your order!
-
-// 🧾 Order ID: ${orderId}
-// Status: *${status}*
-
-// 🛒 Items:
-// ${itemsList}
-
-
-
-// 💳 Payment Mode: ${paymentType === 'online' ? 'Prepaid' : 'COD'}
-// 💰 Total Amount: ${formatCurrency(totalAmount.discountPrice)}
-// 💰 Coupon Discount: ${coupon.discountAmount ? formatCurrency(coupon.discountAmount) : 'N/A'}
-// 💵 Paid Amount: ${formatCurrency(payAmt)}
-// ${paymentType === 'online' ? '' : `💵 COD Amount: ${formatCurrency(totalAmount.discountPrice - payAmt)}`}
-
-
-// 🚚 Address: ${shipping.addressLine}, ${shipping.city}, ${shipping.state} ${shipping.postCode}
-
-// We are processing your order. You'll be notified when it's shipped.
-
-// Thank you!`;
-
-//     const wappUrl = `${process.env.WAPP_URL}send?apikey=${process.env.WAPP_KEY}&mobile=${shipping.mobileNumber}&msg=${encodeURIComponent(wappMsg)}`;
-
-//     try {
-//       await axios.post(wappUrl);
-//     } catch (error) {
-//       console.error('Whatsapp Send Error:', error);
-//       throw new Error((error as Error).message);
-//     }
-//   }
-// }
 export async function sendOrderConfirmationEmail(order: any) {
   const email = order.shipping?.email;
   if (!email) {
@@ -602,4 +525,86 @@ Your feedback means a lot to us ❤️
   }
 
   await Promise.all([emailPromise, wappPromise]);
+}
+/* ─── NEW: Generic email (admin manual send) ─── */
+export async function sendCustomEmail({
+  to,
+  subject,
+  html,
+}: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<unknown> {
+  if (!to) throw new Error('Email recipient is required');
+
+  // Wrap body in branded HTML template
+  const wrappedHtml = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>${subject}</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; background: #f8f8fb; margin: 0; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+          <div style="background: linear-gradient(135deg, #9333ea, #ec4899); padding: 24px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 22px;">PrintHutt</h1>
+          </div>
+          <div style="padding: 30px; color: #333; line-height: 1.6; font-size: 14px; white-space: pre-wrap;">
+            ${html}
+          </div>
+          <div style="background: #f3f4f6; padding: 16px; text-align: center; font-size: 12px; color: #666;">
+            <p style="margin: 0;">
+              PrintHutt · 25 Krishna Market, Delhi 110034<br/>
+              <a href="https://printhutt.com" style="color: #9333ea;">printhutt.com</a>
+            </p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return transporter.sendMail({
+    from: process.env.MAIL_FROM || '"PrintHutt" <printhutt05@gmail.com>',
+    to,
+    subject,
+    html: wrappedHtml,
+  });
+}
+
+/* ─── NEW: Generic SMS (admin manual send) ─── */
+export async function sendCustomSms(mobile: string, body: string): Promise<unknown> {
+  if (!mobile) throw new Error('Mobile is required');
+  if (!body) throw new Error('Body is required');
+
+  // Reuse existing SMS service — wherever sendOtpBySms hits
+  // Typically Fast2SMS / MSG91 / Twilio etc.
+
+  // Example with Fast2SMS (adjust to your provider):
+  const apiKey = process.env.FAST2SMS_API_KEY;
+  if (!apiKey) {
+    logger.warn('[mailer] Fast2SMS API key not set — SMS skipped');
+    return;
+  }
+
+  const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'authorization': apiKey,
+    },
+    body: new URLSearchParams({
+      route: 'q',                // quick transactional
+      message: body,
+      numbers: mobile.replace(/\D/g, ''),
+      flash: '0',
+    }).toString(),
+  });
+
+  if (!response.ok) {
+    throw new Error(`SMS send failed: ${response.status}`);
+  }
+
+  return response.json();
 }

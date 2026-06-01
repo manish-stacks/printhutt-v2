@@ -3,12 +3,12 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import { allowedOrigins, env } from './config/env';
+import { env } from './config/env';
 import { globalLimiter } from './middlewares/rate-limit.middleware';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
 import { logger } from './config/logger';
 
-// All 24 module routers
+// All  module routers
 import authRoutes from './modules/auth/auth.routes';
 import userRoutes from './modules/users/users.routes';
 import categoryRoutes from './modules/categories/categories.routes';
@@ -37,42 +37,90 @@ import userCartRoutes from './modules/usercart/usercart.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import seoRoutes from './modules/seo/seo.routes';
 import pageRoutes from './modules/pages/pages.routes';
+import messagingRoutes from '@/modules/messaging/messaging.routes';
+
+/* ─── Webhook/callback paths exempt from CORS, helmet, rate-limit ─── */
+const PUBLIC_WEBHOOK_PATHS = [
+  '/api/payment/callback',
+  '/api/payment/webhook',
+  '/api/payment/phonepe',
+  '/api/payment/razorpay',
+  '/api/payment/verify',
+];
+
+export const allowedOrigins = [
+  'http://localhost:3000',          // dev
+  'http://localhost:3001',          // dev alt
+  'https://printhutt.com',          // production (no www)
+  'https://www.printhutt.com',      // production (with www)
+];
+
+const isWebhook = (path: string): boolean =>
+  PUBLIC_WEBHOOK_PATHS.some((p) => path.startsWith(p));
 
 export function buildApp(): Express {
   const app = express();
   app.set('trust proxy', 1);
 
-  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-  app.use(cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
+  /* ─── 1. Body parsers (15MB for base64 image carts/orders) ─── */
+  app.use(express.json({ limit: '15mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn(`[CORS] Blocked origin: ${origin}`);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  }));
-
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  /* ─── 2. Cookies + compression ─── */
   app.use(cookieParser());
   app.use(compression());
 
+  /* ─── 3. Helmet — webhooks ko skip ─── */
+  const helmetInstance = helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  });
+  app.use((req, res, next) => {
+    if (isWebhook(req.path)) return next();
+    return helmetInstance(req, res, next);
+  });
+
+  /* ─── 4. CORS — webhooks ko skip (server-to-server requests) ─── */
+  const corsOptions: cors.CorsOptions = {
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      console.warn(`[CORS] Blocked origin: ${origin}`);
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'X-VERIFY',         // PhonePe
+      'X-MERCHANT-ID',    // PhonePe
+    ],
+  };
+  const corsMiddleware = cors(corsOptions);
+  app.use((req, res, next) => {
+    if (isWebhook(req.path)) return next();
+    return corsMiddleware(req, res, next);
+  });
+
+  /* ─── 5. Request logger ─── */
   app.use((req, _res, next) => {
     logger.debug(`${req.method} ${req.originalUrl}`);
     next();
   });
 
-  app.use('/api/', globalLimiter);
+  /* ─── 6. Rate limiter — webhooks ko skip ─── */
+  app.use('/api/', (req, res, next) => {
+    if (isWebhook(req.path)) return next();
+    return globalLimiter(req, res, next);
+  });
 
-  app.get('/health', (_req, res) => res.json({ ok: true, service: env.APP_NAME }));
+  /* ─── 7. Health check ─── */
+  app.get('/health', (_req, res) =>
+    res.json({ ok: true, service: env.APP_NAME })
+  );
 
+  /* ─── 8. Routes ─── */
   app.use('/api/auth', authRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/categories', categoryRoutes);
@@ -100,9 +148,12 @@ export function buildApp(): Express {
   app.use('/api/usercart', userCartRoutes);
   app.use('/api/settings', settingsRoutes);
   app.use('/api/pages', pageRoutes);
+  app.use('/api/messaging', messagingRoutes);
   app.use('/', seoRoutes);
 
+  /* ─── 9. Error handlers (must be last) ─── */
   app.use(notFoundHandler);
   app.use(errorHandler);
+
   return app;
 }

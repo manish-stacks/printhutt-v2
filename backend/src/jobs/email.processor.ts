@@ -2,17 +2,10 @@ import { Job } from 'bullmq';
 import { logger } from '../config/logger';
 import type { EmailJobData } from '../queues/queues';
 
-/**
- * Email job processor.
- *
- * Calls into the existing mailer (already ported from src/lib/mail/mailer.ts).
- * Splits routing by `data.type` — same templates used by original Next routes.
- */
 export async function emailProcessor(job: Job<EmailJobData>): Promise<void> {
   const { type, payload } = job.data;
   logger.info(`[queue:email] processing ${type}`, { id: job.id });
 
-  // Lazy import — avoid loading nodemailer at queue-module load time
   const mailer = await import('../utils/mail/mailer');
 
   switch (type) {
@@ -52,10 +45,31 @@ export async function emailProcessor(job: Job<EmailJobData>): Promise<void> {
       await m.sendOtpBySms(String(payload.mobile), String(payload.otp));
       return;
     }
+
+    /* ─── NEW: Custom admin-sent emails ─── */
+    case 'custom-email': {
+      const m = mailer as unknown as {
+        sendCustomEmail: (p: { to: string; subject: string; html: string }) => Promise<unknown>;
+      };
+      await m.sendCustomEmail({
+        to: String(payload.email),
+        subject: String(payload.subject || 'Message from PrintHutt'),
+        html: String(payload.body),
+      });
+      return;
+    }
+
+    /* ─── NEW: Custom admin-sent SMS/WhatsApp ─── */
+    case 'custom-sms': {
+      const m = mailer as unknown as {
+        sendCustomSms: (mobile: string, body: string) => Promise<unknown>;
+      };
+      await m.sendCustomSms(String(payload.mobile), String(payload.body));
+      return;
+    }
+
     case 'order-confirm':
     case 'order-status': {
-      // delegate to mailer — exact function name depends on existing exports;
-      // wire up after auditing src/lib/mail/mailer.ts
       logger.info(`[queue:email] order email ${type}`, { payload });
       return;
     }

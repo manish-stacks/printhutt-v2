@@ -38,3 +38,17 @@ export const removeFromWishlist = asyncHandler(async (req: Request, res: Respons
   await service.removeFromWishlist(req.user.id, param(req, 'id'));
   return sendOk(res, { message: 'Wishlist item removed' });
 });
+export const adminListAll = asyncHandler(async (req: Request, res: Response) => {
+  const { page, limit, search } = req.query as Record<string, string>;
+  const data = await service.adminListAll({
+    page: page ? Number(page) : undefined,
+    limit: limit ? Number(limit) : undefined,
+    search,
+  });
+  return sendOk(res, data as any);
+});
+
+export const adminGetUserWishlist = asyncHandler(async (req: Request, res: Response) => {
+  const data = await service.adminGetUserWishlist(req.params.userId);
+  return sendOk(res, data as any);
+});
