@@ -121,6 +121,7 @@ async function main(): Promise<void> {
 
           default:
             logger.warn(`Unknown reminder job: ${job.name}`);
+            return;
         }
       },
       {

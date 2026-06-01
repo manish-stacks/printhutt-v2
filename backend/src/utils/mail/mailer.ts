@@ -10,6 +10,7 @@ import dotenv from "dotenv"
 import { generateOrderStatusEmail, getShippedEmailTemplate } from "./templates/order-status";
 import axios from "axios";
 import { ShippingInformation } from "@/types/shipping";
+import { logger } from "@/config/logger";
 dotenv.config()
 
 const transporter = nodemailer.createTransport({
