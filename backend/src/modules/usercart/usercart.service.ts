@@ -2,6 +2,7 @@ import { BadRequestError, NotFoundError } from '@/utils/errors';
 import { userCartRepo } from './usercart.repository';
 import type { AddItemDTO, MergeDTO } from './usercart.validation';
 import { Types } from 'mongoose';
+import UserCart from '@/db/models/userCartModel';
 
 /* Same item check — productId + variantId + size match */
 const sameItem = (
@@ -109,4 +110,121 @@ export async function syncCart(userId: string, items: MergeDTO['items']): Promis
   }
   const populated = await userCartRepo.findByUserPopulated(userId);
   return { success: true, message: 'Cart synced', items: populated?.items ?? [] };
+}
+
+export async function adminListAll(opts: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}): Promise<unknown> {
+  const page = Math.max(1, opts.page || 1);
+  const limit = Math.min(100, opts.limit || 20);
+  const search = opts.search?.trim();
+
+  const pipeline: any[] = [
+    { $match: { 'items.0': { $exists: true } } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'user',
+      },
+    },
+    { $unwind: '$user' },
+  ];
+
+  if (search) {
+    pipeline.push({
+      $match: {
+        $or: [
+          { 'user.username': { $regex: search, $options: 'i' } },
+          { 'user.email': { $regex: search, $options: 'i' } },
+          {
+            $expr: {
+              $regexMatch: {
+                input: { $toString: { $ifNull: ['$user.number', ''] } },
+                regex: search,
+                options: 'i',
+              },
+            },
+          },
+        ],
+      },
+    });
+  }
+
+  pipeline.push({
+    $project: {
+      _id: 0,
+      userId: '$userId',
+      userName: '$user.username',
+      userEmail: '$user.email',
+      userNumber: '$user.number',
+      itemCount: { $size: { $ifNull: ['$items', []] } },
+      totalQuantity: {
+        $sum: {
+          $map: {
+            input: { $ifNull: ['$items', []] },
+            as: 'i',
+            in: { $ifNull: ['$$i.quantity', 0] },
+          },
+        },
+      },
+      totalValue: {
+        $sum: {
+          $map: {
+            input: { $ifNull: ['$items', []] },
+            as: 'i',
+            in: {
+              $multiply: [
+                { $ifNull: ['$$i.price', 0] },
+                { $ifNull: ['$$i.quantity', 0] },
+              ],
+            },
+          },
+        },
+      },
+      lastUpdated: '$updatedAt',
+    },
+  });
+
+  pipeline.push({ $sort: { lastUpdated: -1 } });
+  pipeline.push({
+    $facet: {
+      meta: [{ $count: 'total' }],
+      data: [{ $skip: (page - 1) * limit }, { $limit: limit }],
+    },
+  });
+
+  const result = await UserCart.aggregate(pipeline);
+  const out = result[0];
+
+  return {
+    success: true,
+    total: out.meta[0]?.total || 0,
+    page,
+    limit,
+    data: out.data,
+  };
+}
+
+/* GET /api/usercart/admin/user/:userId */
+export async function adminGetUserCart(userId: string): Promise<unknown> {
+  if (!Types.ObjectId.isValid(userId)) {
+    throw new BadRequestError('Invalid userId');
+  }
+
+  const cart = await UserCart.findOne({ userId })
+    .populate({
+      path: 'items.productId',
+      select: 'title slug price thumbnail discountPrice discountType',
+    })
+    .lean();
+
+  if (!cart) {
+    return { success: true, items: [] };
+  }
+
+  return { success: true, items: cart.items || [] };
 }

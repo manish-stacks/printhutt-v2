@@ -3,87 +3,84 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { axiosInstance } from '@/utils/axios';
 import { toast } from 'react-toastify';
 import {
-    RiHeart3Line, RiSearchLine, RiEyeLine, RiMailSendLine,
+    RiShoppingCart2Line, RiSearchLine, RiEyeLine, RiMailSendLine,
     RiTimeLine, RiCloseLine,
 } from 'react-icons/ri';
 import Image from 'next/image';
 import { formatCurrency } from '@/helpers/helpers';
 import MessageComposerModal from '@/components/admin/MessageComposerModal';
 import { Pagination } from '@/components/admin/Pagination';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-// ← Apne project ke Pagination component se replace karo
-// import Pagination from '@/components/admin/Pagination';
 
-interface WishlistRow {
+interface CartRow {
     userId: string;
     userName: string;
     userEmail: string;
     userNumber: string;
     itemCount: number;
-    lastAdded: string;
+    totalQuantity: number;
+    totalValue: number;
+    lastUpdated: string;
 }
 
-interface WishlistItem {
+interface CartItem {
     productId: {
         _id: string;
         title: string;
         slug: string;
         price: number;
-        discountPrice?: number;
         thumbnail?: { url: string };
     };
-    addedAt: string;
+    variantId?: string;
+    size?: string;
+    color?: string;
+    quantity: number;
+    price: number;
+    custom_data?: Record<string, any>;
 }
 
-export default function AdminWishlistsPage() {
+export default function AdminUserCartPage() {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
-    // 🔑 Initial state from URL
     const [search, setSearch] = useState(searchParams.get('search') || '');
     const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
 
-    const [rows, setRows] = useState<WishlistRow[]>([]);
+    const [rows, setRows] = useState<CartRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [total, setTotal] = useState(0);
     const [limit] = useState(20);
 
-    const [messageUser, setMessageUser] = useState<WishlistRow | null>(null);
-    const [viewUser, setViewUser] = useState<WishlistRow | null>(null);
-    const [viewItems, setViewItems] = useState<WishlistItem[]>([]);
+    const [messageUser, setMessageUser] = useState<CartRow | null>(null);
+    const [viewUser, setViewUser] = useState<CartRow | null>(null);
+    const [viewItems, setViewItems] = useState<CartItem[]>([]);
     const [viewLoading, setViewLoading] = useState(false);
 
+    /* URL sync */
     useEffect(() => {
         const params = new URLSearchParams();
         if (page > 1) params.set('page', String(page));
         if (search) params.set('search', search);
-
         const qs = params.toString();
-        const newUrl = qs ? `${pathname}?${qs}` : pathname;
-        router.replace(newUrl, { scroll: false });
+        router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     }, [page, search]);
 
     const fetchData = async () => {
         setLoading(true);
         try {
-            const res: any = await axiosInstance.get('/wishlist/admin/all', {
+            const res: any = await axiosInstance.get('/usercart/admin/all', {
                 params: { page, limit, search },
             });
-            console.log('[wishlists] fetchData response:', res);
-
-            const data = res?.data || [];
-            const totalCount = res?.total ?? 0;
-
-            setRows(Array.isArray(data) ? data : []);
-            setTotal(Number(totalCount) || 0);
+            setRows(Array.isArray(res?.data) ? res.data : []);
+            setTotal(Number(res?.total) || 0);
         } catch (e: any) {
-            console.error('[wishlists] fetchData error:', e);
-            toast.error(e?.response?.data?.message || 'Failed to fetch wishlists');
+            console.error('[user-cart] fetch error:', e);
+            toast.error(e?.response?.data?.message || 'Failed to fetch carts');
         } finally {
             setLoading(false);
         }
@@ -94,19 +91,16 @@ export default function AdminWishlistsPage() {
         return () => clearTimeout(t);
     }, [search, page]);
 
-    const openViewModal = async (user: WishlistRow) => {
+    const openViewModal = async (user: CartRow) => {
         setViewUser(user);
         setViewLoading(true);
         setViewItems([]);
         try {
-            const res: any = await axiosInstance.get(`/wishlist/admin/user/${user.userId}`);
-            console.log('[wishlists] view items response:', res);
-
-            const items = res?.items || res?.data || [];
+            const res: any = await axiosInstance.get(`/usercart/admin/user/${user.userId}`);
+            const items = res?.items || [];
             setViewItems(Array.isArray(items) ? items : []);
         } catch (e: any) {
-            console.error('[wishlists] view items error:', e);
-            toast.error(e?.response?.data?.message || 'Failed to load items');
+            toast.error(e?.response?.data?.message || 'Failed to load cart items');
         } finally {
             setViewLoading(false);
         }
@@ -115,14 +109,14 @@ export default function AdminWishlistsPage() {
     const totalPages = Math.ceil(total / limit);
 
     return (
-        <div className="p-4 pt-14">
+        <div className="p-4 sm:p-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <RiHeart3Line className="text-purple-600" /> Wishlists
+                        <RiShoppingCart2Line className="text-purple-600" /> User Carts
                     </h1>
-                    <p className="text-sm text-gray-500 mt-1">{total} users with wishlist items</p>
+                    <p className="text-sm text-gray-500 mt-1">{total} users with cart items (abandoned)</p>
                 </div>
 
                 <div className="relative w-full sm:w-80">
@@ -147,15 +141,17 @@ export default function AdminWishlistsPage() {
                                 <th className="px-5 py-3">Email</th>
                                 <th className="px-5 py-3">Phone</th>
                                 <th className="px-5 py-3 text-center">Items</th>
-                                <th className="px-5 py-3">Last Added</th>
+                                <th className="px-5 py-3 text-center">Qty</th>
+                                <th className="px-5 py-3 text-right">Total Value</th>
+                                <th className="px-5 py-3">Last Updated</th>
                                 <th className="px-5 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
-                                <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-400">Loading...</td></tr>
+                                <tr><td colSpan={8} className="px-5 py-10 text-center text-gray-400">Loading...</td></tr>
                             ) : rows.length === 0 ? (
-                                <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-400">No wishlists found</td></tr>
+                                <tr><td colSpan={8} className="px-5 py-10 text-center text-gray-400">No carts found</td></tr>
                             ) : rows.map((row) => (
                                 <tr key={row.userId} className="hover:bg-gray-50/50">
                                     <td className="px-5 py-4">
@@ -175,21 +171,26 @@ export default function AdminWishlistsPage() {
                                             {row.itemCount}
                                         </span>
                                     </td>
+                                    <td className="px-5 py-4 text-center">
+                                        <span className="text-gray-700 font-medium">{row.totalQuantity}</span>
+                                    </td>
+                                    <td className="px-5 py-4 text-right">
+                                        <span className="font-bold text-green-700">{formatCurrency(row.totalValue)}</span>
+                                    </td>
                                     <td className="px-5 py-4 text-gray-500 text-xs">
                                         <div className="flex items-center gap-1">
                                             <RiTimeLine className="w-3.5 h-3.5" />
-                                            {new Date(row.lastAdded).toLocaleDateString('en-IN', {
+                                            {new Date(row.lastUpdated).toLocaleDateString('en-IN', {
                                                 day: '2-digit', month: 'short', year: 'numeric',
                                             })}
                                         </div>
                                     </td>
                                     <td className="px-5 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            {/* 🔥 View modal — page open nahi karega */}
                                             <button
                                                 onClick={() => openViewModal(row)}
                                                 className="p-2 rounded-lg hover:bg-purple-50 text-gray-500 hover:text-purple-600"
-                                                title="View Items"
+                                                title="View Cart"
                                             >
                                                 <RiEyeLine className="w-4 h-4" />
                                             </button>
@@ -208,7 +209,6 @@ export default function AdminWishlistsPage() {
                     </table>
                 </div>
 
-                {/* 🔥 Pagination component — same as other admin pages */}
                 {totalPages > 1 && (
                     <div className="border-t border-gray-100 pb-4">
                         <Pagination
@@ -222,15 +222,15 @@ export default function AdminWishlistsPage() {
             {/* Message modal */}
             {messageUser && (
                 <MessageComposerModal
-                    user={messageUser}
+                    user={messageUser as any}
                     onClose={() => setMessageUser(null)}
                     onSent={() => { setMessageUser(null); toast.success('Message sent!'); }}
                 />
             )}
 
-            {/* View Items modal */}
+            {/* View modal */}
             {viewUser && (
-                <ViewWishlistModal
+                <ViewCartModal
                     user={viewUser}
                     items={viewItems}
                     loading={viewLoading}
@@ -241,12 +241,12 @@ export default function AdminWishlistsPage() {
     );
 }
 
-/* ─── View Modal Component ─── */
-const ViewWishlistModal = ({
+/* ─── View Cart Modal ─── */
+const ViewCartModal = ({
     user, items, loading, onClose,
 }: {
-    user: WishlistRow;
-    items: WishlistItem[];
+    user: CartRow;
+    items: CartItem[];
     loading: boolean;
     onClose: () => void;
 }) => {
@@ -260,16 +260,17 @@ const ViewWishlistModal = ({
         };
     }, [onClose]);
 
+    const grandTotal = items.reduce((s, i) => s + (i.price || 0) * (i.quantity || 0), 0);
+
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
             onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-                {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                     <div>
-                        <h3 className="font-bold text-gray-900">Wishlist Items</h3>
+                        <h3 className="font-bold text-gray-900">Cart Items</h3>
                         <p className="text-xs text-gray-500 mt-0.5">
-                            <span className="font-medium">{user.userName || 'Guest'}</span> · {items.length} items
+                            <span className="font-medium">{user.userName || 'Guest'}</span> · {items.length} items · Total: <span className="font-bold text-green-700">{formatCurrency(grandTotal)}</span>
                         </p>
                     </div>
                     <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500">
@@ -277,12 +278,11 @@ const ViewWishlistModal = ({
                     </button>
                 </div>
 
-                {/* Items */}
                 <div className="flex-1 overflow-y-auto p-5">
                     {loading ? (
                         <div className="text-center py-10 text-gray-400">Loading...</div>
                     ) : items.length === 0 ? (
-                        <div className="text-center py-10 text-gray-400">No items in wishlist</div>
+                        <div className="text-center py-10 text-gray-400">Cart is empty</div>
                     ) : (
                         <ul className="space-y-3">
                             {items.map((item, i) => (
@@ -290,7 +290,7 @@ const ViewWishlistModal = ({
                                     {item.productId?.thumbnail?.url && (
                                         <Image
                                             src={item.productId.thumbnail.url}
-                                            alt={item.productId.title}
+                                            alt={item.productId.title || ''}
                                             width={64}
                                             height={64}
                                             className="w-16 h-16 rounded-lg object-cover bg-white border border-gray-200 flex-shrink-0"
@@ -301,12 +301,39 @@ const ViewWishlistModal = ({
                                             className="text-sm font-medium text-gray-900 line-clamp-2"
                                             dangerouslySetInnerHTML={{ __html: item.productId?.title || 'Unknown product' }}
                                         />
-                                        <p className="text-sm font-bold text-purple-600 mt-1">
-                                            {formatCurrency(item.productId?.price || 0)}
-                                        </p>
-                                        <p className="text-[11px] text-gray-400 mt-0.5">
-                                            Added: {new Date(item.addedAt).toLocaleDateString('en-IN')}
-                                        </p>
+
+                                        {/* Variant info */}
+                                        {(item.size || item.color) && (
+                                            <div className="flex gap-2 mt-1">
+                                                {item.size && (
+                                                    <span className="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
+                                                        Size: {item.size}
+                                                    </span>
+                                                )}
+                                                {item.color && (
+                                                    <span className="text-[10px] bg-pink-50 text-pink-700 px-1.5 py-0.5 rounded">
+                                                        Color: {item.color}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className="flex items-center justify-between mt-1.5">
+                                            <p className="text-sm">
+                                                <span className="font-bold text-purple-600">{formatCurrency(item.price)}</span>
+                                                <span className="text-xs text-gray-500 ml-1">× {item.quantity}</span>
+                                            </p>
+                                            <p className="text-sm font-semibold text-gray-900">
+                                                {formatCurrency((item.price || 0) * (item.quantity || 0))}
+                                            </p>
+                                        </div>
+
+                                        {/* Custom data badge */}
+                                        {item.custom_data && Object.keys(item.custom_data).length > 0 && (
+                                            <span className="inline-block mt-1 text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">
+                                                Customized
+                                            </span>
+                                        )}
                                     </div>
                                 </li>
                             ))}
@@ -314,8 +341,10 @@ const ViewWishlistModal = ({
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="px-5 py-3 border-t border-gray-100 text-right">
+                <div className="px-5 py-3 border-t border-gray-100 flex justify-between items-center">
+                    <span className="text-sm font-semibold text-gray-700">
+                        Grand Total: <span className="text-green-700">{formatCurrency(grandTotal)}</span>
+                    </span>
                     <button
                         onClick={onClose}
                         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg"

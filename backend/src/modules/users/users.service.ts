@@ -14,6 +14,7 @@ import type { ListUsersQueryDTO, UpdateProfileDTO } from './users.validation';
 import mongoose from 'mongoose';
 import ExcelJS from 'exceljs';
 import { BadRequestError } from '@/utils/errors';
+import UserCart from '@/db/models/userCartModel';
 
 /* ──────────────── 1. Admin list ──────────────── */
 export async function adminList(q: ListUsersQueryDTO): Promise<unknown> {
@@ -100,7 +101,12 @@ export async function userFullDetail(userId: string): Promise<unknown> {
     usersRepo.reviewsByUser(userId),
     usersRepo.wishlistByUser(userId),
   ]);
-
+  const cart = await UserCart.findOne({ userId })
+    .populate({
+      path: 'items.productId',
+      select: 'title slug price thumbnail discountPrice discountType',
+    })
+    .lean();
   // Payments = orders me se payment object nikaalo
   const payments = (orders as Array<Record<string, unknown>>).map((o) => ({
     orderId: o.orderId,
@@ -118,6 +124,7 @@ export async function userFullDetail(userId: string): Promise<unknown> {
     payments,
     reviews,
     wishlist: (wishlist as { items?: unknown[] } | null)?.items ?? [],
+    cart: cart?.items ?? [],
   };
 }
 

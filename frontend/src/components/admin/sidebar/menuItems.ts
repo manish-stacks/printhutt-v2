@@ -42,6 +42,11 @@ export const menuItems = {
     { id: 'slider', label: 'Slider', path: '/admin/hero-banner' },
     { id: 'testimonials', label: 'Testimonials', path: '/admin/testimonials' },
     { id: 'Pages', label: 'Pages', path: '/admin/pages' },
+  ],
+  user: [
+    { id: 'list', label: 'Users List', path: '/admin/customer-list' },
+    { id: 'wishlists', label: 'Wishlists', path: '/admin/wishlists' },
+    { id: 'cart', label: 'Cart Store', path: '/admin/user-cart' },
   ]
 };
 // Ecommerce
@@ -92,7 +97,7 @@ export const mainMenuItems = [
   {
     id: 'Cart',
     icon: FaCartPlus,
-    label: 'User Cart',
+    label: 'Session Cart',
     path: '/admin/se_cart',
   },
   {
@@ -102,28 +107,16 @@ export const mainMenuItems = [
     submenu: menuItems.manageSite,
   },
   {
-    id: 'customer',
+    id: 'user',
     icon: FaUsers,
-    label: 'Customer List',
-    path: '/admin/customer-list',
+    label: 'Users',
+    submenu: menuItems.user,
   },
   {
     id: 'reviews',
     icon: FaStar,
-    label: 'Product Reviews',
+    label: 'Customer Reviews',
     path: '/admin/product-reviews',
-  },
-  // {
-  //   id: 'page',
-  //   icon: FaBook,
-  //   label: 'Manages Pages',
-  //   path: '/admin/manage-page',
-  // },
-  {
-    id: 'wishlists',
-    label: 'Wishlists',
-    icon: RiHeart3Line,
-    path: '/admin/wishlists',
   },
   {
     id: 'Settings',

@@ -8,7 +8,7 @@ import { RiLoader2Line } from 'react-icons/ri';
 import Image from 'next/image';
 import Link from 'next/link';
 
-type TabKey = 'profile' | 'addresses' | 'orders' | 'payments' | 'reviews' | 'wishlist';
+type TabKey = 'profile' | 'addresses' | 'orders' | 'payments' | 'reviews' | 'wishlist' | 'cart';
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'profile', label: 'Profile' },
@@ -17,6 +17,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'payments', label: 'Payments' },
   { key: 'reviews', label: 'Reviews' },
   { key: 'wishlist', label: 'Wishlist' },
+  { key: 'cart', label: 'Cart' },
 ];
 
 export default function UserDetailPage() {
@@ -54,7 +55,7 @@ export default function UserDetailPage() {
     return <div className="text-center py-20 text-gray-500">User not found</div>;
   }
 
-  const { user, addresses, orders, payments, reviews, wishlist } = data;
+  const { user, addresses, orders, payments, reviews, wishlist, cart } = data;
 
   return (
     <div className="max-w-8xl mx-auto px-4 lg:px-10 py-16">
@@ -95,8 +96,8 @@ export default function UserDetailPage() {
               key={t.key}
               onClick={() => setTab(t.key)}
               className={`px-5 py-3 text-sm font-medium transition-colors ${tab === t.key
-                  ? 'border-b-2 border-blue-600 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-800'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-500 hover:text-gray-800'
                 }`}
             >
               {t.label}
@@ -104,6 +105,7 @@ export default function UserDetailPage() {
               {t.key === 'addresses' && ` (${addresses?.length || 0})`}
               {t.key === 'reviews' && ` (${reviews?.length || 0})`}
               {t.key === 'wishlist' && ` (${wishlist?.length || 0})`}
+              {t.key === 'cart' && ` (${cart?.length || 0})`}
             </button>
           ))}
         </div>
@@ -219,6 +221,79 @@ export default function UserDetailPage() {
                   </Link>
                 </div>
               )) : <Empty text="No wishlist items" />}
+            </div>
+          )}
+          {/* CART */}
+          {tab === 'cart' && (
+            <div className="space-y-3">
+              {cart?.length ? (
+                <>
+                  <div className="flex items-center justify-between bg-purple-50 border border-purple-100 rounded-lg p-3 mb-3">
+                    <span className="text-sm font-medium text-gray-700">
+                      {cart.length} item(s) in cart
+                    </span>
+                    <span className="text-base font-bold text-purple-600">
+                      Total: ₹
+                      {cart.reduce((s: number, i: any) => s + (i.price || 0) * (i.quantity || 0), 0)}
+                    </span>
+                  </div>
+
+                  {cart.map((item: any, i: number) => (
+                    <div key={item.productId?._id || i} className="border rounded-lg p-4 flex gap-3 text-sm">
+                      {item.productId?.thumbnail?.url && (
+                        <Image
+                          src={item.productId.thumbnail.url}
+                          alt={item.productId.title || ''}
+                          width={80}
+                          height={80}
+                          className="w-20 h-20 rounded-lg object-cover border flex-shrink-0"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <Link
+                          target="_blank"
+                          href={`/product-details/${item.productId?.slug}`}
+                          className="font-medium text-gray-900 hover:text-purple-600 line-clamp-2 block"
+                          dangerouslySetInnerHTML={{ __html: item.productId?.title || 'Product' }}
+                        />
+
+                        {(item.size || item.color) && (
+                          <div className="flex gap-2 mt-1">
+                            {item.size && (
+                              <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
+                                Size: {item.size}
+                              </span>
+                            )}
+                            {item.color && (
+                              <span className="text-xs bg-pink-50 text-pink-700 px-2 py-0.5 rounded">
+                                Color: {item.color}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between mt-2">
+                          <p className="text-sm">
+                            <span className="font-bold text-purple-600">₹{item.price}</span>
+                            <span className="text-gray-500 ml-1">× {item.quantity}</span>
+                          </p>
+                          <p className="font-semibold text-gray-900">
+                            ₹{(item.price || 0) * (item.quantity || 0)}
+                          </p>
+                        </div>
+
+                        {item.custom_data && Object.keys(item.custom_data).length > 0 && (
+                          <span className="inline-block mt-1 text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded">
+                            Customized
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <Empty text="No cart items" />
+              )}
             </div>
           )}
         </div>

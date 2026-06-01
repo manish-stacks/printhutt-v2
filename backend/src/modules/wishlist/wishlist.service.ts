@@ -52,7 +52,8 @@ export async function removeFromWishlist(
   await wishlist.save();
 }
 
-/* GET /api/wishlist/admin/all — list all wishlists with user + product details */
+
+/* GET /api/wishlist/admin/all */
 export async function adminListAll(opts: {
   page?: number;
   limit?: number;
@@ -60,95 +61,103 @@ export async function adminListAll(opts: {
 }): Promise<unknown> {
   const page = Math.max(1, opts.page || 1);
   const limit = Math.min(100, opts.limit || 20);
+  const search = opts.search?.trim();
 
-  // First get all unique users with wishlists
-  const matchStage: any = {};
-  const userMatch: any = {};
-  if (opts.search) {
-    userMatch.$or = [
-      { username: { $regex: opts.search, $options: 'i' } },
-      { email: { $regex: opts.search, $options: 'i' } },
-      { number: { $regex: opts.search, $options: 'i' } },
-    ];
-  }
+  const pipeline: any[] = [
+    // Only docs with items
+    { $match: { 'items.0': { $exists: true } } },
 
-  const aggregate = await Wishlist.aggregate([
-    // Group by user, get latest wishlist info
-    {
-      $group: {
-        _id: '$userId',
-        items: { $push: '$$ROOT' },
-        itemCount: { $sum: 1 },
-        lastAdded: { $max: '$createdAt' },
-      },
-    },
+    // Join user
     {
       $lookup: {
         from: 'users',
-        localField: '_id',
+        localField: 'userId',
         foreignField: '_id',
         as: 'user',
       },
     },
     { $unwind: '$user' },
-    ...(Object.keys(userMatch).length ? [{ $match: { user: userMatch.$or ? { $or: userMatch.$or.map((c: any) => Object.fromEntries(Object.entries(c).map(([k, v]) => [`user.${k.replace('user.', '')}`, v]))) } : userMatch } }] : []),
-    {
-      $project: {
-        userId: '$_id',
-        userName: '$user.username',
-        userEmail: '$user.email',
-        userNumber: '$user.number',
-        itemCount: 1,
-        lastAdded: 1,
-      },
-    },
-    { $sort: { lastAdded: -1 } },
-    {
-      $facet: {
-        meta: [{ $count: 'total' }],
-        data: [{ $skip: (page - 1) * limit }, { $limit: limit }],
-      },
-    },
-  ]);
+  ];
 
-  const result = aggregate[0];
-  const responseData = {
-    success: true,
-    total: result.meta[0]?.total || 0,
-    page,
-    limit,
-    data: result.data,
-  };
+  // Search filter
+  if (search) {
+    pipeline.push({
+      $match: {
+        $or: [
+          { 'user.username': { $regex: search, $options: 'i' } },
+          { 'user.email': { $regex: search, $options: 'i' } },
+          {
+            $expr: {
+              $regexMatch: {
+                input: { $toString: { $ifNull: ['$user.number', ''] } },
+                regex: search,
+                options: 'i',
+              },
+            },
+          },
+        ],
+      },
+    });
+  }
 
-  // 🔍 DEBUG
-  console.log('[wishlist] adminListAll →', {
-    total: responseData.total,
-    page: responseData.page,
-    dataLength: responseData.data.length,
+  // Project fields
+  pipeline.push({
+    $project: {
+      _id: 0,
+      userId: '$userId',
+      userName: '$user.username',
+      userEmail: '$user.email',
+      userNumber: '$user.number',
+      itemCount: { $size: { $ifNull: ['$items', []] } },
+      lastAdded: '$updatedAt',
+    },
   });
 
-  return responseData;
+  // Sort + paginate
+  pipeline.push({ $sort: { lastAdded: -1 } });
+  pipeline.push({
+    $facet: {
+      meta: [{ $count: 'total' }],
+      data: [{ $skip: (page - 1) * limit }, { $limit: limit }],
+    },
+  });
+
+  const result = await Wishlist.aggregate(pipeline);
+  const out = result[0];
+
+  return {
+    success: true,
+    total: out.meta[0]?.total || 0,
+    page,
+    limit,
+    data: out.data,
+  };
 }
 
-/* GET /api/wishlist/admin/user/:userId — single user's full wishlist with product info */
+/* GET /api/wishlist/admin/user/:userId */
 export async function adminGetUserWishlist(userId: string): Promise<unknown> {
   if (!Types.ObjectId.isValid(userId)) {
     throw new BadRequestError('Invalid userId');
   }
 
-  const items = await Wishlist.find({ userId })
+  // Nested populate — items.productId
+  const wishlist = await Wishlist.findOne({ userId })
     .populate({
-      path: 'productId',
+      path: 'items.productId',
       select: 'title slug price thumbnail discountPrice discountType',
     })
-    .sort({ createdAt: -1 })
     .lean();
 
-  // 🔍 DEBUG — server logs me dekhne ke liye
-  console.log(`[wishlist] admin fetch for ${userId}, items: ${items.length}`);
-  if (items.length > 0) {
-    console.log('[wishlist] first item productId:', items[0].productId);
+  if (!wishlist) {
+    return { success: true, items: [] };
   }
+
+  // Sort items by addedAt desc
+  const items = (wishlist.items || []).sort((a: any, b: any) => {
+    const ta = new Date(a.addedAt).getTime();
+    const tb = new Date(b.addedAt).getTime();
+    return tb - ta;
+  });
 
   return { success: true, items };
 }

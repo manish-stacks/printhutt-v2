@@ -201,9 +201,10 @@ const SeCartContent = () => {
                     </td>
                     <td className="border p-2">{cart?.productId?.title || "N/A"}</td>
                     <td className="border p-2">
-                      {cart?.createdAt
-                        ? new Date(cart.createdAt).toLocaleDateString("en-US")
-                        : "N/A"}
+                      {new Date(cart.createdAt).toLocaleDateString('en-IN', {
+                        day: '2-digit', month: 'short', year: 'numeric',
+                      })}
+
                     </td>
                   </tr>
                 );
