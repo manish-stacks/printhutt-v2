@@ -6,7 +6,7 @@ import SeCartContent from './SeCartContent';
 
 export default function SeCartPage() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<Load ingSpinner />}>
       <SeCartContent />
     </Suspense>
   );
