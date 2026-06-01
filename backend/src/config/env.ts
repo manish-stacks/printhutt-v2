@@ -28,9 +28,7 @@ const envSchema = z.object({
   COOKIE_SECURE: z.coerce.boolean().default(false),
   COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
 
-  CORS_ORIGIN: z.string().default(
-    'http://localhost:3000,https://printhutt.com,https://services.printhutt.com'
-  ),
+  CORS_ORIGIN: z.string().default('http://localhost:3000'),
 
   AWS_REGION: z.string().optional(),
   AWS_ACCESS_KEY_ID: z.string().optional(),
@@ -68,3 +66,12 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 export type Env = typeof env;
+
+
+export const allowedOrigins = [
+  'http://localhost:3000',          // dev
+  'http://localhost:3001',          // dev alt
+  'https://printhutt.com',          // production (no www)
+  'https://www.printhutt.com',      // production (with www) ← ye missing tha
+  'https://printhutt.vercel.app',   // staging (if any)
+];
