@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: "printhutt",
+      name: "printhutt-client",
       script: "npm",
       args: "start",
       cwd: "/root/printhutt-v2/frontend",
