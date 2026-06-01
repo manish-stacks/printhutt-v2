@@ -78,7 +78,7 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
     [selectedVariantId, product?.varient]
   );
 
-  console.log('Selected Variant:', product);
+  // console.log('Selected Variant:', product);
 
   const activePrice = useMemo(() => {
     if (selectedVariant?.price) {

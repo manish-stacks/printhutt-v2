@@ -46,11 +46,14 @@ export const createTemplate = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const updateTemplate = asyncHandler(async (req: Request, res: Response) => {
-  return sendOk(res, { success: true, template: await service.updateTemplate(req.params.id, req.body) });
+  return sendOk(res, {
+    success: true,
+    template: await service.updateTemplate(String(req.params.id), req.body),
+  });
 });
 
 export const deleteTemplate = asyncHandler(async (req: Request, res: Response) => {
-  return sendOk(res, await service.deleteTemplate(req.params.id) as any);
+  return sendOk(res, (await service.deleteTemplate(String(req.params.id))) as any);
 });
 
 export const triggerOrderPending = asyncHandler(async (_req: Request, res: Response) => {

@@ -1,15 +1,7 @@
-/**
- * Wishlist service. Direct port of:
- *   src/app/api/v1/wishlist/route.ts        POST + GET
- *   src/app/api/v1/wishlist/[id]/route.ts   DELETE
- *
- * Behaviour preserved exactly — including the "soft" response when the
- * GET endpoint is called without a session (returns success:false +
- * data:[] with HTTP 200 instead of 401, so the frontend can treat an
- * anonymous wishlist as empty without UX errors).
- */
 import { BadRequestError, NotFoundError } from '@/utils/errors';
 import { wishlistRepo } from './wishlist.repository';
+import Wishlist from '@/db/models/wishlistModel';
+import { Types } from 'mongoose';
 
 /* ──────────────── 1. Add to wishlist ──────────────── */
 export async function addToWishlist(

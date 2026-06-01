@@ -37,10 +37,18 @@ export function getQueueEvents(name: QueueName): QueueEvents {
 }
 
 // Convenience producers
-export interface EmailJobData {
-  type: 'verify' | 'reset' | 'order-confirm' | 'order-status' | 'otp-email' | 'otp-sms';
+export type EmailJobData = {
+  type:
+    | 'verify'
+    | 'reset'
+    | 'order-confirm'
+    | 'order-status'
+    | 'otp-email'
+    | 'otp-sms'
+    | 'custom-email'    // ← NEW
+    | 'custom-sms';      // ← NEW
   payload: Record<string, unknown>;
-}
+};
 
 export async function enqueueEmail(data: EmailJobData): Promise<void> {
   await getQueue(QueueNames.email).add(data.type, data);

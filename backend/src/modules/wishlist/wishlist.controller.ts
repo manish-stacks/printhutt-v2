@@ -49,6 +49,6 @@ export const adminListAll = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const adminGetUserWishlist = asyncHandler(async (req: Request, res: Response) => {
-  const data = await service.adminGetUserWishlist(req.params.userId);
+  const data = await service.adminGetUserWishlist(String(req.params.userId));
   return sendOk(res, data as any);
 });

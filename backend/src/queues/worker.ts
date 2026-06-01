@@ -6,7 +6,6 @@
 
 import { ConnectionOptions, Queue, Worker } from 'bullmq';
 import { env } from '../config/env';
-import { logger } from '../config/logger';
 import { connectDB } from '../db/connection';
 import { createBullConnection } from '../redis/client';
 import { QueueNames, getQueue } from './queues';
@@ -23,6 +22,7 @@ import {
   processOrderPendingReminders,
   processWishlistAbandoned,
 } from '../modules/messaging/messaging.service';
+import { logger } from '@/config/logger';
 
 async function main(): Promise<void> {
   await connectDB();
