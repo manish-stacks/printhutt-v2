@@ -158,9 +158,23 @@ export async function bySlug(slug: string): Promise<unknown> {
   const blog = await blogsRepo.findBySlug(slug);
   if (!blog) throw new NotFoundError('Blog not found');
 
-  const relatedBlogs = await blogsRepo.findRelatedBlogs(
-    (blog.category as { _id: { toString(): string } })._id.toString(),
-    (blog._id as { toString(): string }).toString()
-  );
+  const b = blog as {
+    _id: { toString(): string };
+    category?: { _id?: { toString(): string } } | string | null;
+  };
+
+  let categoryId: string | null = null;
+  if (b.category) {
+    if (typeof b.category === 'string') {
+      categoryId = b.category;
+    } else if (b.category._id) {
+      categoryId = b.category._id.toString();
+    }
+  }
+
+  const relatedBlogs = categoryId
+    ? await blogsRepo.findRelatedBlogs(categoryId, b._id.toString()).catch(() => [])
+    : [];
+
   return { success: true, blogPost: blog, relatedBlogs };
 }

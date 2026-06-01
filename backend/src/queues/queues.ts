@@ -1,4 +1,4 @@
-import { Queue, QueueEvents } from 'bullmq';
+import { ConnectionOptions, Queue, QueueEvents } from 'bullmq';
 import { createBullConnection } from '../redis/client';
 
 export const QueueNames = {
@@ -19,7 +19,7 @@ export function getQueue(name: QueueName): Queue {
   let q = queues.get(name);
   if (!q) {
     q = new Queue(name, {
-      connection: createBullConnection(),
+      connection: createBullConnection() as unknown as ConnectionOptions,
       defaultJobOptions: {
         attempts: 3,
         backoff: { type: 'exponential', delay: 2000 },
@@ -33,7 +33,7 @@ export function getQueue(name: QueueName): Queue {
 }
 
 export function getQueueEvents(name: QueueName): QueueEvents {
-  return new QueueEvents(name, { connection: createBullConnection() });
+  return new QueueEvents(name, { connection: createBullConnection() as unknown as ConnectionOptions });
 }
 
 // Convenience producers

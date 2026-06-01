@@ -1,6 +1,7 @@
 import { BadRequestError, NotFoundError } from '@/utils/errors';
 import { userCartRepo } from './usercart.repository';
 import type { AddItemDTO, MergeDTO } from './usercart.validation';
+import { Types } from 'mongoose';
 
 /* Same item check — productId + variantId + size match */
 const sameItem = (
@@ -50,7 +51,7 @@ export async function updateQty(
   const cart = await userCartRepo.findByUser(userId);
   if (!cart) throw new NotFoundError('Cart not found');
 
-  const item = cart.items.id(itemId);
+  const item = (cart.items as unknown as Types.DocumentArray<any>).id(itemId);
   if (!item) throw new NotFoundError('Item not found in cart');
   item.quantity = quantity;
   await cart.save();
@@ -60,8 +61,7 @@ export async function updateQty(
 export async function removeItem(userId: string, itemId: string): Promise<unknown> {
   const cart = await userCartRepo.findByUser(userId);
   if (!cart) throw new NotFoundError('Cart not found');
-
-  const item = cart.items.id(itemId);
+  const item = (cart.items as unknown as Types.DocumentArray<any>).id(itemId);
   if (!item) throw new NotFoundError('Item not found in cart');
   item.deleteOne();
   await cart.save();

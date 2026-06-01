@@ -51,7 +51,7 @@ export const blogsRepo = {
       .lean(),
 
   findRelatedBlogs: (categoryId: string, excludeId: string) =>
-    Blog.find({ category: categoryId, _id: { $ne: excludeId } })  
+    Blog.find({ category: categoryId, _id: { $ne: excludeId } })
       .populate({ path: 'category', model: BlogCategory })
       .sort({ createdAt: -1 })
       .limit(3)

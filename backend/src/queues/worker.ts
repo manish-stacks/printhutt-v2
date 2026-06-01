@@ -5,7 +5,7 @@
  *
  * One process can host all workers, or split per-queue for scaling.
  */
-import { Worker } from 'bullmq';
+import { ConnectionOptions, Worker } from 'bullmq';
 import { env } from '../config/env';
 import { logger } from '../config/logger';
 import { connectDB } from '../db/connection';
@@ -24,7 +24,7 @@ async function main(): Promise<void> {
 
   const workers: Worker[] = [
     new Worker(QueueNames.email, emailProcessor, {
-      connection: createBullConnection(),
+      connection: createBullConnection() as unknown as ConnectionOptions,
       concurrency: 10,
     }),
     new Worker(
@@ -35,10 +35,10 @@ async function main(): Promise<void> {
         }
         return orderProcessor(job);
       },
-      { connection: createBullConnection(), concurrency: 5 }
+      { connection: createBullConnection() as unknown as ConnectionOptions, concurrency: 5 }
     ),
     new Worker(QueueNames.cacheCleanup, cacheCleanupProcessor, {
-      connection: createBullConnection(),
+      connection: createBullConnection() as unknown as ConnectionOptions,
       concurrency: 2,
     }),
   ];

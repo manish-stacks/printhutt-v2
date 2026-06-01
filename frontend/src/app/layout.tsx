@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import MainLayout from "@/layout/Main";
 import { getSiteSettings } from "@/lib/getSettings";
 import "./globals.css";
@@ -14,14 +14,23 @@ import { ToastContainer } from 'react-toastify';
 import Script from "next/script";
 import 'quill/dist/quill.core.css';
 
-// Dynamic metadata — DB se aata hai
+/* ─── Viewport (themeColor + responsive) ─── */
+export async function generateViewport(): Promise<Viewport> {
+  const s = await getSiteSettings();
+  return {
+    themeColor: s.themeColor || "#3d4750",
+    width: 'device-width',
+    initialScale: 1,
+  };
+}
+
+/* ─── Dynamic metadata from DB ─── */
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings();
   return {
     title: s.defaultTitle || s.siteName || "PrintHutt",
     description: s.defaultDescription || "",
     keywords: s.defaultKeywords,
-    themeColor: s.themeColor || "#3d4750",
     icons: s.favicon?.url ? { icon: s.favicon.url } : undefined,
     openGraph: {
       title: s.defaultTitle || s.siteName,

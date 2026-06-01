@@ -63,7 +63,7 @@ export async function generateSitemap(): Promise<string> {
       priority: 0.8,
     });
   }
-  for (const c of categories as Array<{ slug: string; updatedAt: Date }>) {
+  for (const c of categories as unknown as Array<{ slug: string; updatedAt: Date }>) {
     urls.push({
       loc: `${baseClean}/category/${c.slug}`,
       lastmod: new Date(c.updatedAt).toISOString().split('T')[0],
@@ -85,7 +85,7 @@ export async function generateSitemap(): Promise<string> {
       });
     }
   }
-  for (const b of blogs as Array<{ slug: string; updatedAt: Date }>) {
+  for (const b of blogs as unknown as Array<{ slug: string; updatedAt: Date }>) {
     urls.push({
       loc: `${baseClean}/blog-details/${b.slug}`,
       lastmod: new Date(b.updatedAt).toISOString().split('T')[0],
