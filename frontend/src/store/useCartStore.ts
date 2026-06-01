@@ -65,7 +65,7 @@ const createChunkedStorage = (): StateStorage => {
           }
         }
       } catch {
-        try { sessionStorage.setItem(key, value); } catch {}
+        try { sessionStorage.setItem(key, value); } catch { }
       }
     },
     removeItem: (key) => {
@@ -77,7 +77,7 @@ const createChunkedStorage = (): StateStorage => {
           localStorage.removeItem(`${key}:info`);
         }
         localStorage.removeItem(key);
-      } catch {}
+      } catch { }
     },
   };
 };
@@ -123,9 +123,11 @@ const scheduleDbSync = (items: CartItem[]) => {
   if (!isUserLoggedIn()) return;
   if (syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(() => {
-    const payload = items.map(toDbPayload);
+    const persistableItems = items.filter((item) => !(item as any).isGift);
+
+    const payload = persistableItems.map(toDbPayload);
     userCartService.sync(payload).catch((e) => console.error('DB cart sync failed', e));
-  }, 600); // 600ms debounce — multiple rapid changes ek hi call me
+  }, 600);
 };
 
 /* ---------- store ---------- */
@@ -145,7 +147,10 @@ export const useCartStore = create<CartState>()(
                 : item
             );
           } else {
-            add_product(product._id).catch(() => {});
+            // 🎁 Gift items me analytics ping skip karo
+            if (!(product as any).isGift) {
+              add_product(product._id).catch(() => { });
+            }
             newItems = [...state.items, { ...product, quantity } as CartItem];
           }
           scheduleDbSync(newItems);

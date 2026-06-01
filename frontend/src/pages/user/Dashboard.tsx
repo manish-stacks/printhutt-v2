@@ -30,7 +30,7 @@ const Dashboard = () => {
   const userData = useUserStore((state) => state.userDetails);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
-
+console.log("User details in Dashboard:", userData); // DEBUG
   useEffect(() => {
     (async () => {
       try {

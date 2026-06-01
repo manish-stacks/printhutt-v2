@@ -99,6 +99,7 @@ export const useUserStore = create<UserState>()(
                     // axiosInstance interceptor unwraps response.data,
                     // so this resolves to the body directly.
                     const data = await axiosInstance.post('/auth/me') as unknown as MeResponse;
+                    // console.log("Fetched user details:", data); // DEBUG
                     if (data?.success && data?.user) {
                         set({
                             isLoggedIn: true,
@@ -106,6 +107,8 @@ export const useUserStore = create<UserState>()(
                                 id: data.user.id ?? data.user._id ?? '',
                                 username: data.user.username,
                                 email: data.user.email,
+                                number: data.user.number,
+                                isVerified: data.user.isVerified,
                             },
                         });
                     } else {

@@ -42,6 +42,7 @@ interface UnwrappedAxios extends Omit<AxiosInstance, 'get' | 'post' | 'put' | 'p
 const _axios = axios.create({
   baseURL: API_URL,
   withCredentials: true,
+  timeout: 30000,
 });
 
 export const axiosInstance = _axios as unknown as UnwrappedAxios;

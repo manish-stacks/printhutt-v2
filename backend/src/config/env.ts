@@ -71,6 +71,5 @@ export const allowedOrigins = [
   'http://localhost:3000',          // dev
   'http://localhost:3001',          // dev alt
   'https://printhutt.com',          // production (no www)
-  'https://www.printhutt.com',      // production (with www) ← ye missing tha
-  'https://printhutt.vercel.app',   // staging (if any)
+  'https://www.printhutt.com',      // production (with www)
 ];

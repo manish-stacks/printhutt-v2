@@ -5,13 +5,14 @@ import Aos from "aos";
 import AppLayout from "./App";
 import AdminLayout from "./Admin";
 import { APP_VERSION } from "@/config/appVersion";
+import { useFreeGiftGuard } from "@/hooks/useFreeGiftGuard";
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 const Layout = ({ children }: LayoutProps) => {
-
+  useFreeGiftGuard();
   const hasRun = useRef(false);
 
   useEffect(() => {
@@ -22,7 +23,7 @@ const Layout = ({ children }: LayoutProps) => {
 
     if (storedVersion !== APP_VERSION) {
 
-      // 🔥 FULL RESET
+      //  FULL RESET
       localStorage.clear();
       sessionStorage.clear();
 

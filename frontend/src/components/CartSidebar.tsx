@@ -16,13 +16,10 @@ import {
 } from "react-icons/ri";
 import { toast } from "react-toastify";
 import CheckOutPopUpV2 from "./CheckOutPopUpV2";
-import confetti from "canvas-confetti";
 import GiftCustomizeModal from "./GiftCustomizeModal";
-import { Product } from "@/lib/types/product";
-import { productService } from "@/_services/common/productService";
+import { FREE_THRESHOLD } from "@/lib/constants/gift";
 
-const FREE_THRESHOLD = 1000;
-const FREE_GIFT_ID = "67b4756b5e05b7be01d85ea2";
+
 
 const CartSidebar = ({ onClose }: { onClose: () => void }) => {
   const popupRef = useRef<HTMLDivElement | null>(null);
@@ -33,57 +30,12 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
   });
   const { items, updateQuantity, removeFromCart, getTotalPrice } = useCartStore();
   const [showMailModal, setShowMailModal] = useState(false);
-  const addToCart = useCartStore((state) => state.addToCart);
   const [showGiftModal, setShowGiftModal] = useState(false);
-  const [product, setProduct] = useState<Product>();
 
   /* ── Update totals when items change ── */
   useEffect(() => {
     setTotalPrice(getTotalPrice());
   }, [items]);
-
-  /* ── Fetch free-gift product once ── */
-  useEffect(() => {
-    (async () => {
-      try {
-        const resp: any = await productService.getById(FREE_GIFT_ID);
-        setProduct(resp?.product || resp);
-      } catch (e) {
-        console.error("Error fetching free-gift product:", e);
-      }
-    })();
-  }, []);
-
-  /* ── Free gift auto-add / remove on threshold cross ── */
-  useEffect(() => {
-    if (!product) return;
-    const { discountPrice = 0 } = getTotalPrice();
-    const hasFreeGift = items.some((i) => i._id === FREE_GIFT_ID);
-
-    if (discountPrice >= FREE_THRESHOLD && !hasFreeGift) {
-      addToCart(
-        {
-          ...product,
-          thumbnail: {
-            ...product.thumbnail,
-            url: "https://cdn.shopify.com/app-store/listing_images/08313cab5d04fcc9a59ffc39eefa1521/icon/CPuHmrL0lu8CEAE=.png",
-          },
-          title: "Free Acrylic Photo Keychain With NFC Tag",
-          price: 0,
-          discountPrice: 0,
-          isGift: true,
-          quantity: 1,
-        },
-        1
-      );
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-      toast.success("🎁 Free gift unlocked!");
-    }
-
-    if (discountPrice < FREE_THRESHOLD && hasFreeGift) {
-      removeFromCart(FREE_GIFT_ID);
-    }
-  }, [items, product]);
 
   /* ── ESC + scroll lock ── */
   useEffect(() => {

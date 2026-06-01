@@ -185,6 +185,7 @@ const Login = () => {
 
       if (data?.role === 'user') {
         router.push('/user/dashboard');
+        return;
       } else {
         router.push('/login');
       }

@@ -27,6 +27,7 @@ const razorpay = new Razorpay({
   key_secret: env.RAZORPAY_KEY_SECRET ?? '',
 });
 
+
 /* ───────────────── PhonePe ───────────────── */
 export async function phonePeInitiate(body: {
   orderId: string;
@@ -34,7 +35,7 @@ export async function phonePeInitiate(body: {
   transactionId: string;
   userDetails?: { name?: string; email?: string; phone?: string };
 }): Promise<Record<string, unknown>> {
-  const callbackUrl = `${env.APP_URL}/api/payment/callback`;
+  const callbackUrl = `${env.API_URL}/api/payment/callback`;
   const response = await phonePe.initiatePayment(
     body.amount,
     body.transactionId,
