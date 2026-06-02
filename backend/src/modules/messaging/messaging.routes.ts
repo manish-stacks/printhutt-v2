@@ -15,10 +15,10 @@ router.get('/logs/user/:userId', controller.getUserLogs);
 router.get('/logs', controller.listLogs);
 
 // Templates
-router.get('/templates', controller.listTemplates);
-router.post('/templates', controller.createTemplate);
-router.put('/templates/:id', controller.updateTemplate);
-router.delete('/templates/:id', controller.deleteTemplate);
+// router.get('/templates', controller.listTemplates);
+// router.post('/templates', controller.createTemplate);
+// router.put('/templates/:id', controller.updateTemplate);
+// router.delete('/templates/:id', controller.deleteTemplate);
 
 // Manual trigger (for testing)
 router.post('/trigger/order-pending', controller.triggerOrderPending);

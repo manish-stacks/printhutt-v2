@@ -153,7 +153,9 @@ export async function adminGetUserWishlist(userId: string): Promise<unknown> {
   }
 
   // Sort items by addedAt desc
-  const items = (wishlist.items || []).sort((a: any, b: any) => {
+  const items = (
+    (wishlist as { items?: any[] })?.items || []
+  ).sort((a, b) => {
     const ta = new Date(a.addedAt).getTime();
     const tb = new Date(b.addedAt).getTime();
     return tb - ta;

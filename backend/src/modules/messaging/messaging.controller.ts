@@ -37,24 +37,24 @@ export const listLogs = asyncHandler(async (req: Request, res: Response) => {
   return sendOk(res, { success: true, total, logs });
 });
 
-export const listTemplates = asyncHandler(async (_req: Request, res: Response) => {
-  return sendOk(res, { success: true, templates: await service.listTemplates() });
-});
+// export const listTemplates = asyncHandler(async (_req: Request, res: Response) => {
+//   return sendOk(res, { success: true, templates: await service.listTemplates() });
+// });
 
-export const createTemplate = asyncHandler(async (req: Request, res: Response) => {
-  return sendCreated(res, { success: true, template: await service.createTemplate(req.body) });
-});
+// export const createTemplate = asyncHandler(async (req: Request, res: Response) => {
+//   return sendCreated(res, { success: true, template: await service.createTemplate(req.body) });
+// });
 
-export const updateTemplate = asyncHandler(async (req: Request, res: Response) => {
-  return sendOk(res, {
-    success: true,
-    template: await service.updateTemplate(String(req.params.id), req.body),
-  });
-});
+// export const updateTemplate = asyncHandler(async (req: Request, res: Response) => {
+//   return sendOk(res, {
+//     success: true,
+//     template: await service.updateTemplate(String(req.params.id), req.body),
+//   });
+// });
 
-export const deleteTemplate = asyncHandler(async (req: Request, res: Response) => {
-  return sendOk(res, (await service.deleteTemplate(String(req.params.id))) as any);
-});
+// export const deleteTemplate = asyncHandler(async (req: Request, res: Response) => {
+//   return sendOk(res, (await service.deleteTemplate(String(req.params.id))) as any);
+// });
 
 export const triggerOrderPending = asyncHandler(async (_req: Request, res: Response) => {
   return sendOk(res, await service.processOrderPendingReminders() as any);
