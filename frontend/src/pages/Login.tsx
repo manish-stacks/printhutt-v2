@@ -398,7 +398,7 @@ const Login = () => {
                           handleKeyDown(e, index)
                         }
                         onPaste={handlePaste}
-                        className="w-12 h-14 rounded-xl border-2 border-gray-300 text-center text-2xl font-bold focus:border-blue-500 focus:outline-none"
+                        className="w-10 h-12 rounded-xl border-2 border-gray-300 text-center text-2xl font-bold focus:border-blue-500 focus:outline-none"
                       />
                     ))}
                   </div>

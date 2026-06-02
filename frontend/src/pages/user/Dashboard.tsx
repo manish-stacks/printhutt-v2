@@ -28,10 +28,16 @@ interface DashboardData {
 
 const Dashboard = () => {
   const userData = useUserStore((state) => state.userDetails);
+  const logout = useUserStore((state) => state.logout);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
   // console.log("User details in Dashboard:", userData); // DEBUG
   useEffect(() => {
+    if (!userData) {
+      logout();
+      return;
+    }
+    
     (async () => {
       try {
         const res: any = await axiosInstance.get('/users/me');

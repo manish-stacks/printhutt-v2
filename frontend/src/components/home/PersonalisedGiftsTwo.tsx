@@ -42,13 +42,9 @@ function PersonalizedGiftsTwo() {
         {/* Heading */}
         <div className="text-center mb-10 sm:mb-14">
 
-          <span className="inline-flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[11px] uppercase tracking-[0.2em] font-bold px-4 py-2 rounded-full mb-4">
-            <RiSparkling2Line size={14} />
-            Customized Collection
-          </span>
 
           <h2
-            className="text-3xl sm:text-5xl font-bold text-white leading-tight"
+            className="text-2xl sm:text-5xl font-bold text-white leading-tight"
             style={{
               fontFamily: "'Cormorant Garamond', serif",
             }}
@@ -56,7 +52,7 @@ function PersonalizedGiftsTwo() {
             Personalized Gifts Crafted With Love
           </h2>
 
-          <p className="text-white/60 text-sm sm:text-base max-w-2xl mx-auto mt-4 leading-relaxed">
+          <p className="text-white/60 text-sm sm:text-base max-w-2xl mx-auto mt-4 leading-relaxed hidden lg:block md:block">
             Discover premium customized gifts, acrylic frames,
             LED lamps and handcrafted personalized products
             made for unforgettable moments.
@@ -65,7 +61,7 @@ function PersonalizedGiftsTwo() {
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-5">
 
           {
             !loading ? (
@@ -76,7 +72,7 @@ function PersonalizedGiftsTwo() {
                 >
                   <Link
                     href={product.link}
-                    className="block relative overflow-hidden rounded-[28px] bg-[#13132a] border border-white/10 hover:border-amber-400/40 transition-all duration-500 shadow-xl hover:shadow-amber-400/10 hover:-translate-y-2"
+                    className="block relative overflow-hidden rounded-[10px] lg:rounded-[15px] md:rounded-[15px] bg-[#13132a] border border-white/10 hover:border-amber-400/40 transition-all duration-500 shadow-xl hover:shadow-amber-400/10 hover:-translate-y-2"
                   >
                     <div className="relative aspect-[4/4.8] overflow-hidden">
 

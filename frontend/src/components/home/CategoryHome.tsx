@@ -47,13 +47,13 @@ const CategoryHome = () => {
           {/* Heading */}
           <div className="text-center mb-10 sm:mb-14">
 
-            <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] font-bold text-amber-500 bg-amber-400/10 border border-amber-400/20 px-4 py-2 rounded-full mb-4">
+            <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] font-bold text-amber-500 bg-amber-400/10 border border-amber-400/20 px-4 py-2 rounded-full mb-4 hidden lg:block md:block">
               <RiSparkling2Line size={14} />
               Featured Collection
             </span>
 
             <h2
-              className="text-3xl sm:text-5xl font-bold text-[#0d0d1a] leading-tight"
+              className="text-3xl sm:text-5xl font-bold text-[#0d0d1a] leading-tight "
               style={{
                 fontFamily: "'Cormorant Garamond', serif",
               }}
@@ -61,14 +61,14 @@ const CategoryHome = () => {
               Explore Premium Neon
             </h2>
 
-            <p className="text-[#0d0d1a]/60 text-sm sm:text-base mt-4 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-[#0d0d1a]/60 text-sm sm:text-base mt-4 max-w-2xl mx-auto leading-relaxed hidden lg:block md:block">
               Discover handcrafted premium neon signs, custom LED lamps,
               acrylic frames and personalised glowing gifts.
             </p>
           </div>
 
           {/* Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-3 gap-5">
 
             {products.map((product, index) => (
               <motion.div
@@ -85,7 +85,7 @@ const CategoryHome = () => {
                   href={product.url}
                   className="group block"
                 >
-                  <div className="relative overflow-hidden rounded-[28px] bg-[#13132a] border border-white/10 hover:border-amber-400/40 transition-all duration-500 shadow-xl hover:shadow-amber-400/10 hover:-translate-y-2">
+                  <div className="relative overflow-hidden rounded-[10px] lg:rounded-[15px] md:rounded-[15px] bg-[#13132a] border border-white/10 hover:border-amber-400/40 transition-all duration-500 shadow-xl hover:shadow-amber-400/10 hover:-translate-y-2">
 
                     {/* Image */}
                     <div className="relative aspect-[4/4.5] overflow-hidden">

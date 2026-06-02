@@ -49,13 +49,9 @@ function PersonalizedGifts() {
         {/* Heading */}
         <div className="text-center mb-10 sm:mb-14">
 
-          <span className="inline-flex items-center gap-2 bg-amber-400/10 border border-amber-400/20 text-amber-500 text-[11px] uppercase tracking-[0.2em] font-bold px-4 py-2 rounded-full mb-4">
-            <RiGift2Line size={14} />
-            Personalized Collection
-          </span>
-
+          
           <h2
-            className="text-3xl sm:text-5xl font-bold text-[#0d0d1a] leading-tight"
+            className="text-2xl sm:text-5xl font-bold text-[#0d0d1a] leading-tight"
             style={{
               fontFamily: "'Cormorant Garamond', serif",
             }}
@@ -63,7 +59,7 @@ function PersonalizedGifts() {
             Gifts That Glow With Emotion
           </h2>
 
-          <p className="text-[#0d0d1a]/60 text-sm sm:text-base max-w-2xl mx-auto mt-4 leading-relaxed">
+          <p className="text-[#0d0d1a]/60 text-sm sm:text-base max-w-2xl mx-auto mt-4 leading-relaxed hidden lg:block md:block">
             Create unforgettable memories with personalized LED lamps,
             neon signs, acrylic frames and handcrafted glowing gifts.
           </p>
@@ -71,7 +67,7 @@ function PersonalizedGifts() {
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-5">
 
           {
             !loading ? (
@@ -84,7 +80,7 @@ function PersonalizedGifts() {
 
                   <Link
                     href={product.link}
-                    className="block relative overflow-hidden rounded-[28px] bg-[#13132a] border border-white/10 hover:border-amber-400/40 transition-all duration-500 shadow-xl hover:shadow-amber-400/10 hover:-translate-y-2"
+                    className="block relative overflow-hidden rounded-[10px] lg:rounded-[15px] md:rounded-[15px] bg-[#13132a] border border-white/10 hover:border-amber-400/40 transition-all duration-500 shadow-xl hover:shadow-amber-400/10 hover:-translate-y-2"
                   >
 
                     {/* Media */}

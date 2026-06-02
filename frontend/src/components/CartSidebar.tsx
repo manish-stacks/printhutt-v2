@@ -88,12 +88,14 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-[17]"
         onClick={onClose}
+        style={{ height: '100dvh' }}
       />
 
       {/* Sidebar */}
       <div
         ref={popupRef}
-        className="fixed top-0 right-0 h-screen w-full max-w-[440px] bg-white z-[99] shadow-2xl flex flex-col animate-slide-in"
+        className="fixed inset-y-0 right-0 w-full max-w-[440px] bg-white z-[99] shadow-2xl flex flex-col animate-slide-in"
+        style={{ height: '100dvh' }}
       >
         {/* ─── HEADER ─── */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
@@ -165,11 +167,10 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
               {items.map((item) => (
                 <li
                   key={item._id}
-                  className={`relative rounded-2xl p-3 border transition ${
-                    item.isGift
-                      ? "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200"
-                      : "bg-gray-50 border-gray-100 hover:bg-white hover:shadow-sm"
-                  }`}
+                  className={`relative rounded-2xl p-3 border transition ${item.isGift
+                    ? "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200"
+                    : "bg-gray-50 border-gray-100 hover:bg-white hover:shadow-sm"
+                    }`}
                 >
                   <div className="flex gap-3">
                     {/* Thumbnail */}
@@ -277,7 +278,10 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
 
         {/* ─── FOOTER (totals + checkout) ─── */}
         {items.length > 0 && (
-          <div className="border-t border-gray-100 px-5 py-4 bg-white flex-shrink-0">
+          <div
+            className="border-t border-gray-100 px-5 pt-4 bg-white flex-shrink-0"
+            style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+          >
             {/* Totals */}
             <div className="space-y-1.5 mb-4 text-sm">
               <div className="flex justify-between">
