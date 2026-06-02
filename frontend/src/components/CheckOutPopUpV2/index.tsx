@@ -343,7 +343,6 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                 window.location.reload();
                 return;
             }
-
             setError(errMsg || 'Something Went Wrong');
         } finally {
             setIsSubmitting(false);
