@@ -12,6 +12,7 @@ import {
 } from "react-icons/ri";
 import { useCartStore } from "@/store/useCartStore";
 import { toast } from "react-toastify";
+import { compressImage } from "@/utils/image-compress";
 
 const FREE_GIFT_ID = "67b4756b5e05b7be01d85ea2";
 const MAX_SIZE_MB = 10;
@@ -40,21 +41,30 @@ export default function GiftCustomizeModal({ onClose }: { onClose: () => void })
     };
   }, [onClose]);
 
-  /* ── File validator + reader ── */
-  const processFile = (file: File) => {
+  
+  /* ─── File validator + compressor ─── */
+  const processFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload an image file");
       return;
     }
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      toast.error(`File size must be under ${MAX_SIZE_MB}MB`);
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File too large (max 5MB). Please use a smaller image.");
       return;
     }
+    try {
+      const result = await compressImage(file, { maxWidth: 1600, quality: 0.85, maxRawMB: 5 });
+      setFileObj(result.file);
+      setPreviewImage(result.dataUrl);
 
-    setFileObj(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setPreviewImage(reader.result as string);
-    reader.readAsDataURL(file);
+      // Optional log — see compression result
+      console.log(
+        `[compress] ${(file.size / 1024).toFixed(0)}KB → ${(result.compressedSize / 1024).toFixed(0)}KB`
+      );
+    } catch (e) {
+      console.error("Compression failed:", e);
+      toast.error("Image processing failed");
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,13 +172,12 @@ export default function GiftCustomizeModal({ onClose }: { onClose: () => void })
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => !previewImage && fileInputRef.current?.click()}
-            className={`relative w-full aspect-[4/3] rounded-2xl border-2 border-dashed transition-all overflow-hidden ${
-              isDragging
-                ? "border-purple-500 bg-purple-50/50 scale-[0.99]"
-                : previewImage
+            className={`relative w-full aspect-[4/3] rounded-2xl border-2 border-dashed transition-all overflow-hidden ${isDragging
+              ? "border-purple-500 bg-purple-50/50 scale-[0.99]"
+              : previewImage
                 ? "border-transparent bg-gray-50"
                 : "border-gray-300 bg-gray-50 hover:border-purple-400 hover:bg-purple-50/30 cursor-pointer"
-            }`}
+              }`}
           >
             {previewImage ? (
               <>

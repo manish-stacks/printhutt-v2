@@ -285,6 +285,39 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             paymentPartner,
         };
 
+        /* ─── 🔒 Pre-flight payload size check ─── */
+        const MAX_PAYLOAD_MB = 12; // safe under 15MB backend limit
+        let payloadSize = 0;
+        try {
+            payloadSize = new Blob([JSON.stringify(order)]).size;
+        } catch {
+            payloadSize = 0;
+        }
+        const sizeMB = payloadSize / (1024 * 1024);
+
+        if (payloadSize > MAX_PAYLOAD_MB * 1024 * 1024) {
+            // Find heaviest items to mention by name
+            const heavyItems = order.items
+                .map((it) => ({
+                    name: it.name,
+                    size: new Blob([JSON.stringify(it)]).size,
+                }))
+                .sort((a, b) => b.size - a.size)
+                .filter((it) => it.size > 500 * 1024) // > 500KB
+                .slice(0, 3);
+
+            const heavyNames = heavyItems
+                .map((h) => h.name.replace(/<[^>]+>/g, '').slice(0, 40))
+                .join(', ');
+
+            const msg = `Your cart has very large images (${sizeMB.toFixed(1)}MB total). Please upload smaller photos${heavyNames ? ` for: ${heavyNames}` : ''}.`;
+
+            setError(msg);
+            toast.error(msg, { autoClose: 8000 });
+            console.warn('[checkout] Payload too large', { sizeMB, heavyItems });
+            return;
+        }
+
         try {
             setIsSubmitting(true);
             const response: any = await create_a_new_order(order);
@@ -294,11 +327,24 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                 setError(response.message || 'Something went wrong');
             }
         } catch (error: any) {
-            if (error.message === "Unauthorized") {
+            /* ─── 🔥 Handle 413 with friendly message ─── */
+            const status = error?.response?.status;
+            const errMsg = error?.message || error?.response?.data?.message || '';
+
+            if (status === 413 || /payload too large|request entity too large|too large/i.test(errMsg)) {
+                const msg = "Order failed: Your photos are too large. Please re-upload smaller images and try again.";
+                setError(msg);
+                toast.error(msg, { autoClose: 8000 });
+                return;
+            }
+
+            if (errMsg === "Unauthorized") {
                 window.localStorage.removeItem('user-store');
                 window.location.reload();
+                return;
             }
-            setError(error.message || 'Something Went Wrong');
+
+            setError(errMsg || 'Something Went Wrong');
         } finally {
             setIsSubmitting(false);
         }
