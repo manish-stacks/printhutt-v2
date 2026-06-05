@@ -3,6 +3,9 @@ import { userCartRepo } from './usercart.repository';
 import type { AddItemDTO, MergeDTO } from './usercart.validation';
 import { Types } from 'mongoose';
 import UserCart from '@/db/models/userCartModel';
+import { logger } from '@/config/logger';
+
+const MAX_ITEM_SIZE_BYTES = 500 * 1024; // 500KB per item
 
 /* Same item check — productId + variantId + size match */
 const sameItem = (
@@ -95,17 +98,25 @@ export async function mergeCart(userId: string, body: MergeDTO): Promise<unknown
   }
   await cart.save();
 
-  // populated wapas bhejo taaki frontend ko poora product mile
   const populated = await userCartRepo.findByUserPopulated(userId);
   return { success: true, message: 'Cart merged', items: populated?.items ?? [] };
 }
 
 export async function syncCart(userId: string, items: MergeDTO['items']): Promise<unknown> {
+  const cleanItems = (items || []).map(sanitizeCartItem) as MergeDTO['items'];
+
+  const totalSize = new TextEncoder().encode(JSON.stringify(cleanItems)).length;
+  logger.info('[usercart] syncCart', {
+    userId,
+    itemCount: cleanItems.length,
+    sizeKB: Math.round(totalSize / 1024),
+  });
+
   let cart = await userCartRepo.findByUser(userId);
   if (!cart) {
-    cart = await userCartRepo.createForUser(userId, items);
+    cart = await userCartRepo.createForUser(userId, cleanItems);
   } else {
-    cart.items = items as never;
+    cart.items = cleanItems as never;
     await cart.save();
   }
   const populated = await userCartRepo.findByUserPopulated(userId);
@@ -227,4 +238,56 @@ export async function adminGetUserCart(userId: string): Promise<unknown> {
   }
 
   return { success: true, items: cart.items || [] };
+}
+
+
+
+
+/* Strip base64 image strings from custom_data — MongoDB 16MB safety */
+function sanitizeCartItem(item: any): any {
+  if (!item) return item;
+  const out = { ...item };
+
+  if (out.custom_data && typeof out.custom_data === 'object') {
+    const cd: Record<string, any> = { ...out.custom_data };
+    let stripped = false;
+
+    for (const key of Object.keys(cd)) {
+      const val = cd[key];
+      if (typeof val === 'string' && val.startsWith('data:image/')) {
+        // Base64 image found — strip it
+        delete cd[key];
+        stripped = true;
+      }
+    }
+
+    if (stripped) {
+      cd._stripped_base64 = true;
+      cd._stripped_at = new Date().toISOString();
+      logger.warn('[usercart] stripped base64 from custom_data', {
+        productId: out.productId,
+        keys: Object.keys(item.custom_data || {}),
+      });
+    }
+
+    out.custom_data = cd;
+  }
+
+  // Size check per item (final safety)
+  const itemSize = new TextEncoder().encode(JSON.stringify(out)).length;
+  if (itemSize > MAX_ITEM_SIZE_BYTES) {
+    logger.warn('[usercart] item still oversized after strip', {
+      productId: out.productId,
+      size: itemSize,
+    });
+    // Strip entire custom_data if still big
+    out.custom_data = { _oversized_stripped: true };
+  }
+
+  return out;
+}
+
+function sanitizeItems(items: any[]): any[] {
+  if (!Array.isArray(items)) return [];
+  return items.map(sanitizeCartItem);
 }

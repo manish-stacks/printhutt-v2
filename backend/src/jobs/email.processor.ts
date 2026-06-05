@@ -51,6 +51,12 @@ export async function emailProcessor(job: Job<EmailJobData>): Promise<void> {
       const m = mailer as unknown as {
         sendCustomEmail: (p: { to: string; subject: string; html: string }) => Promise<unknown>;
       };
+      const toEmail = String(payload.email || '').trim();
+      if (!toEmail || !toEmail.includes('@')) {
+        logger.warn('[queue:email] custom-email skipped — no recipient', { logId: payload.logId });
+        return; // skip silently
+      }
+
       await m.sendCustomEmail({
         to: String(payload.email),
         subject: String(payload.subject || 'Message from PrintHutt'),
@@ -68,7 +74,11 @@ export async function emailProcessor(job: Job<EmailJobData>): Promise<void> {
       return;
     }
 
-    case 'order-confirm':
+    case 'order-confirm': {
+      logger.info(`[queue:email] order email ${type}`, { payload });
+      return;
+    }
+
     case 'order-status': {
       logger.info(`[queue:email] order email ${type}`, { payload });
       return;

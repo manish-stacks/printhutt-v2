@@ -341,7 +341,7 @@ export async function sendOrderConfirmationEmail(order: any) {
     console.error("Mail send failed:", err);
   }
 
-  
+
   if (order.shipping?.mobileNumber) {
     const itemsList = order.items
       .map((i: { name: string; quantity: number }, idx: number) => `${idx + 1}. ${i.name} x ${i.quantity}`)
@@ -537,8 +537,10 @@ export async function sendCustomEmail({
   subject: string;
   html: string;
 }): Promise<unknown> {
-  if (!to) throw new Error('Email recipient is required');
-
+  if (!to || typeof to !== 'string' || !to.includes('@')) {
+    logger.warn('[mailer] skipping email — invalid recipient', { to });
+    return { skipped: true, reason: 'invalid recipient' };
+  }
   // Wrap body in branded HTML template
   const wrappedHtml = `
     <!DOCTYPE html>

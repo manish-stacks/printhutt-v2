@@ -109,7 +109,7 @@ export default function AdminUserCartPage() {
     const totalPages = Math.ceil(total / limit);
 
     return (
-        <div className="p-4 sm:p-6">
+        <div className="p-4 pt-10">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>

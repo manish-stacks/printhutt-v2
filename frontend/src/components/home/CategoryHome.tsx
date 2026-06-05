@@ -47,11 +47,6 @@ const CategoryHome = () => {
           {/* Heading */}
           <div className="text-center mb-10 sm:mb-14">
 
-            <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] font-bold text-amber-500 bg-amber-400/10 border border-amber-400/20 px-4 py-2 rounded-full mb-4 hidden lg:block md:block">
-              <RiSparkling2Line size={14} />
-              Featured Collection
-            </span>
-
             <h2
               className="text-3xl sm:text-5xl font-bold text-[#0d0d1a] leading-tight "
               style={{

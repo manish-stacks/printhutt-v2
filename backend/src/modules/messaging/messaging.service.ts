@@ -73,7 +73,7 @@ export async function sendManualMessage(opts: {
   const user = await User.findById(opts.userId);
   if (!user) throw new NotFoundError('User not found');
 
-  if (opts.channel === 'email' && !user.email) {
+  if (opts.channel === 'email' && (!user.email || !user.email.includes('@'))) {
     throw new BadRequestError('User has no email');
   }
   if ((opts.channel === 'sms' || opts.channel === 'whatsapp') && !user.number) {
