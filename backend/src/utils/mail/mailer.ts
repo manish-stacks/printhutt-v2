@@ -386,13 +386,13 @@ export async function sendOrderStatus(order: OrderDetails) {
     html: emailContent,
   });
 
-  let wappPromise = Promise.resolve();
+  let wappPromise: Promise<void> = Promise.resolve();
 
   if (order?.shipping?.mobileNumber) {
     const params = [
-      order.shipping.userName || "", // {{1}}
-      order.orderId || "", // {{2}}
-      order.status || "", // {{3}}
+      order.shipping.userName || "",
+      order.orderId || "",
+      order.status || "",
     ];
 
     const waUrl =
@@ -406,12 +406,16 @@ export async function sendOrderStatus(order: OrderDetails) {
       `&stype=normal` +
       `&Params=${encodeURIComponent(params.join(","))}`;
 
-    wappPromise = axios.get(waUrl).catch((error) => {
-      console.error("WhatsApp failed:", error);
-    });
+    wappPromise = axios
+      .get(waUrl)
+      .then(() => { })
+      .catch((error) => {
+        console.error("WhatsApp failed:", error);
+      });
   }
 
   await Promise.all([emailPromise, wappPromise]);
+
 }
 
 export async function sendRtoMessage(
@@ -515,7 +519,7 @@ Rate this product
 
     wappPromise = axios
       .get(waUrl)
-      .then(() => {})
+      .then(() => { })
       .catch((error) => {
         console.error("WhatsApp failed:", error);
       });
