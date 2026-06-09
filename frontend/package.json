@@ -1,6 +1,6 @@
 {
   "name": "printhutt",
-  "version": "6.3.4",
+  "version": "6.4.4",
   "private": true,
   "scripts": {
     "dev": "next dev",

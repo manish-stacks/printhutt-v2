@@ -65,15 +65,22 @@ export async function byId(id: string): Promise<unknown> {
 
 export async function byIdStorefront(id: string): Promise<unknown> {
   if (!productRepo.isValidObjectId(id)) throw new BadRequestError('Invalid Product ID');
-  console.log('Finding product by ID:', id);
-  const product = await productRepo.findByIdFull(id);
+  const cacheKey = `${CACHE_PREFIX}detail:id:${id}`;
+  const cached = await cacheGet<unknown>(cacheKey);
+  if (cached) return cached;
+  const product = await productRepo.findByIdFull(id).lean();
   if (!product) throw new NotFoundError('Product not found');
+  await cacheSet(cacheKey, product, 600); // 10 min cache
   return product;
 }
 
 export async function bySlugStorefront(slug: string): Promise<unknown> {
-  const product = await productRepo.findBySlug(slug);
+  const cacheKey = `${CACHE_PREFIX}detail:slug:${slug}`;
+  const cached = await cacheGet<unknown>(cacheKey);
+  if (cached) return cached;
+  const product = await productRepo.findBySlug(slug).lean();
   if (!product) throw new NotFoundError('Product not found');
+  await cacheSet(cacheKey, product, 600); // 10 min cache
   return product;
 }
 
@@ -91,108 +98,65 @@ export async function storefrontList(q: StorefrontListQueryDTO): Promise<unknown
   const cached = await cacheGet<unknown>(cacheKey);
   if (cached) return cached;
 
-  const products = await productRepo.storefrontBase().exec();
-  // Filter in-memory (matches original behaviour — original also fetched
-  // ALL status:true products then filtered them in JS).
-  type AnyProduct = Record<string, unknown> & {
-    title?: string;
-    tags?: string[];
-    short_description?: string;
-    sku?: string;
-    category?: { name?: string };
-    subcategory?: { name?: string };
-    price: number;
-    rating: number;
-    createdAt: string | Date;
-    featured?: number | boolean;
-  };
-  let filtered = [...(products as unknown as AnyProduct[])];
+  // ✅ FIX: Build MongoDB filter query — no more in-memory filtering of ALL products
+  const filter: FilterQuery<unknown> = { status: true };
 
-  // SEARCH
+  // SEARCH — use $text index (fast) or regex fallback
   if (q.search) {
-    const s = q.search.toLowerCase();
-    filtered = filtered.filter((p) => {
-      const titleMatch = p.title?.toLowerCase().includes(s) ?? false;
-      const tagMatch = p.tags?.some((t) => t.toLowerCase().includes(s)) ?? false;
-      const shortDescMatch =
-        p.short_description?.toLowerCase().includes(s) ?? false;
-      const skuMatch = p.sku?.toLowerCase().includes(s) ?? false;
-      const categoryMatch = p.category?.name?.toLowerCase().includes(s) ?? false;
-      const subCategoryMatch =
-        p.subcategory?.name?.toLowerCase().includes(s) ?? false;
-      return (
-        titleMatch ||
-        tagMatch ||
-        shortDescMatch ||
-        skuMatch ||
-        categoryMatch ||
-        subCategoryMatch
-      );
-    });
-  }
-
-  // CATEGORY (note: original matches by category NAME, not id — preserved)
-  const categories = q.categories?.split(',').filter(Boolean) ?? [];
-  if (categories.length > 0) {
-    filtered = filtered.filter((p) =>
-      p.category?.name ? categories.includes(p.category.name) : false
-    );
+    filter.$or = [
+      { title: { $regex: q.search, $options: 'i' } },
+      { tags: { $regex: q.search, $options: 'i' } },
+      { sku: { $regex: q.search, $options: 'i' } },
+    ];
   }
 
   // PRICE
-  filtered = filtered.filter((p) => p.price >= q.minPrice && p.price <= q.maxPrice);
+  filter.price = { $gte: q.minPrice, $lte: q.maxPrice };
 
   // RATING
   if (q.rating > 0) {
-    filtered = filtered.filter((p) => p.rating >= q.rating);
+    filter.rating = { $gte: q.rating };
   }
 
   // TAGS
   const tags = q.tags?.split(',').filter(Boolean) ?? [];
   if (tags.length > 0) {
-    filtered = filtered.filter((p) => p.tags?.some((t) => tags.includes(t)) ?? false);
+    filter.tags = { $in: tags };
   }
 
   // SORT
-  switch (q.sort) {
-    case 'featured':
-      filtered = filtered.sort(
-        (a, b) => (Number(b.featured) || 0) - (Number(a.featured) || 0)
-      );
-      break;
-    case 'newest':
-      filtered = filtered.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      break;
-    case 'price-asc':
-      filtered = filtered.sort((a, b) => a.price - b.price);
-      break;
-    case 'price-desc':
-      filtered = filtered.sort((a, b) => b.price - a.price);
-      break;
-    case 'rating':
-      filtered = filtered.sort((a, b) => b.rating - a.rating);
-      break;
-    default:
-      filtered = filtered.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      break;
-  }
+  const sortMap: Record<string, Record<string, 1 | -1>> = {
+    'featured':   { ishome: -1, createdAt: -1 },
+    'newest':     { createdAt: -1 },
+    'price-asc':  { price: 1 },
+    'price-desc': { price: -1 },
+    'rating':     { rating: -1 },
+  };
+  const sortQuery = sortMap[q.sort] ?? { createdAt: -1 };
 
-  // PAGINATE
+  // PAGINATE — let MongoDB do it
   const perPage = 12;
-  const total = filtered.length;
-  const totalPages = Math.ceil(total / perPage);
-  const offset = (q.page - 1) * perPage;
-  const paginated = filtered.slice(offset, offset + perPage);
+  const skip = (q.page - 1) * perPage;
 
+  const [products, total] = await Promise.all([
+    productRepo.storefrontFiltered(filter, sortQuery, skip, perPage),
+    productRepo.countFiltered(filter),
+  ]);
+
+  // CATEGORY filter by name — done post-populate since category is a ref
+  // Only apply if categories param is set (rare case)
+  const categoryNames = q.categories?.split(',').filter(Boolean) ?? [];
+  type AnyProduct = Record<string, unknown> & { category?: { name?: string } };
+  const finalProducts = categoryNames.length > 0
+    ? (products as AnyProduct[]).filter((p) =>
+        p.category?.name ? categoryNames.includes(p.category.name) : false
+      )
+    : products;
+
+  const totalPages = Math.ceil(total / perPage);
   const payload = {
     success: true,
-    products: paginated,
+    products: finalProducts,
     totalProducts: total,
     pagination: { page: q.page, perPage, pages: totalPages, total, totalPages },
   };

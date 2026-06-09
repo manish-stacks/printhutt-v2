@@ -170,20 +170,20 @@ const Login = () => {
     try {
       setLoadingOtp(true);
 
-      const { data } = await axiosInstance.post(
+      const response = await axiosInstance.post(
         '/auth/verify-otp',
         {
           otp: otpValue,
           emailOrMobile,
         }
       );
-      console.log('✅ verify-otp response:', data);
-      toast.success(data?.message || 'Login Successful');
+      console.log('✅ verify-otp response:', response);
+      toast.success(response?.message || 'Login Successful');
       await fetchUserDetails();
       console.log('✅ isLoggedIn after fetch:', useUserStore.getState().isLoggedIn);
       await syncCartOnLogin();
 
-      if (data?.role === 'user') {
+      if (response?.role === 'user') {
         router.push('/user/dashboard');
         return;
       } else {

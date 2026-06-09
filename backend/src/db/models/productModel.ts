@@ -208,6 +208,25 @@ const productSchema = new Schema<IProduct>(
   { timestamps: true }
 );
 
+// ── Performance Indexes ──────────────────────────────────────────────────
+// Storefront main listing: status filter + newest first
+productSchema.index({ status: 1, createdAt: -1 });
+
+// Category/SubCategory filtering (most common storefront queries)
+productSchema.index({ category: 1, status: 1, createdAt: -1 });
+productSchema.index({ subcategory: 1, status: 1, createdAt: -1 });
+
+// Slug lookup (product detail page)
+productSchema.index({ slug: 1 }, { unique: true });
+
+// Homepage feature flags
+productSchema.index({ ishome: 1, status: 1 });
+productSchema.index({ trending: 1, status: 1 });
+productSchema.index({ new: 1, status: 1 });
+
+// Text search on title + tags
+productSchema.index({ title: 'text', tags: 'text' });
+
 const Product: Model<IProduct> =
   mongoose.models.Product ||
   mongoose.model<IProduct>("Product", productSchema);

@@ -224,6 +224,24 @@ export const productRepo = {
 
   /* ─── Mutations ─── */
   create: (data: Record<string, unknown>) => Product.create(data),
+
+  /* ─── Storefront filtered query (replaces in-memory filtering) ─── */
+  storefrontFiltered: (
+    filter: FilterQuery<unknown>,
+    sort: Record<string, 1 | -1>,
+    skip: number,
+    limit: number
+  ) =>
+    Product.find(filter)
+      .populate({ path: 'category', model: Category, select: 'name slug' })
+      .populate({ path: 'subcategory', model: SubCategory, select: 'name slug' })
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+
+  countFiltered: (filter: FilterQuery<unknown>) =>
+    Product.countDocuments(filter),
   updateById: (id: string, patch: UpdateQuery<unknown>) =>
     Product.findByIdAndUpdate(id, patch, { new: true }),
   patchStatus: (id: string, status: boolean) =>

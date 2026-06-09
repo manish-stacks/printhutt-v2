@@ -11,6 +11,12 @@ export async function connectDB(): Promise<typeof mongoose> {
   try {
     await mongoose.connect(env.MONGO_URL, {
       bufferCommands: false,
+      // ✅ FIX: Proper connection pool settings for production
+      maxPoolSize: 10,        // Max concurrent connections
+      minPoolSize: 2,         // Keep at least 2 alive
+      socketTimeoutMS: 45000, // 45s socket timeout
+      serverSelectionTimeoutMS: 10000, // 10s to find server
+      heartbeatFrequencyMS: 10000,     // Check server health every 10s
     });
     isConnected = true;
     logger.info('MongoDB connected');
