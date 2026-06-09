@@ -40,11 +40,13 @@ import pageRoutes from './modules/pages/pages.routes';
 import messagingRoutes from '@/modules/messaging/messaging.routes';
 
 /* ─── Webhook/callback paths exempt from CORS, helmet, rate-limit ─── */
+/* ✅ FIX: Sirf actual server-to-server callbacks exempt hone chahiye.
+   /api/payment/razorpay/create-order browser se call hota hai — usse CORS chahiye.
+   Isliye exact webhook paths likho, broad prefix nahi. */
 const PUBLIC_WEBHOOK_PATHS = [
-  '/api/payment/callback',
+  '/api/payment/callback',        // PhonePe callback
   '/api/payment/webhook',
-  '/api/payment/phonepe',
-  '/api/payment/razorpay',
+  '/api/payment/razorpay/webhooks', // Razorpay webhook (server-to-server)
   '/api/payment/verify',
 ];
 

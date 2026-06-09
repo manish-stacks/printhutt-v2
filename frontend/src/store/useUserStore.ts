@@ -37,10 +37,12 @@ interface UserState {
 export async function syncCartOnLogin(): Promise<void> {
   try {
     const localItems = useCartStore.getState().items;
-    console.log('🛒 Guest cart items at login:', localItems.length); // DEBUG
 
-    if (localItems.length > 0) {
-      const payload = localItems.map((item: any) => ({
+    // ✅ FIX 1: Gift items kabhi DB ko mat bhejo
+    const persistableLocal = localItems.filter((item: any) => !item.isGift);
+
+    if (persistableLocal.length > 0) {
+      const payload = persistableLocal.map((item: any) => ({
         productId: item._id,
         variantId: item.selectedVariant?._id,
         size: item.selectedVariant?.size,
@@ -49,27 +51,47 @@ export async function syncCartOnLogin(): Promise<void> {
         price: item.price,
         custom_data: item.custom_data,
       }));
-      console.log('🛒 Merging payload:', payload); // DEBUG
-      const mergeRes = await userCartService.merge(payload);
-      console.log('🛒 Merge response:', mergeRes); // DEBUG
+      await userCartService.merge(payload);
     }
 
+    // DB se fresh cart fetch karo
     const res: any = await userCartService.get();
-    console.log('🛒 DB cart after merge:', res); // DEBUG
     const dbItems = res?.items ?? [];
 
-    const storeItems = dbItems.map((it: any) => {
+    // ✅ FIX 2: DB items ko proper map karo with dedup by productId+variantId+size
+    const seen = new Set<string>();
+    const storeItems = dbItems.reduce((acc: any[], it: any) => {
       const p = it.productId;
-      return {
+      if (!p) return acc; // invalid entry skip
+
+      const sv = it.variantId ? { _id: it.variantId, size: it.size, color: it.color, price: it.price } : null;
+      // Unique key same as cartItemKey logic
+      const key = `${p._id ?? p}::${it.variantId ?? ''}::${it.size ?? ''}`;
+
+      if (seen.has(key)) {
+        // Duplicate — find existing and merge quantity
+        const existing = acc.find((a: any) => {
+          const aKey = `${a._id}::${a.selectedVariant?._id ?? ''}::${a.selectedVariant?.size ?? ''}`;
+          return aKey === key;
+        });
+        if (existing) existing.quantity += it.quantity;
+        return acc;
+      }
+      seen.add(key);
+
+      acc.push({
         ...p,
         quantity: it.quantity,
         price: it.price,
-        ...(it.variantId ? { selectedVariant: { _id: it.variantId, size: it.size, color: it.color, price: it.price } } : {}),
+        ...(sv ? { selectedVariant: sv } : {}),
         ...(it.custom_data ? { custom_data: it.custom_data } : {}),
         _dbItemId: it._id,
-      };
-    });
+      });
+      return acc;
+    }, []);
 
+    // ✅ FIX 3: isGift flag wale items local mein reh sakte hain (re-evaluate honge)
+    // Gift items DB se nahi aate, useFreeGiftGuard re-add kar dega if threshold met
     useCartStore.getState().syncFromDb(storeItems);
   } catch (e) {
     console.error('❌ Cart sync on login failed', e);

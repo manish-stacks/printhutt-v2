@@ -117,6 +117,25 @@ const toDbPayload = (item: CartItem): DbCartItemPayload => {
   };
 };
 
+/**
+ * Unique key for a cart item — product + variant + size combo.
+ * Custom items (isGift=false, has custom_data) are always unique per entry.
+ */
+const cartItemKey = (item: { _id: string; selectedVariant?: { _id?: string; size?: string }; custom_data?: unknown; isGift?: boolean }): string => {
+  const sv = item.selectedVariant;
+  return `${item._id}::${sv?._id ?? ''}::${sv?.size ?? ''}`;
+};
+
+const isSameCartItem = (
+  a: CartItem,
+  b: { _id: string; selectedVariant?: { _id?: string; size?: string }; custom_data?: unknown }
+): boolean => {
+  // Custom-data items are always separate entries
+  if ((a as any).custom_data && Object.keys((a as any).custom_data).length > 0) return false;
+  if ((b as any).custom_data && Object.keys((b as any).custom_data).length > 0) return false;
+  return cartItemKey(a as any) === cartItemKey(b as any);
+};
+
 /* debounced full-sync to DB (sirf logged-in) */
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
 const scheduleDbSync = (items: CartItem[]) => {
@@ -138,16 +157,16 @@ export const useCartStore = create<CartState>()(
 
       addToCart: (product, quantity) => {
         set((state) => {
-          const existingItem = state.items.find((item) => item._id === product._id);
+          // ✅ FIX: variant-aware duplicate check
+          const existingItem = state.items.find((item) => isSameCartItem(item, product as any));
           let newItems: CartItem[];
           if (existingItem) {
             newItems = state.items.map((item) =>
-              item._id === product._id
+              isSameCartItem(item, product as any)
                 ? { ...item, quantity: item.quantity + quantity }
                 : item
             );
           } else {
-            // 🎁 Gift items me analytics ping skip karo
             if (!(product as any).isGift) {
               add_product(product._id).catch(() => { });
             }

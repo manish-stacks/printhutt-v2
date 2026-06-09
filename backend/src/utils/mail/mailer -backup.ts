@@ -1,24 +1,21 @@
 import nodemailer from "nodemailer";
 import crypto from "crypto";
-import { v4 as uuidv4 } from "uuid";
-import UserModel from "@/db/models/userModel";
-import type { mallerType, OrderDetails } from "@/types/index";
-import { formatCurrency } from "@/utils/helpers";
-import { getCustomerEmailTemplate } from "./templates/customer";
-import { getOwnerEmailTemplate } from "./templates/owner";
-import dotenv from "dotenv";
-import {
-  generateOrderStatusEmail,
-  getShippedEmailTemplate,
-} from "./templates/order-status";
+import { v4 as uuidv4 } from 'uuid';
+import UserModel from '@/db/models/userModel'
+import type { mallerType, OrderDetails } from '@/types/index';
+import { formatCurrency } from '@/utils/helpers';
+import { getCustomerEmailTemplate } from './templates/customer';
+import { getOwnerEmailTemplate } from './templates/owner';
+import dotenv from "dotenv"
+import { generateOrderStatusEmail, getShippedEmailTemplate } from "./templates/order-status";
 import axios from "axios";
-// import { ShippingInformation } from "@/types/shipping";
+import { ShippingInformation } from "@/types/shipping";
 import { logger } from "@/config/logger";
-dotenv.config();
+dotenv.config()
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || "587"),
+  port: parseInt(process.env.SMTP_PORT || '587'),
   // secure: process.env.SMTP_SECURE === 'true',
   auth: {
     user: process.env.SMTP_USER,
@@ -26,39 +23,31 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export const sendVerifyEmail = async ({
-  email,
-  emailType,
-  userId,
-}: mallerType) => {
+export const sendVerifyEmail = async ({ email, emailType, userId }: mallerType) => {
   try {
     const rawToken = uuidv4();
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(rawToken)
-      .digest("hex");
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
 
-    if (emailType === "VERIFY") {
+    if (emailType === 'VERIFY') {
       await UserModel.findByIdAndUpdate(userId, {
         verifyToken: hashedToken,
         verifyTokenExpiry: Date.now() + 3600000,
       });
-    } else if (emailType === "RESET") {
+    } else if (emailType === 'RESET') {
       await UserModel.findByIdAndUpdate(userId, {
         forgotPasswordToken: hashedToken,
         forgotPasswordTokenExpiry: Date.now() + 3600000,
       });
     }
 
-    const actionURL = `${process.env.APP_URL}/${emailType === "VERIFY" ? "verifyemail" : "resetpassword"}?token=${rawToken}`;
+    const actionURL = `${process.env.APP_URL}/${emailType === 'VERIFY' ? 'verifyemail' : 'resetpassword'}?token=${rawToken}`;
 
     const mailOptions = {
       from: `"${process.env.APP_NAME}" <${process.env.SMTP_FROM}>`,
       to: email,
-      subject:
-        emailType === "VERIFY" ? "Verify your email" : "Reset your password",
+      subject: emailType === 'VERIFY' ? 'Verify your email' : 'Reset your password',
       html: `
-        <p>Click the link below to ${emailType === "VERIFY" ? "verify your email" : "reset your password"}:</p>
+        <p>Click the link below to ${emailType === 'VERIFY' ? 'verify your email' : 'reset your password'}:</p>
         <a href="${actionURL}" target="_blank">Click here</a>
         <p>Or copy and paste this URL in your browser:</p>
         <p>${actionURL}</p>
@@ -73,7 +62,12 @@ export const sendVerifyEmail = async ({
   }
 };
 
-export const sendOtpByEmail = async (email: string, otp: string) => {
+
+
+export const sendOtpByEmail = async (
+  email: string,
+  otp: string
+) => {
   const mailOptions = {
     from: `"${process.env.APP_NAME}" <${process.env.SMTP_FROM}>`,
     to: email,
@@ -279,6 +273,9 @@ export const sendOtpByEmail = async (email: string, otp: string) => {
   }
 };
 
+
+
+
 export const sendOtpBySms = async (mobile: string, otp: string) => {
   const receiver = `+91${mobile}`;
   const template = "OTP1";
@@ -291,18 +288,20 @@ export const sendOtpBySms = async (mobile: string, otp: string) => {
 
   //const wappUrl = `${process.env.WAPP_URL}send?apikey=${process.env.WAPP_KEY}&mobile=${mobile}&msg=${encodeURIComponent(wappMsg)}`;
 
+
   try {
     await Promise.all([
       axios.post(smsUrl),
       //axios.post(wappUrl)
     ]);
   } catch (error) {
-    console.error("OTP Send Error:", error);
+    console.error('OTP Send Error:', error);
     throw new Error((error as Error).message);
   }
 
   return { to: mobile, message: `Your OTP is ${otp}` };
 };
+
 
 export async function sendOrderConfirmationEmail(order: any) {
   const email = order.shipping?.email;
@@ -342,42 +341,49 @@ export async function sendOrderConfirmationEmail(order: any) {
     console.error("Mail send failed:", err);
   }
 
-  if (order.shipping?.mobileNumber) {
-    const params = [
-      order.shipping.userName || "", // {{1}}
-      order.orderId || "", // {{2}}
-      order.status || "", // {{3}}
-      order.paymentType === "online" ? "Prepaid" : "COD", // {{4}}
-      formatCurrency(order.totalAmount.discountPrice), // {{5}}
-      formatCurrency(order.payAmt), // {{6}}
-      `${order.shipping.addressLine}, ${order.shipping.city}, ${order.shipping.state} ${order.shipping.postCode}`, // {{7}}
-    ];
 
-    const waUrl =
-      `http://waapi.hoverbusinessservices.com/api/sendmsgutil.php` +
-      `?user=Printhutt_BW` +
-      `&pass=123456` +
-      `&sender=BUZWAP` +
-      `&phone=${order.shipping.mobileNumber}` +
-      `&text=printhutt_order_confirmation` +
-      `&priority=wa` +
-      `&stype=normal` +
-      `&Params=${encodeURIComponent(params.join(","))}`;
+  if (order.shipping?.mobileNumber) {
+    const itemsList = order.items
+      .map((i: { name: string; quantity: number }, idx: number) => `${idx + 1}. ${i.name} x ${i.quantity}`)
+      .join("\n");
+
+    const wappMsg = `
+    Hi ${order.shipping.userName},
+    Thank you for your order!
+    🧾 Order ID: ${order.orderId}
+    Status: *${order.status}*
+    🛒 Items:
+    ${itemsList}
+
+    💳 Payment Mode: ${order.paymentType === 'online' ? 'Prepaid' : 'COD'}
+    💰 Total Amount: ${formatCurrency(order.totalAmount.discountPrice)}
+    💰 Coupon Discount: ${(order.coupon as { discountAmount?: number })?.discountAmount ? formatCurrency((order.coupon as { discountAmount?: number })?.discountAmount ?? 0) : 'N/A'}
+    💵 Paid Amount: ${formatCurrency(order.payAmt)}
+    ${order.paymentType === 'online' ? '' : `💵 COD Amount: ${formatCurrency(order.totalAmount.discountPrice - order.payAmt)}`}
+
+    🚚 Address: ${order.shipping.addressLine}, ${order.shipping.city}, ${order.shipping.state} ${order.shipping.postCode}
+
+    We are processing your order. You'll be notified when it's shipped.
+    Thank you for shopping with Print Hutt ❤️
+    `;
+    const wappUrl = `${process.env.WAPP_URL}send?apikey=${process.env.WAPP_KEY}&mobile=${order.shipping.mobileNumber}&msg=${encodeURIComponent(wappMsg)}`;
 
     try {
-      const response = await axios.get(waUrl);
-      console.log("WhatsApp sent:", response.data);
-    } catch (error) {
-      console.error("WhatsApp failed:", error);
+      await axios.post(wappUrl);
+    } catch (e) {
+      console.log("WhatsApp failed:", e);
     }
   }
 }
 
+
+
+
+
 export async function sendOrderStatus(order: OrderDetails) {
-  const emailContent =
-    order.status === "shipped"
-      ? getShippedEmailTemplate(order)
-      : generateOrderStatusEmail(order);
+  const emailContent = order.status === 'shipped'
+    ? getShippedEmailTemplate(order)
+    : generateOrderStatusEmail(order);
 
   const emailPromise = transporter.sendMail({
     from: process.env.SMTP_FROM,
@@ -389,72 +395,75 @@ export async function sendOrderStatus(order: OrderDetails) {
   let wappPromise = Promise.resolve();
 
   if (order?.shipping?.mobileNumber) {
-    const params = [
-      order.shipping.userName || "", // {{1}}
-      order.orderId || "", // {{2}}
-      order.status || "", // {{3}}
-    ];
+    const itemsList = order.items.map((item, i) => {
+      const price = item.discountType === 'percentage'
+        ? item.price - (item.price * item.discountPrice) / 100
+        : item.price - item.discountPrice;
 
-    const waUrl =
-      `http://waapi.hoverbusinessservices.com/api/sendmsgutil.php` +
-      `?user=Printhutt_BW` +
-      `&pass=123456` +
-      `&sender=BUZWAP` +
-      `&phone=${order.shipping.mobileNumber}` +
-      `&text=printhutt_order_status` +
-      `&priority=wa` +
-      `&stype=normal` +
-      `&Params=${encodeURIComponent(params.join(","))}`;
+      return `${i + 1}. ${item.name} x ${item.quantity} = ₹${price * item.quantity}`;
+    }).join('\n');
 
-    wappPromise = axios.get(waUrl).catch((error) => {
-      console.error("WhatsApp failed:", error);
-    });
+    const wappMsg = `
+        Hi ${order.shipping.userName},
+
+        Your order with ID: ${order.orderId} is currently *${order.status}*.
+
+        🧾 Order Details:
+        ${itemsList}
+
+
+        💳 Payment Mode: ${order.paymentType === 'online' ? 'Prepaid' : 'COD'}
+        💰 Total Amount: ${formatCurrency(order.totalAmount.discountPrice)}
+        💰 Coupon Discount: ${(order.coupon as { discountAmount?: number })?.discountAmount ? formatCurrency((order.coupon as { discountAmount?: number })?.discountAmount ?? 0) : 'N/A'}
+        💵 Paid Amount: ${formatCurrency(order.payAmt)}
+        ${order.paymentType === 'online' ? '' : `💵 COD Amount: ${formatCurrency(order.totalAmount.discountPrice - order.payAmt)}`}
+
+        🚚 Address: ${order.shipping.addressLine}, ${order.shipping.city}, ${order.shipping.state} ${order.shipping.postCode}
+
+        If you have any questions, feel free to reply to this message.
+
+        Thank you for shopping with us!`;
+
+    const wappUrl = `${process.env.WAPP_URL}send?apikey=${process.env.WAPP_KEY}&mobile=${order.shipping.mobileNumber}&msg=${encodeURIComponent(wappMsg)}`;
+
+    wappPromise = axios.post(wappUrl);
   }
 
   await Promise.all([emailPromise, wappPromise]);
 }
 
-export async function sendRtoMessage(
-  order: OrderDetails,
-  refundReason: string,
-) {
+export async function sendRtoMessage(order: OrderDetails, refundReason: string) {
   const shipping = order.shipping;
 
-  const params = [
-    shipping.userName || "", // {{1}}
-    order.orderId || "", // {{2}}
-    refundReason || "", // {{3}}
-  ];
+  const wappMsg = `
+Hi ${shipping.userName},
 
-  const waUrl =
-    `http://waapi.hoverbusinessservices.com/api/sendmsgutil.php` +
-    `?user=Printhutt_BW` +
-    `&pass=123456` +
-    `&sender=BUZWAP` +
-    `&phone=${shipping.mobileNumber}` +
-    `&text=printhutt_order_rto` +
-    `&priority=wa` +
-    `&stype=normal` +
-    `&Params=${encodeURIComponent(params.join(","))}`;
+Your order with ID: ${order.orderId} has been RTO *${refundReason}*.
+
+If you have any questions, feel free to reply to this message.
+
+Thank you for shopping with us!`;
+
+  const wappUrl = `${process.env.WAPP_URL}send?apikey=${process.env.WAPP_KEY}&mobile=${shipping.mobileNumber}&msg=${encodeURIComponent(wappMsg)}`;
 
   try {
-    const response = await axios.get(waUrl);
-    console.log("WhatsApp sent:", response.data);
+    await axios.post(wappUrl);
   } catch (error) {
-    console.error("Whatsapp Send Error:", error);
+    console.error('Whatsapp Send Error:', error);
     throw new Error((error as Error).message);
   }
 }
+
 
 export async function sendDeliveredWithRatingMessage(order: OrderDetails) {
   /* ================= EMAIL ================= */
   const reviewLinks = order.items
     .map(
       (item, i) =>
-        `${i + 1}. ${item.name}
+        `${i + 1}. ${item.name}  
 👉 <a href="${process.env.APP_URL}/product-details/${item.slug}/write-review" target="_blank">
 Rate this product
-</a>`,
+</a>`
     )
     .join("<br/><br/>");
 
@@ -488,37 +497,32 @@ Rate this product
   });
 
   /* ================= WHATSAPP ================= */
-  let wappPromise: Promise<void> = Promise.resolve();
+  let wappPromise = Promise.resolve();
 
   if (order?.shipping?.mobileNumber) {
-    const reviewLink =
-      order.items?.length > 0
-        ? `${process.env.APP_URL}/product-details/${order.items[0].slug}/write-review`
-        : `${process.env.APP_URL}`;
+    const productList = order.items
+      .map(
+        (item, i) =>
+          `${i + 1}. ${item.name}\n⭐ Rate: ${process.env.APP_URL}product-details/${item.slug}/write-review`
+      )
+      .join("\n\n");
 
-    const params = [
-      order.shipping.userName || "", // {{1}}
-      order.orderId || "", // {{2}}
-      reviewLink, // {{3}}
-    ];
+    const wappMsg = `
+Hi ${order.shipping.userName} 👋
 
-    const waUrl =
-      `http://waapi.hoverbusinessservices.com/api/sendmsgutil.php` +
-      `?user=Printhutt_BW` +
-      `&pass=123456` +
-      `&sender=BUZWAP` +
-      `&phone=${order.shipping.mobileNumber}` +
-      `&text=printhutt_order_delivered` +
-      `&priority=wa` +
-      `&stype=normal` +
-      `&Params=${encodeURIComponent(params.join(","))}`;
+🎉 Your order *${order.orderId}* has been *DELIVERED* successfully!
 
-    wappPromise = axios
-      .get(waUrl)
-      .then(() => {})
-      .catch((error) => {
-        console.error("WhatsApp failed:", error);
-      });
+⭐ Please rate your products:
+${productList}
+
+Your feedback means a lot to us ❤️
+`;
+
+    const wappUrl = `${process.env.WAPP_URL}send?apikey=${process.env.WAPP_KEY}&mobile=${order.shipping.mobileNumber}&msg=${encodeURIComponent(
+      wappMsg
+    )}`;
+
+    wappPromise = axios.post(wappUrl);
   }
 
   await Promise.all([emailPromise, wappPromise]);
@@ -533,9 +537,9 @@ export async function sendCustomEmail({
   subject: string;
   html: string;
 }): Promise<unknown> {
-  if (!to || typeof to !== "string" || !to.includes("@")) {
-    logger.warn("[mailer] skipping email — invalid recipient", { to });
-    return { skipped: true, reason: "invalid recipient" };
+  if (!to || typeof to !== 'string' || !to.includes('@')) {
+    logger.warn('[mailer] skipping email — invalid recipient', { to });
+    return { skipped: true, reason: 'invalid recipient' };
   }
   // Wrap body in branded HTML template
   const wrappedHtml = `
@@ -573,12 +577,9 @@ export async function sendCustomEmail({
 }
 
 /* ─── NEW: Generic SMS (admin manual send) ─── */
-export async function sendCustomSms(
-  mobile: string,
-  body: string,
-): Promise<unknown> {
-  if (!mobile) throw new Error("Mobile is required");
-  if (!body) throw new Error("Body is required");
+export async function sendCustomSms(mobile: string, body: string): Promise<unknown> {
+  if (!mobile) throw new Error('Mobile is required');
+  if (!body) throw new Error('Body is required');
 
   // Reuse existing SMS service — wherever sendOtpBySms hits
   // Typically Fast2SMS / MSG91 / Twilio etc.
@@ -586,21 +587,21 @@ export async function sendCustomSms(
   // Example with Fast2SMS (adjust to your provider):
   const apiKey = process.env.FAST2SMS_API_KEY;
   if (!apiKey) {
-    logger.warn("[mailer] Fast2SMS API key not set — SMS skipped");
+    logger.warn('[mailer] Fast2SMS API key not set — SMS skipped');
     return;
   }
 
-  const response = await fetch("https://www.fast2sms.com/dev/bulkV2", {
-    method: "POST",
+  const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      authorization: apiKey,
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'authorization': apiKey,
     },
     body: new URLSearchParams({
-      route: "q", // quick transactional
+      route: 'q',                // quick transactional
       message: body,
-      numbers: mobile.replace(/\D/g, ""),
-      flash: "0",
+      numbers: mobile.replace(/\D/g, ''),
+      flash: '0',
     }).toString(),
   });
 

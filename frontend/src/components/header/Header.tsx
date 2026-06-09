@@ -134,7 +134,7 @@ export default function Header() {
               <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
 
                 {/* Account */}
-                <Link
+                <a
                   href={isLoggedIn ? '/user/dashboard' : '/login'}
                   className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors"
                   title="Account"
@@ -146,7 +146,7 @@ export default function Header() {
                       {isLoggedIn ? 'Dashboard' : 'Login'}
                     </span>
                   </div>
-                </Link>
+                </a>
 
                 {/* Wishlist */}
                 <Link
@@ -189,13 +189,13 @@ export default function Header() {
                 </button>
 
                 {/* Mobile right menu (was duplicate) */}
-                <button
+                {/* <button
                   onClick={toggleMenu}
                   className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 ml-1"
                   aria-label="Menu"
                 >
                   <RiMenu3Fill className="text-xl text-[#3d4750]" />
-                </button>
+                </button> */}
               </div>
             </div>
 

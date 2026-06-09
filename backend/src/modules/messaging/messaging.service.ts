@@ -40,7 +40,7 @@ Need help? Reply to this email.
 Your order #{{orderId}} is still pending payment.
 
 Amount: ₹{{totalAmount}}
-Complete payment: https://printhutt.com/order/{{orderId}}
+Complete payment: https://www.printhutt.com/cart
 
 Don't miss out!
 - PrintHutt Team`,

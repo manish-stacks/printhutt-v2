@@ -85,16 +85,24 @@ export async function mergeCart(userId: string, body: MergeDTO): Promise<unknown
   }
 
   for (const incoming of body.items) {
+    // ✅ FIX 1: Gift items kabhi DB mein save mat karo
+    if ((incoming as any).isGift) continue;
+
     const hasCustom =
       incoming.custom_data && Object.keys(incoming.custom_data).length > 0;
+
     const existing = cart.items.find((i) =>
       sameItem(i, incoming.productId, incoming.variantId, incoming.size)
     );
+
     if (existing && !hasCustom) {
-      existing.quantity += incoming.quantity;
-    } else {
+      // ✅ FIX 2: Quantity add nahi, MAX lo — avoid double counting
+      // Guest mein 2 tha, DB mein bhi 2 tha → result 2 hona chahiye, 4 nahi
+      existing.quantity = Math.max(existing.quantity, incoming.quantity);
+    } else if (!existing) {
       cart.items.push(incoming as never);
     }
+    // existing + hasCustom = skip (custom items already separate hain)
   }
   await cart.save();
 
