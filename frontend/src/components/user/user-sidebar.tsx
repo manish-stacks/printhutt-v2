@@ -62,7 +62,7 @@ const UserSidebar = ({ activemenu }: Props) => {
       {/* ─── USER CARD ─── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center text-lg font-bold flex-shrink-0">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#3C2A6D] to-[#3C2A6D] text-white flex items-center justify-center text-lg font-bold flex-shrink-0">
             {initials}
           </div>
           <div className="min-w-0 flex-1">
@@ -86,7 +86,7 @@ const UserSidebar = ({ activemenu }: Props) => {
                 href={item.href}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition ${
                   active
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
+                    ? 'bg-[#3C2A6D] text-white shadow-md shadow-purple-200'
                     : 'text-gray-600 hover:bg-purple-50'
                 }`}
               >
@@ -109,7 +109,7 @@ const UserSidebar = ({ activemenu }: Props) => {
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition mb-1 ${
                 active
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
+                  ? 'bg-[#3C2A6D] text-white shadow-md shadow-purple-200'
                   : 'text-gray-600 hover:bg-purple-50 hover:text-purple-600'
               }`}
             >

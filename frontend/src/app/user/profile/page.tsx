@@ -65,9 +65,9 @@ const Profile = () => {
 
   return (
     <>
-      <Breadcrumb title="Profile" />
+      {/* <Breadcrumb title="Profile" /> */}
       <section className="py-6 sm:py-8 bg-gray-50 min-h-screen">
-        <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-6">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col lg:flex-row gap-6">
 
           <div className="lg:w-[280px] flex-shrink-0">
             <UserSidebar activemenu="profile" />
@@ -76,7 +76,7 @@ const Profile = () => {
           <div className="flex-1 space-y-5 min-w-0">
 
             {/* Banner with avatar */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 text-white rounded-2xl p-6 sm:p-8 shadow-md">
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#3C2A6D] via-[#3C2A6D] to-[#593f9e] text-white rounded-2xl p-6 sm:p-8 shadow-md">
               <div className="relative z-10 flex items-center gap-4 flex-wrap">
                 <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur border-2 border-white/40 flex items-center justify-center text-3xl font-bold flex-shrink-0">
                   {initials}
@@ -87,7 +87,7 @@ const Profile = () => {
                     {formData.displayName || 'Unnamed User'}
                   </h2>
                   {isVerified && (
-                    <span className="inline-flex items-center gap-1 text-xs bg-green-400/20 text-green-100 px-2.5 py-1 rounded-full mt-2 backdrop-blur">
+                    <span className="inline-flex items-center gap-1 text-xs bg-green-400/80 text-gray-50 px-2.5 py-1 rounded-full mt-2 backdrop-blur">
                       <RiShieldCheckLine /> Verified Account
                     </span>
                   )}

@@ -104,10 +104,10 @@ const Dashboard = () => {
 
   return (
     <>
-      <Breadcrumb title="Dashboard" />
+      {/* <Breadcrumb title="Dashboard" /> */}
 
       <section className="py-6 sm:py-8 bg-gray-50 min-h-screen">
-        <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-6">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col lg:flex-row gap-6">
 
           {/* Sidebar */}
           <div className="lg:w-[280px] flex-shrink-0">
@@ -118,7 +118,7 @@ const Dashboard = () => {
           <div className="flex-1 space-y-5 min-w-0">
 
             {/* ─── WELCOME BANNER ─── */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 text-white rounded-2xl p-6 sm:p-8 shadow-md">
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#3C2A6D] via-[#3C2A6D] to-[#593f9e] text-white rounded-2xl p-6 sm:p-8 shadow-md">
               <div className="relative z-10">
                 <p className="text-purple-100 text-sm">Welcome back 👋</p>
                 <h2 className="text-2xl sm:text-3xl font-bold mt-1 break-words">

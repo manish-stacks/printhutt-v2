@@ -77,7 +77,8 @@ export async function requestOtp(emailOrMobile: string): Promise<void> {
     await user.save();
   }
 
-  // ✅ FIX: Try queue first, fallback to direct send if queue/Redis is down
+  //  FIX: Try queue first, fallback to direct send if queue/Redis is down
+
   try {
     await enqueueEmail({
       type: isEmailInput ? 'otp-email' : 'otp-sms',
@@ -86,7 +87,6 @@ export async function requestOtp(emailOrMobile: string): Promise<void> {
         : { mobile: emailOrMobile, otp },
     });
   } catch (queueErr) {
-    // Queue/Redis down — send directly so user is never blocked
     const { logger } = await import('@/config/logger');
     logger.warn('[auth] BullMQ queue failed, sending OTP directly', { error: queueErr });
     const mailer = await import('@/utils/mail/mailer');

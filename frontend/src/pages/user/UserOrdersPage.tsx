@@ -62,9 +62,9 @@ const UserOrdersPage = () => {
 
   return (
     <>
-      <Breadcrumb title="Orders" />
+      {/* <Breadcrumb title="Orders" /> */}
       <section className="py-6 sm:py-8 bg-gray-50 min-h-screen">
-        <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-6">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col lg:flex-row gap-6">
 
           <div className="lg:w-[280px] flex-shrink-0">
             <UserSidebar activemenu="orders" />
@@ -73,7 +73,7 @@ const UserOrdersPage = () => {
           <div className="flex-1 space-y-5 min-w-0">
 
             {/* Banner */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 text-white rounded-2xl p-6 sm:p-8 shadow-md">
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#3C2A6D] via-[#3C2A6D] to-[#593f9e] text-white rounded-2xl p-6 sm:p-8 shadow-md">
               <div className="relative z-10">
                 <p className="text-purple-100 text-sm">Order History</p>
                 <h2 className="text-2xl sm:text-3xl font-bold mt-1">
@@ -145,9 +145,8 @@ const UserOrdersPage = () => {
                         </div>
                       </div>
 
-                      <span className={`text-xs font-semibold px-3 py-1.5 rounded-full capitalize ${
-                        STATUS_STYLE[order.status] || 'bg-gray-100 text-gray-600'
-                      }`}>
+                      <span className={`text-xs font-semibold px-3 py-1.5 rounded-full capitalize ${STATUS_STYLE[order.status] || 'bg-gray-100 text-gray-600'
+                        }`}>
                         {order.status}
                       </span>
                     </div>
@@ -209,14 +208,27 @@ const UserOrdersPage = () => {
                       >
                         <RiDownload2Line /> Invoice
                       </Link>
-                      {order?.shipment?.trackingId && (
-                        <Link
-                          href={`/user/order-track/${order.shipment.trackingId}`}
-                          className="flex items-center gap-1.5 text-xs font-medium bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg transition"
-                        >
-                          <RiTruckLine /> Track Order
-                        </Link>
-                      )}
+
+                      {order?.status === 'shipped' && order?.shipment?.trackingId &&
+                        (order?.shipment?.provider === 'fship' ? (
+                          <a
+                            href={`https://app.fship.in/shipment/tracking?awbno=${order?.shipment?.trackingId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-xs font-medium bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg transition"
+                          >
+                            <RiTruckLine />
+                            Track Shipment
+                          </a>
+                        ) : (
+                          <Link
+                            href={`/user/order-track/${order?.shipment?.trackingId}`}
+                            className="flex items-center gap-1.5 text-xs font-medium bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg transition"
+                          >
+                            <RiTruckLine />
+                            Track Order
+                          </Link>
+                        ))}
                     </div>
                   </div>
                 ))}

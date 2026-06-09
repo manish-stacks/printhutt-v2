@@ -7,6 +7,7 @@ import {
   RiMapPin2Line, RiPhoneLine, RiCheckboxCircleFill,
   RiCloseCircleFill, RiInformationLine, RiUser3Line,
   RiBankCard2Line,
+  RiDownload2Line,
 } from 'react-icons/ri';
 import { formatCurrency, formatDate } from '@/helpers/helpers';
 import { useEffect, useState } from 'react';
@@ -18,12 +19,12 @@ import Image from 'next/image';
 import CustomizeOderModel from '@/components/admin/order/CustomizeOderModel';
 
 const STATUS_CONFIG: Record<string, { icon: any; color: string; bg: string }> = {
-  pending:   { icon: RiTimeLine,        color: 'text-amber-700',   bg: 'bg-amber-100' },
-  confirmed: { icon: RiCheckLine,       color: 'text-blue-700',    bg: 'bg-blue-100' },
-  shipped:   { icon: RiTruckLine,       color: 'text-purple-700',  bg: 'bg-purple-100' },
-  delivered: { icon: RiBoxingLine,      color: 'text-green-700',   bg: 'bg-green-100' },
-  cancelled: { icon: RiCloseLine,       color: 'text-red-700',     bg: 'bg-red-100' },
-  refunded:  { icon: RiCloseLine,       color: 'text-orange-700',  bg: 'bg-orange-100' },
+  pending: { icon: RiTimeLine, color: 'text-amber-700', bg: 'bg-amber-100' },
+  confirmed: { icon: RiCheckLine, color: 'text-blue-700', bg: 'bg-blue-100' },
+  shipped: { icon: RiTruckLine, color: 'text-purple-700', bg: 'bg-purple-100' },
+  delivered: { icon: RiBoxingLine, color: 'text-green-700', bg: 'bg-green-100' },
+  cancelled: { icon: RiCloseLine, color: 'text-red-700', bg: 'bg-red-100' },
+  refunded: { icon: RiCloseLine, color: 'text-orange-700', bg: 'bg-orange-100' },
 };
 
 export default function OrderDetailsPage() {
@@ -69,7 +70,7 @@ export default function OrderDetailsPage() {
         </Link>
 
         {/* Banner */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 text-white rounded-2xl p-6 sm:p-8 shadow-md">
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#3C2A6D] via-[#3C2A6D] to-[#593f9e] text-white rounded-2xl p-6 sm:p-8 shadow-md">
           <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-purple-100 text-sm">Order Details</p>
@@ -267,14 +268,29 @@ export default function OrderDetailsPage() {
               </div>
 
               {/* Track button if shipped */}
-              {order?.shipment?.trackingId && (
-                <Link
-                  href={`/user/order-track/${order.shipment.trackingId}`}
-                  className="mt-4 w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl text-sm font-medium transition"
-                >
-                  <RiTruckLine /> Track Shipment
-                </Link>
-              )}
+              <div className="flex flex-wrap items-center gap-2 px-4 sm:px-5 py-3 border-t border-gray-100 bg-gray-50/50 mt-2">
+                
+                {order?.status === 'shipped' && order?.shipment?.trackingId &&
+                  (order?.shipment?.provider === 'fship' ? (
+                    <a
+                      href={`https://app.fship.in/shipment/tracking?awbno=${order?.shipment?.trackingId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-xs font-medium bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg transition"
+                    >
+                      <RiTruckLine />
+                      Track Shipment
+                    </a>
+                  ) : (
+                    <Link
+                      href={`/user/order-track/${order?.shipment?.trackingId}`}
+                      className="flex items-center gap-1.5 text-xs font-medium bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg transition"
+                    >
+                      <RiTruckLine />
+                      Track Order
+                    </Link>
+                  ))}
+              </div>
             </div>
 
             {/* Help / Invoice */}
