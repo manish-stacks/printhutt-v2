@@ -40,23 +40,29 @@ async function main(): Promise<void> {
    * Schedule repeatable jobs
    */
   async function scheduleReminders() {
-    const existing = await reminderQueue.getRepeatableJobs();
-    for (const job of existing) {
+    // ✅ FIX: Existing repeatable jobs clear karo tabhi naye add karo
+    const existingReminder = await reminderQueue.getRepeatableJobs();
+    for (const job of existingReminder) {
       await reminderQueue.removeRepeatableByKey(job.key);
     }
+    // Existing order queue repeatable bhi clear karo (duplicate tha)
+    const existingOrder = await getQueue(QueueNames.order).getRepeatableJobs();
+    for (const job of existingOrder) {
+      await getQueue(QueueNames.order).removeRepeatableByKey(job.key);
+    }
 
-    // 🔥 Order pending — every 15 min
+    // ✅ only pending reminder cron — every 15 min
     await reminderQueue.add(
       'order-pending',
       {},
-      { repeat: { pattern: '*/15 * * * *' } }  // ← every 15 min
+      { repeat: { pattern: '*/15 * * * *' }, jobId: 'order-pending-cron' }
     );
 
     // Wishlist abandoned — daily at 10 AM
     await reminderQueue.add(
       'wishlist-abandoned',
       {},
-      { repeat: { pattern: '0 10 * * *' } }
+      { repeat: { pattern: '0 10 * * *' }, jobId: 'wishlist-abandoned-cron' }
     );
 
     logger.info('Reminder cron jobs scheduled (15min/daily)');
@@ -122,19 +128,6 @@ async function main(): Promise<void> {
     ),
   ];
 
-  /**
-   * Existing Pending Reminder Cron
-   */
-  await getQueue(QueueNames.order).add(
-    'pending-reminder',
-    {},
-    {
-      repeat: {
-        pattern: '0 * * * *',
-      },
-      jobId: 'pending-reminder-cron',
-    }
-  );
 
   /**
    * Schedule new reminder jobs
@@ -145,12 +138,11 @@ async function main(): Promise<void> {
     w.on('completed', (job) => {
       logger.debug(`[${w.name}] completed ${job.id}`);
     });
-
     w.on('failed', (job, err) => {
       logger.error(`[${w.name}] failed ${job?.id}`, err);
     });
   }
-
+  
   const shutdown = async (signal: string) => {
     logger.info(`Worker received ${signal}, closing...`);
 

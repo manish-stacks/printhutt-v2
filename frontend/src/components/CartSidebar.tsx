@@ -50,12 +50,13 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
     };
   }, [onClose]);
 
-  const handleQuantityChange = (productId: string, newQty: number) => {
+  // ✅ FIX: itemIndex pass karo — same _id wale duplicate items exact entry target karein
+  const handleQuantityChange = (productId: string, newQty: number, itemIndex: number) => {
     if (newQty < 1) {
-      removeFromCart(productId);
+      removeFromCart(productId, itemIndex);
       toast.info("Item removed");
     } else {
-      updateQuantity(productId, newQty);
+      updateQuantity(productId, newQty, itemIndex);
     }
   };
 
@@ -164,9 +165,9 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
             </div>
           ) : (
             <ul className="space-y-3">
-              {items.map((item) => (
+              {items.map((item, itemIndex) => (
                 <li
-                  key={item._id}
+                  key={`${item._id}-${itemIndex}`}
                   className={`relative rounded-2xl p-3 border transition ${item.isGift
                     ? "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200"
                     : "bg-gray-50 border-gray-100 hover:bg-white hover:shadow-sm"
@@ -237,7 +238,7 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
                         {!item.isGift ? (
                           <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden">
                             <button
-                              onClick={() => handleQuantityChange(item._id, item.quantity - 1)}
+                              onClick={() => handleQuantityChange(item._id, item.quantity - 1, itemIndex)}
                               className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 text-gray-600 transition"
                               aria-label="Decrease"
                             >
@@ -247,7 +248,7 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
                               {item.quantity}
                             </span>
                             <button
-                              onClick={() => handleQuantityChange(item._id, item.quantity + 1)}
+                              onClick={() => handleQuantityChange(item._id, item.quantity + 1, itemIndex)}
                               className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 text-gray-600 transition"
                               aria-label="Increase"
                             >
@@ -260,7 +261,7 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
 
                         {!item.isGift && (
                           <button
-                            onClick={() => removeFromCart(item._id)}
+                            onClick={() => removeFromCart(item._id, itemIndex)}
                             className="text-gray-400 hover:text-red-500 transition p-1.5 rounded-lg hover:bg-red-50"
                             aria-label="Remove"
                           >

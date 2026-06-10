@@ -168,9 +168,14 @@ export async function storefrontList(q: StorefrontListQueryDTO): Promise<unknown
 export async function storefrontByCategorySlug(
   q: StorefrontCategoryQueryDTO
 ): Promise<unknown> {
+  // ✅ FIX: Redis cache add kiya — har page request pe DB hit hota tha
+  const cacheKey = `${CACHE_PREFIX}cat-slug:${q.category}:p${q.page}:l${q.limit}`;
+  const cached = await cacheGet<unknown>(cacheKey);
+  if (cached) return cached;
+
   const result = await productRepo.findByCategorySlug(q.category, q.page, q.limit);
   if (!result) throw new NotFoundError('Category not found');
-  return {
+  const payload = {
     success: true,
     products: result.products,
     pagination: {
@@ -181,15 +186,22 @@ export async function storefrontByCategorySlug(
       hasMore: q.page * q.limit < result.total,
     },
   };
+  await cacheSet(cacheKey, payload, TTL_SECS);
+  return payload;
 }
 
 /* ──────────────── 6. Storefront: by sub-category slug ──────────────── */
 export async function storefrontBySubCategorySlug(
   q: StorefrontSubCategoryQueryDTO
 ): Promise<unknown> {
+  // ✅ FIX: Redis cache add kiya
+  const cacheKey = `${CACHE_PREFIX}subcat-slug:${q.subCategory}:p${q.page}:l${q.limit}`;
+  const cached = await cacheGet<unknown>(cacheKey);
+  if (cached) return cached;
+
   const result = await productRepo.findBySubCategorySlug(q.subCategory, q.page, q.limit);
   if (!result) throw new NotFoundError('Subcategory not found');
-  return {
+  const payload = {
     success: true,
     products: result.products,
     categories: result.categories,
@@ -201,6 +213,8 @@ export async function storefrontBySubCategorySlug(
       hasMore: q.page * q.limit < result.total,
     },
   };
+  await cacheSet(cacheKey, payload, TTL_SECS);
+  return payload;
 }
 
 /* ──────────────── 7. Storefront: new arrivals ──────────────── */
@@ -208,33 +222,68 @@ export async function newArrivals(q: NewArrivalsQueryDTO): Promise<unknown> {
   const limit =
     q.limit === 'all' || !q.limit ? 10 : Math.max(parseInt(q.limit, 10) || 10, 1);
 
+  // ✅ FIX: Redis cache — homepage pe bar bar call hota tha, aggregate expensive hai
+  const cacheKey = `${CACHE_PREFIX}new-arrivals:${q.type ?? 'all'}:${limit}`;
+  const cached = await cacheGet<unknown>(cacheKey);
+  if (cached) return cached;
+
   const matchQuery: FilterQuery<unknown> = { status: true };
   if (q.type === 'customize') (matchQuery as Record<string, unknown>).isCustomize = true;
   if (q.type === 'pre') (matchQuery as Record<string, unknown>).isCustomize = false;
 
   const products = await productRepo.randomSampleWithCategoryAndSub(matchQuery, limit);
-  return { success: true, products };
+  const payload = { success: true, products };
+  // ✅ 2 min cache — random sample hai, zyada stale nahi hona chahiye
+  await cacheSet(cacheKey, payload, 120);
+  return payload;
 }
 
 /* ──────────────── 8. Storefront: products with offers ──────────────── */
 export async function withOffers(q: OffersQueryDTO): Promise<unknown> {
   const limit =
     q.limit === 'all' || !q.limit ? 10 : Math.max(parseInt(q.limit, 10) || 10, 1);
+
+  // ✅ FIX: Redis cache add kiya
+  const cacheKey = `${CACHE_PREFIX}with-offers:${limit}`;
+  const cached = await cacheGet<unknown>(cacheKey);
+  if (cached) return cached;
+
   const products = await productRepo.withOffers(limit);
-  return { success: true, products };
+  const payload = { success: true, products };
+  await cacheSet(cacheKey, payload, TTL_SECS);
+  return payload;
 }
 
 /* ──────────────── 9. Storefront: search suggestions ──────────────── */
 export async function suggest(q: SuggestQueryDTO): Promise<unknown> {
-  const products = await productRepo.suggest((q.q ?? '').trim(), q.limit);
-  return { success: true, products };
+  const term = (q.q ?? '').trim();
+  if (!term) return { success: true, products: [] };
+
+  // ✅ FIX: Short TTL cache — search suggestions DB hit per keystroke tha
+  const cacheKey = `${CACHE_PREFIX}suggest:${term.toLowerCase()}:${q.limit ?? 10}`;
+  const cached = await cacheGet<unknown>(cacheKey);
+  if (cached) return cached;
+
+  const products = await productRepo.suggest(term, q.limit);
+  const payload = { success: true, products };
+  // 60s cache — search terms frequently repeat
+  await cacheSet(cacheKey, payload, 60);
+  return payload;
 }
 
 /* ──────────────── 10. Storefront: top related ──────────────── */
 export async function topRelated(q: RelatedQueryDTO): Promise<unknown> {
   const limit = q.limit === 'all' || !q.limit ? null : Math.max(parseInt(q.limit, 10), 1);
+
+  // ✅ FIX: Redis cache — product detail page pe bar bar call hota tha
+  const cacheKey = `${CACHE_PREFIX}top-related:${q.category}:${limit ?? 'all'}`;
+  const cached = await cacheGet<unknown>(cacheKey);
+  if (cached) return cached;
+
   const products = await productRepo.topRelated(q.category, limit);
-  return { products };
+  const payload = { products };
+  await cacheSet(cacheKey, payload, TTL_SECS);
+  return payload;
 }
 
 /* ──────────────── 11. Create product (multipart) ──────────────── */

@@ -185,14 +185,23 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         if (!otp || otp.length !== 6) { setError('Please enter a valid 6-digit OTP'); return; }
         try {
             setLoading(true);
-            const data = await axiosInstance.post('/auth/verify-otp', { otp, emailOrMobile });
-            toast.success(data.message || 'OTP verified successfully');
+            const data: any = await axiosInstance.post('/auth/verify-otp', { otp, emailOrMobile });
+            // ✅ FIX: Access token in-memory set karo — axios interceptor ke liye
+            // Cookie httpOnly set hoti hai backend se automatically
+            // But in-memory token bhi set karo taaki immediate requests auth ho sakein
+            if (data?.accessToken) {
+                const { setAccessToken } = await import('@/utils/axios');
+                setAccessToken(data.accessToken);
+            }
+            toast.success(data?.message || 'OTP verified successfully');
+            // ✅ fetchUserDetails + cart sync — NO reload needed
             await fetchUserDetails();
             await syncCartOnLogin();
             onClose();
+            
         } catch { setError('Invalid OTP or OTP expired'); }
         finally { setLoading(false); }
-    }, [otp]);
+    }, [otp, emailOrMobile, fetchUserDetails, onClose]);
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') isOtpSent ? handleVerifyOtp() : handleSendOtp();

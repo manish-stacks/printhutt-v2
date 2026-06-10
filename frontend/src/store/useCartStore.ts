@@ -90,8 +90,8 @@ interface CartItem extends Product {
 interface CartState {
   items: CartItem[];
   addToCart: (product: Product, quantity: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeFromCart: (productId: string, itemIndex?: number) => void;
+  updateQuantity: (productId: string, quantity: number, itemIndex?: number) => void;
   updateItem: (productId: string, data: Partial<CartItem>) => void;
   clearCart: () => void;
   getTotalItems: () => number;
@@ -177,19 +177,43 @@ export const useCartStore = create<CartState>()(
         });
       },
 
-      removeFromCart: (productId) => {
+      removeFromCart: (productId, itemIndex) => {
         set((state) => {
-          const newItems = state.items.filter((item) => item._id !== productId);
+          let newItems: CartItem[];
+          if (itemIndex !== undefined) {
+            // ✅ FIX: Index-based remove — same _id wale items mein exact entry remove karo
+            newItems = state.items.filter((_, idx) => idx !== itemIndex);
+          } else {
+            // Fallback: pehli matching entry remove karo
+            const firstMatchIdx = state.items.findIndex((item) => item._id === productId);
+            newItems = firstMatchIdx >= 0
+              ? state.items.filter((_, idx) => idx !== firstMatchIdx)
+              : state.items;
+          }
           scheduleDbSync(newItems);
           return { items: newItems };
         });
       },
 
-      updateQuantity: (productId, quantity) => {
+      updateQuantity: (productId, quantity, itemIndex) => {
         set((state) => {
-          const newItems = state.items.map((item) =>
-            item._id === productId ? { ...item, quantity } : item
-          );
+          let newItems: CartItem[];
+          if (itemIndex !== undefined) {
+            // ✅ FIX: Index-based update — exact entry update karo
+            newItems = state.items.map((item, idx) =>
+              idx === itemIndex ? { ...item, quantity } : item
+            );
+          } else {
+            // Fallback: pehli matching entry update karo
+            let found = false;
+            newItems = state.items.map((item) => {
+              if (!found && item._id === productId) {
+                found = true;
+                return { ...item, quantity };
+              }
+              return item;
+            });
+          }
           scheduleDbSync(newItems);
           return { items: newItems };
         });
@@ -212,8 +236,33 @@ export const useCartStore = create<CartState>()(
         set({ items: [] });
       },
 
-      // DB se aaye items ko store me set (login merge ke baad)
-      syncFromDb: (items) => set({ items }),
+      // DB se aaye items ko store me set — dedup karo same _id+variant combo
+      syncFromDb: (items) => {
+        const seen = new Set<string>();
+        const deduped = items.reduce((acc: CartItem[], item) => {
+          // Custom data items kabhi dedup mat karo (har ek unique hai)
+          if ((item as any).custom_data && Object.keys((item as any).custom_data).length > 0) {
+            acc.push(item);
+            return acc;
+          }
+          // Gift items bhi skip
+          if ((item as any).isGift) {
+            acc.push(item);
+            return acc;
+          }
+          const key = cartItemKey(item as any);
+          if (seen.has(key)) {
+            // Duplicate mila — existing ki quantity mein add karo
+            const existing = acc.find((a) => cartItemKey(a as any) === key);
+            if (existing) existing.quantity += item.quantity;
+            return acc;
+          }
+          seen.add(key);
+          acc.push(item);
+          return acc;
+        }, []);
+        set({ items: deduped });
+      },
 
       getTotalItems: () => get().items.reduce((t, i) => t + i.quantity, 0),
 

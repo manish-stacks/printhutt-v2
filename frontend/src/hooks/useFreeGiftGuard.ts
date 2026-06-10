@@ -75,7 +75,9 @@ export function useFreeGiftGuard() {
     if (!thresholdMet) {
       prevThresholdMet.current = false;
       if (hasFreeGift) {
-        removeFromCart(FREE_GIFT_ID);
+        // ✅ FIX: index-based remove — gift item ka exact index find karo
+        const giftIndex = items.findIndex((i) => i._id === FREE_GIFT_ID);
+        if (giftIndex >= 0) removeFromCart(FREE_GIFT_ID, giftIndex);
       }
     }
   }, [items, giftProduct]);

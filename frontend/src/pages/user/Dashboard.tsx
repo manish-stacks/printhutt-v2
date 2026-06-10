@@ -28,27 +28,37 @@ interface DashboardData {
 
 const Dashboard = () => {
   const userData = useUserStore((state) => state.userDetails);
-  const logout = useUserStore((state) => state.logout);
+  const isLoggedIn = useUserStore((state) => state.isLoggedIn);
+  const fetchUserDetails = useUserStore((state) => state.fetchUserDetails);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
-  // console.log("User details in Dashboard:", userData); // DEBUG
+
   useEffect(() => {
-    if (!userData) {
-      logout();
-      return;
-    }
-    
-    (async () => {
+    // ✅ FIX: Zustand persist hydration ka wait karo — pehle tick mein
+    // userData null hota hai even if logged in. logout() mat karo yahan.
+    // Middleware already protect karta hai /user/* routes ko.
+    // Agar refresh_token valid hai to middleware next() karta hai,
+    // axios interceptor automatically token refresh karega.
+
+    // Small delay — zustand persist rehydrate hone do
+    const timer = setTimeout(async () => {
       try {
         const res: any = await axiosInstance.get('/users/me');
-        // Handle both unwrapped and nested response shapes
         setData(res?.data?.data || res?.data || res);
+        // ✅ Fresh user details bhi sync karo
+        if (!userData) {
+          await fetchUserDetails();
+        }
       } catch (err) {
         console.error(err);
+        // ✅ 401 pe axios interceptor refresh karega automatically
+        // Agar refresh bhi fail hua to auth:expired event fire hoga → logout
       } finally {
         setLoading(false);
       }
-    })();
+    }, 50); // 50ms — zustand hydrate hone ke liye kaafi hai
+
+    return () => clearTimeout(timer);
   }, []);
 
   if (loading) return <LoadingSpinner />;
