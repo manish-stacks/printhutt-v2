@@ -64,7 +64,7 @@ export function buildApp(): Express {
   const app = express();
   app.set('trust proxy', 1);
 
-  /* ─── 1. Body parsers (15MB for base64 image carts/orders) ─── */
+  /* ─── 1. Body parsers (25MB for base64 image carts/orders) ─── */
   app.use(express.json({ limit: '25mb' }));
   app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
@@ -121,6 +121,38 @@ export function buildApp(): Express {
   app.get('/health', (_req, res) =>
     res.json({ ok: true, service: env.APP_NAME })
   );
+
+  /* ─── 7b. Cache-Control headers — Lighthouse "Use efficient cache lifetimes" fix ─── */
+  // Public storefront endpoints — browser + CDN caching allow karo
+  // Private/user endpoints — no-store rakhte hain
+  app.use('/api/', (req, res, next) => {
+    const path = req.path;
+    const isGet = req.method === 'GET';
+
+    if (!isGet) return next();
+
+    // Public storefront — 5 min cache (stale-while-revalidate 60s)
+    const publicStorefront = [
+      '/categories/storefront', '/subcategories/storefront',
+      '/products/storefront', '/products/new-arrivals',
+      '/products/with-offers', '/products/top-related',
+      '/products/suggest', '/sliders/storefront',
+      '/testimonials/storefront', '/offers/storefront',
+      '/blogs/storefront', '/settings',
+      '/pages/', '/seo/', '/warranty', '/return-policy', '/shipping',
+    ];
+
+    const isPublic = publicStorefront.some(p => path.startsWith(p) || path.includes(p));
+
+    if (isPublic) {
+      res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+    } else {
+      // Private: cart, orders, auth, users — never cache
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+
+    next();
+  });
 
   /* ─── 8. Routes ─── */
   app.use('/api/auth', authRoutes);

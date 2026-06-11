@@ -1,9 +1,9 @@
-
 "use client";
 
 import React, {
   Suspense,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -19,34 +19,34 @@ const DayoftheWeek = ({
 }) => {
   const [productData, setProductData] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-
-      const products =
-        await productService.getTopProducts(
-          6,
-          catID
-        );
-
-      setProductData(products?.products);
-    } catch (error) {
-      console.error(
-        "Error fetching data:",
-        error
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    const el = sectionRef.current;
+    if (!el) return;
+
+    // ✅ FIX: useEffect mein seedha fetch nahi — IntersectionObserver se
+    // Visible hone pe hi API call karo. Home page pe 5-6 DayoftheWeek hain
+    // Sab ek saath fetch karte the on mount — ab sirf visible wala fetch karega
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          observer.disconnect();
+          productService
+            .getTopProducts(6, catID)
+            .then((res: any) => setProductData(res?.products || []))
+            .catch(console.error)
+            .finally(() => setLoading(false));
+        }
+      },
+      { rootMargin: "200px", threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [catID]);
 
   return (
-    <section className="relative overflow-hidden bg-[#ffffff] py-14 sm:py-16">
+    <section ref={sectionRef} className="relative overflow-hidden bg-[#ffffff] py-14 sm:py-16">
 
       {/* Glow */}
       <div className="absolute top-0 left-0 w-72 h-72 bg-pink-500/10 blur-3xl rounded-full" />

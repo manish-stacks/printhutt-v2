@@ -5,6 +5,8 @@ import Header from "./Header";
 import Footer from "./Footer";
 import AdminLayout from "./admin/AdminLayout";
 import AOS from "aos";
+import "aos/dist/aos.css";
+import "animate.css";
 
 const Layout = ({ children }) => {
   const pathname = usePathname();
@@ -12,8 +14,8 @@ const Layout = ({ children }) => {
 
   useEffect(() => {
     AOS.init({
-      duration: 1000, // Animation duration in ms
-      once: true, // Run animation only once
+      duration: 1000,
+      once: true, 
     });
   }, []);
 

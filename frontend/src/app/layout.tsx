@@ -4,17 +4,10 @@ import { getSiteSettings } from "@/lib/getSettings";
 import "./globals.css";
 import '/public/style.css';
 import '/public/acrylic.css';
-import 'animate.css';
-import "aos/dist/aos.css";
 import 'remixicon/fonts/remixicon.css';
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
-import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 import Script from "next/script";
-import 'quill/dist/quill.core.css';
 
-/* ─── Viewport (themeColor + responsive) ─── */
 export async function generateViewport(): Promise<Viewport> {
   const s = await getSiteSettings();
   return {
@@ -24,7 +17,6 @@ export async function generateViewport(): Promise<Viewport> {
   };
 }
 
-/* ─── Dynamic metadata from DB ─── */
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings();
   return {
@@ -59,6 +51,19 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* ✅ FIX 2: Cormorant Garamond — 11 components mein use ho raha tha
+            but kabhi preload nahi hua. Google Fonts se swap se load karo */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* ✅ font-display=swap — FOIT nahi hoga (Font display fix) */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&display=swap"
+          rel="stylesheet"
+        />
+
+        {/* Cormorant Garamond preloaded via Google Fonts in <head> */}
+
         {/* Meta Pixel */}
         {s.metaPixelId && (
           <Script
@@ -113,9 +118,8 @@ export default async function RootLayout({
           </>
         )}
 
-        {/* Custom free-form head scripts (admin-controlled — XSS risk) */}
         {s.headScripts && (
-          <div dangerouslySetInnerHTML={{ __html: s.headScripts }} />
+          <script dangerouslySetInnerHTML={{ __html: s.headScripts }} />
         )}
       </head>
       <body>
@@ -124,9 +128,8 @@ export default async function RootLayout({
           {children}
         </MainLayout>
 
-        {/* Custom free-form body scripts */}
         {s.bodyScripts && (
-          <div dangerouslySetInnerHTML={{ __html: s.bodyScripts }} />
+          <script dangerouslySetInnerHTML={{ __html: s.bodyScripts }} />
         )}
       </body>
     </html>

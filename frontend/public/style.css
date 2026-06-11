@@ -54,129 +54,147 @@
 /*--  Poppins font  --*/
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-Thin.ttf") format("truetype");
   font-weight: 100;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-ThinItalic.ttf") format("truetype");
   font-weight: 100;
   font-style: italic;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-ExtraLight.ttf") format("truetype");
   font-weight: 200;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-ExtraLightItalic.ttf") format("truetype");
   font-weight: 200;
   font-style: italic;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-Light.ttf") format("truetype");
   font-weight: 300;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-LightItalic.ttf") format("truetype");
   font-weight: 300;
   font-style: italic;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-Regular.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-Regular.ttf") format("truetype");
   font-weight: 400;
   font-style: italic;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-Medium.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-MediumItalic.ttf") format("truetype");
   font-weight: 500;
   font-style: italic;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-SemiBold.ttf") format("truetype");
   font-weight: 600;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-SemiBoldItalic.ttf") format("truetype");
   font-weight: 600;
   font-style: italic;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-Bold.ttf") format("truetype");
   font-weight: 700;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-BoldItalic.ttf") format("truetype");
   font-weight: 700;
   font-style: italic;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-ExtraBold.ttf") format("truetype");
   font-weight: 800;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-ExtraBoldItalic.ttf") format("truetype");
   font-weight: 800;
   font-style: italic;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-Black.ttf") format("truetype");
   font-weight: 900;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   src: url("./fonts/poppins/Poppins-BlackItalic.ttf") format("truetype");
   font-weight: 900;
   font-style: italic;
+  font-display: swap;
 }
 
 /*--  Quicksand font  --*/
@@ -185,6 +203,7 @@
   src: url("./fonts/quicksand/Quicksand-Light.ttf") format("truetype");
   font-weight: 300;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -192,6 +211,7 @@
   src: url("./fonts/quicksand/Quicksand-Regular.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -199,6 +219,7 @@
   src: url("./fonts/quicksand/Quicksand-Medium.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -206,6 +227,7 @@
   src: url("./fonts/quicksand/Quicksand-SemiBold.ttf") format("truetype");
   font-weight: 600;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -213,6 +235,7 @@
   src: url("./fonts/quicksand/Quicksand-Bold.ttf") format("truetype");
   font-weight: 700;
   font-style: normal;
+  font-display: swap;
 }
 
 /* custom font */
@@ -222,6 +245,7 @@
   src: url("./fonts/customize/Barbara-Calligraphy.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -229,6 +253,7 @@
   src: url("./fonts/customize/bellamona-webfont.woff") format("woff");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -236,6 +261,7 @@
   src: url("./fonts/customize/Bellarina.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -243,6 +269,7 @@
   src: url("./fonts/customize/brittanysignature-webfont.woff") format("woff");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -250,6 +277,7 @@
   src: url("./fonts/customize/Buttervill.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -257,6 +285,7 @@
   src: url("./fonts/customize/combine-script.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -264,6 +293,7 @@
   src: url("./fonts/customize/cosmodrome-monoline-webfont_bfcb9a5e-8962-4b6a-8ac2-31bae38f6f29.woff") format("woff");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -271,6 +301,7 @@
   src: url("./fonts/customize/DancingScript-VariableFont_wght.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -278,6 +309,7 @@
   src: url("./fonts/customize/dream_angel-webfont_7340341f-e6ed-4749-b751-f2bb8a8215a9.woff") format("woff");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -285,6 +317,7 @@
   src: url("./fonts/customize/foundry-font_pack-webfont_9d131044-032a-4771-ab30-f5ebdb5d02fd.woff") format("woff");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -292,6 +325,7 @@
   src: url("./fonts/customize/funky_signature-webfont_887d1918-ad15-4bdd-95f7-d9b43a5866a4.woff") format("woff");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -299,6 +333,7 @@
   src: url("./fonts/customize/HaloHandletter.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -306,6 +341,7 @@
   src: url("./fonts/customize/hexore-webfont.woff") format("woff");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -313,6 +349,7 @@
   src: url("./fonts/customize/Korian.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -320,6 +357,7 @@
   src: url("./fonts/customize/lavanderia_regular.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -327,6 +365,7 @@
   src: url("./fonts/customize/Modesta.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -334,6 +373,7 @@
   src: url("./fonts/customize/Monteryn.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -341,6 +381,7 @@
   src: url("./fonts/customize/neoneon-webfont.woff") format("woff");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -348,6 +389,7 @@
   src: url("./fonts/customize/zorate-webfont.woff") format("woff");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 
@@ -360,14 +402,16 @@
   font-family: "orangina_demo";
   src: url("./fonts/customize/Orangina-Demo.ttf") format("truetype");
   font-weight: 400;
-  font-style: normal
+  font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "ariblk";
   src: url('./fonts/customize/ariblk.ttf') format('truetype');
   font-weight: 400;
-  font-style: normal
+  font-style: normal;
+  font-display: swap;
 }
 
 
@@ -375,7 +419,8 @@
   font-family: "impact";
   src: url('./fonts/customize/impact.ttf') format('truetype');
   font-weight: 400;
-  font-style: normal
+  font-style: normal;
+  font-display: swap;
 }
 
 
@@ -384,21 +429,24 @@
   font-family: "bookma";
   src: url('./fonts/customize/BOOKMA.TTF') format('truetype');
   font-weight: 400;
-  font-style: normal
+  font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "coopbl";
   src: url('./fonts/customize/COOPBL.TTF') format('truetype');
   font-weight: 400;
-  font-style: normal
+  font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "aurorac";
   src: url('./fonts/customize/AURORAC.TTF') format('truetype');
   font-weight: 400;
-  font-style: normal
+  font-style: normal;
+  font-display: swap;
 }
 
 /* Utilities ( Import Utilities ) */
@@ -407,7 +455,7 @@
 /* components ( Import components ) */
 /* common */
 body {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   font-size: 15px;
   font-weight: 400;
   color: #686e7d;
@@ -428,7 +476,7 @@ body {
 }
 
 .font-Poppins {
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
 }
 
 .font-quicksand {
@@ -754,7 +802,7 @@ textarea::placeholder {
 .select-options li {
   -webkit-transition: all 0.3s ease-in-out;
   transition: all 0.3s ease-in-out;
-  font-family: "Poppins, sans-serif";
+  font-family: "Poppins";
   font-weight: 300;
   line-height: 28px;
   letter-spacing: 0.03rem;
@@ -2811,5 +2859,3 @@ ul#ProTab li.active a {
 .bg-gradient {
   background: linear-gradient(170deg, #000F44 0%, #4A0012 100%)
 }
-
-
