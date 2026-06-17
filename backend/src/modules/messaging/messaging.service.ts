@@ -27,12 +27,12 @@ async function sendWhatsApp(
 
 /* ─── WhatsApp Template mapping ───────────────────────────────────────────────
    Ye templates aapke WhatsApp Business API provider mein approve hone chahiye
-   Template names: printhutt_order_confirmation, printhutt_order_failed, printhutt_pending_reminder
+   Template names: printhutt_order_confirmation, printhutt_order_failed, printhutt_pending_reminders
 ─────────────────────────────────────────────────────────────────────────────── */
 export const WHATSAPP_TEMPLATES: Record<string, string> = {
   order_confirm:           'printhutt_order_confirmation',
   order_failed:            'printhutt_order_failed',
-  order_pending_reminder:  'printhutt_pending_reminder',
+  order_pending_reminder:  'printhutt_pending_reminders',
 };
 
 function getWhatsAppParams(
