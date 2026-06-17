@@ -40,29 +40,23 @@ async function main(): Promise<void> {
    * Schedule repeatable jobs
    */
   async function scheduleReminders() {
-    // ✅ FIX: Existing repeatable jobs clear karo tabhi naye add karo
-    const existingReminder = await reminderQueue.getRepeatableJobs();
-    for (const job of existingReminder) {
+    const existing = await reminderQueue.getRepeatableJobs();
+    for (const job of existing) {
       await reminderQueue.removeRepeatableByKey(job.key);
     }
-    // Existing order queue repeatable bhi clear karo (duplicate tha)
-    const existingOrder = await getQueue(QueueNames.order).getRepeatableJobs();
-    for (const job of existingOrder) {
-      await getQueue(QueueNames.order).removeRepeatableByKey(job.key);
-    }
 
-    // ✅ only pending reminder cron — every 15 min
+    // 🔥 Order pending — every 15 min
     await reminderQueue.add(
       'order-pending',
       {},
-      { repeat: { pattern: '*/15 * * * *' }, jobId: 'order-pending-cron' }
+      { repeat: { pattern: '*/15 * * * *' } }  // ← every 15 min
     );
 
     // Wishlist abandoned — daily at 10 AM
     await reminderQueue.add(
       'wishlist-abandoned',
       {},
-      { repeat: { pattern: '0 10 * * *' }, jobId: 'wishlist-abandoned-cron' }
+      { repeat: { pattern: '0 10 * * *' } }
     );
 
     logger.info('Reminder cron jobs scheduled (15min/daily)');
@@ -128,9 +122,8 @@ async function main(): Promise<void> {
     ),
   ];
 
-
   /**
-   * Schedule new reminder jobs
+   * Schedule reminder cron jobs
    */
   await scheduleReminders();
 
@@ -138,11 +131,12 @@ async function main(): Promise<void> {
     w.on('completed', (job) => {
       logger.debug(`[${w.name}] completed ${job.id}`);
     });
+
     w.on('failed', (job, err) => {
       logger.error(`[${w.name}] failed ${job?.id}`, err);
     });
   }
-  
+
   const shutdown = async (signal: string) => {
     logger.info(`Worker received ${signal}, closing...`);
 
