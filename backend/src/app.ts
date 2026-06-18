@@ -38,6 +38,8 @@ import settingsRoutes from './modules/settings/settings.routes';
 import seoRoutes from './modules/seo/seo.routes';
 import pageRoutes from './modules/pages/pages.routes';
 import messagingRoutes from '@/modules/messaging/messaging.routes';
+import bullboardRoutes from './modules/bullboard/bullboard.routes';
+import { requireAdmin } from './middlewares/auth.middleware';
 
 /* ─── Webhook/callback paths exempt from CORS, helmet, rate-limit ─── */
 /* ✅ FIX: Sirf actual server-to-server callbacks exempt hone chahiye.
@@ -64,7 +66,7 @@ export function buildApp(): Express {
   const app = express();
   app.set('trust proxy', 1);
 
-  /* ─── 1. Body parsers (25MB for base64 image carts/orders) ─── */
+  /* ─── 1. Body parsers (15MB for base64 image carts/orders) ─── */
   app.use(express.json({ limit: '25mb' }));
   app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
@@ -160,6 +162,9 @@ export function buildApp(): Express {
   app.use('/api/categories', categoryRoutes);
   app.use('/api/subcategories', subcategoryRoutes);
   app.use('/api/products', productRoutes);
+
+  /* ─── Bull Board — Queue Dashboard (admin only) ─── */
+  app.use('/api/admin/queues',  bullboardRoutes); //...requireAdmin,
   app.use('/api/cart', cartRoutes);
   app.use('/api/wishlist', wishlistRoutes);
   app.use('/api/addresses', addressRoutes);

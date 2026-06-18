@@ -27,12 +27,12 @@ async function sendWhatsApp(
 
 /* ─── WhatsApp Template mapping ───────────────────────────────────────────────
    Ye templates aapke WhatsApp Business API provider mein approve hone chahiye
-   Template names: printhutt_order_confirmation, printhutt_order_failed, printhutt_pending_reminders
+   Template names: printhutt_order_confirmation, printhutt_order_failed, printhutt_reminder_02
 ─────────────────────────────────────────────────────────────────────────────── */
 export const WHATSAPP_TEMPLATES: Record<string, string> = {
   order_confirm:           'printhutt_order_confirmation',
   order_failed:            'printhutt_order_failed',
-  order_pending_reminder:  'printhutt_pending_reminders',
+  order_pending_reminder:  'printhutt_reminder_02',
 };
 
 function getWhatsAppParams(
@@ -60,7 +60,7 @@ function getWhatsAppParams(
 
     case 'order_pending_reminder':
       // {{1}} name, {{2}} orderId, {{3}} amount, {{4}} cartLink
-      return [name, oid, `₹${amt}`, 'https://www.printhutt.com/cart'];
+      return [name, oid, `₹${amt}`];
 
     default:
       return [name, oid];
@@ -127,29 +127,122 @@ export const MESSAGES = {
   order_pending_reminder: {
     channel: 'email' as const,
     subject: '⏳ Complete Your Order - #{{orderId}} | PrintHutt',
-    body: `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
+    body: `<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="UTF-8"/>
+</head>
 <body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 15px;">
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td align="center" style="padding:40px 15px;">
+
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08);">
-<tr><td align="center" style="background:linear-gradient(135deg,#9333ea,#ec4899);padding:36px 20px;">
+
+<tr>
+<td align="center" style="background:linear-gradient(135deg,#9333ea,#ec4899);padding:36px 20px;">
 <img src="https://www.printhutt.com/print-hutt-logo.webp" alt="PrintHutt" width="110" style="margin-bottom:12px;"/>
 <h1 style="margin:0;color:#fff;font-size:26px;">PrintHutt</h1>
-</td></tr>
-<tr><td style="padding:40px 35px;">
-<h2 style="margin:0 0 8px;font-size:26px;color:#d97706;">⏳ Your Order is Pending!</h2>
-<p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.7;">Hi <b>{{userName}}</b>, your order <b>#{{orderId}}</b> is still waiting for payment. Complete it before your items run out!</p>
+<p style="margin:8px 0 0;color:#fce7f3;font-size:14px;">
+Premium Personalized Gifts
+</p>
+</td>
+</tr>
+
+<tr>
+<td style="padding:40px 35px;">
+
+<h2 style="margin:0 0 12px;font-size:28px;color:#d97706;">
+⏳ Complete Your Order
+</h2>
+
+<p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.8;">
+Hi <b>{{userName}}</b>,
+your order <b>#{{orderId}}</b> is still waiting for payment.
+
+Don't worry — your selected items are still reserved, but availability may change soon.
+Complete your order now to avoid missing out.
+
+</p>
+
 <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:20px 24px;margin-bottom:24px;">
-<p style="margin:0 0 8px;font-size:14px;color:#6b7280;">Order Amount</p>
-<p style="margin:0;font-size:24px;font-weight:700;color:#9333ea;">₹{{totalAmount}}</p>
+<p style="margin:0 0 8px;font-size:14px;color:#6b7280;">
+Order Amount
+</p>
+
+<p style="margin:0;font-size:24px;font-weight:700;color:#9333ea;">
+₹{{totalAmount}}
+</p>
 </div>
-<div style="text-align:center;margin:28px 0;">
-<a href="{{cartLink}}" style="display:inline-block;background:linear-gradient(135deg,#9333ea,#ec4899);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:600;">Complete Payment Now →</a>
+
+<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+
+<h3 style="margin:0 0 10px;color:#9333ea;font-size:18px;">
+🎁 Exclusive Offer for You
+</h3>
+
+<p style="margin:0 0 12px;color:#4b5563;font-size:15px;line-height:1.7;">
+As a special thank you, we're offering you an exclusive discount on your prepaid order.
+</p>
+
+<p style="margin:0 0 12px;color:#111827;font-size:16px;font-weight:600;">
+Get <span style="color:#16a34a;">₹150 OFF</span> using coupon code:
+</p>
+
+<div style="margin-bottom:12px;">
+<span style="display:inline-block;background:#9333ea;color:#fff;padding:10px 18px;border-radius:8px;font-size:18px;font-weight:700;letter-spacing:1px;">
+TRUST50
+</span>
 </div>
-</td></tr>
-<tr><td style="background:#f3f4f6;padding:20px;text-align:center;">
-<p style="margin:0;font-size:12px;color:#9ca3af;">© PrintHutt · <a href="https://printhutt.com" style="color:#9333ea;">printhutt.com</a></p>
-</td></tr>
-</table></td></tr></table></body></html>`,
+
+<p style="margin:0;color:#4b5563;font-size:14px;line-height:1.7;">
+💳 Secure Payments &nbsp; • &nbsp;
+✅ 100% Satisfaction Guarantee &nbsp; • &nbsp;
+🚚 Fast Delivery Across India
+</p>
+
+</div>
+
+<div style="text-align:center;margin:32px 0;">
+<a href="{{cartLink}}" style="display:inline-block;background:linear-gradient(135deg,#9333ea,#ec4899);color:#fff;text-decoration:none;padding:15px 34px;border-radius:10px;font-size:16px;font-weight:600;">
+Complete Payment Now →
+</a>
+</div>
+
+<p style="margin:0;color:#6b7280;font-size:14px;line-height:1.8;">
+Need help completing your order?
+Simply reply to this email or contact our support team. We're happy to assist you.
+</p>
+
+<p style="margin:24px 0 0;color:#6b7280;font-size:14px;line-height:1.8;">
+Thank you for choosing PrintHutt. ❤️
+<br/>
+Printed with passion. Delivered with care.
+</p>
+
+</td>
+</tr>
+
+<tr>
+<td style="background:#f3f4f6;padding:20px;text-align:center;border-top:1px solid #e5e7eb;">
+<p style="margin:0;font-size:12px;color:#9ca3af;">
+© PrintHutt ·
+<a href="https://printhutt.com" style="color:#9333ea;text-decoration:none;">
+printhutt.com
+</a>
+</p>
+</td>
+</tr>
+
+</table>
+
+</td>
+</tr>
+</table>
+</body>
+</html>
+`,
   },
   wishlist_abandoned: {
     channel: 'email' as const,
