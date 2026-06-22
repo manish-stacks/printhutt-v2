@@ -42,7 +42,8 @@ const ProductCardTwo = ({ product }: PopupProps) => {
     product.discountType === "percentage"
       ? product.price - (product.price * product.discountPrice) / 100
       : product.price - product.discountPrice;
-
+  const isOutOfStock =
+    !product?.status || product?.stock <= 0;
   return (
     <div className="group h-full">
       <div className="relative flex flex-col h-full overflow-hidden rounded-[10px] border border-white/10 bg-[#13132a] hover:border-amber-400/40 transition-all duration-500 hover:-translate-y-2 shadow-xl hover:shadow-amber-400/10">
@@ -146,17 +147,29 @@ const ProductCardTwo = ({ product }: PopupProps) => {
                       </span>
                     )}
                   </div>
-                  <span className="text-emerald-400 text-xs mt-2 font-medium">In Stock</span>
+                  <span
+                    className={`text-xs mt-2 font-medium ${isOutOfStock
+                        ? "text-red-400"
+                        : "text-emerald-400"
+                      }`}
+                  >
+                    {isOutOfStock ? "Out of Stock" : "In Stock"}
+                  </span>
                 </div>
                 <button
-                  onClick={() => handleAddToCart(product)}
-                  className="shrink-0 w-[48px] h-[48px] rounded-2xl bg-amber-400 hover:bg-white transition-all duration-300 flex items-center justify-center"
+                  onClick={() => !isOutOfStock && handleAddToCart(product)}
+                  disabled={isOutOfStock}
+                  className={`shrink-0 w-[48px] h-[48px] rounded-2xl flex items-center justify-center transition-all duration-300 ${isOutOfStock
+                      ? "bg-gray-500 cursor-not-allowed opacity-50"
+                      : "bg-amber-400 hover:bg-white"
+                    }`}
                 >
                   <RiShoppingBag4Line size={20} className="text-black" />
                 </button>
               </div>
             ) : (
               <button
+                disabled={isOutOfStock}
                 onClick={() => router.push(product?.customizeLink)}
                 className="w-full h-[48px] rounded-2xl bg-amber-400 hover:bg-white text-black text-sm font-bold transition-all duration-300"
               >

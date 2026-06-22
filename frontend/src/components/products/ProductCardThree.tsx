@@ -29,7 +29,8 @@ const ProductCardThree = ({ product }: PopupProps) => {
         const response = await wishlistService.addWishlist(product._id);
         toast(response.message);
     }
-
+    const isOutOfStock =
+        !product?.status || product?.stock <= 0;
     return (
         <>
             <div className="bb-pro-box bg-[#fff] border-[1px] border-solid border-[#eee] rounded-[5px]">
@@ -67,8 +68,13 @@ const ProductCardThree = ({ product }: PopupProps) => {
                             </button>
                         </li>
                         <li className="bb-btn-group transition-all duration-[0.3s] ease-in-out w-[35px] h-[35px] mx-[2px] flex items-center justify-center text-[#fff] bg-[#fff] border-[1px] border-solid border-[#eee] rounded-[10px]">
-                            <button onClick={() => handleAddToCart(product)} title="Add To Cart" className="w-[35px] h-[35px] flex items-center justify-center">
-                                <i className="ri-shopping-bag-4-line transition-all duration-[0.3s] ease-in-out text-[18px] text-[#777] leading-[10px]" />
+                            <button
+                                onClick={() => !isOutOfStock && handleAddToCart(product)}
+                                disabled={isOutOfStock}
+                                title={isOutOfStock ? "Out of Stock" : "Add To Cart"}
+                                className="w-[35px] h-[35px] flex items-center justify-center disabled:opacity-50"
+                            >
+                                <i className="ri-shopping-bag-4-line" />
                             </button>
                         </li>
                     </ul>

@@ -1,22 +1,4 @@
-/**
- * Product service — full port of:
- *   src/app/api/product/route.ts                            GET + POST
- *   src/app/api/product/[id]/route.ts                       GET, PUT, DELETE, PATCH
- *   src/app/api/product/[id]/copy/route.ts                  POST (copy)
- *   src/app/api/product/by_category/route.ts                GET
- *   src/app/api/product/image-delate/route.ts               POST (delete one image)
- *   src/app/api/v1/products/route.ts                        GET (storefront filter)
- *   src/app/api/v1/products/[id]/route.ts                   GET
- *   src/app/api/v1/products/category/route.ts               GET
- *   src/app/api/v1/products/sub-category/route.ts           GET
- *   src/app/api/v1/products/new-arrivals/route.ts           GET
- *   src/app/api/v1/products/offers/route.ts                 GET
- *   src/app/api/v1/products/search-suggestions/route.ts     GET
- *   src/app/api/v1/products/top-related-products/route.ts   GET
- *
- * Behaviour preserved exactly — same filter logic, sort cases, pagination
- * shape and response keys.
- */
+
 import mongoose, { FilterQuery } from 'mongoose';
 import { deleteImage, uploadImage, type MulterFile, type UploadedAsset } from '@/utils/storage';
 import {

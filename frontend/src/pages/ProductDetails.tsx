@@ -179,6 +179,16 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
   //  FIXED — sahi validation
   const handleAddToCart = () => {
     if (!product) return;
+    if (
+  (product?.isVarientStatus &&
+    (selectedVariant?.stock ?? 0) <= 0) ||
+  (!product?.isVarientStatus &&
+    (product?.stock ?? 0) <= 0)
+) {
+  toast.error("Product is out of stock");
+  return;
+}
+
     if (product.isCustomize) return router.push(product.customizeLink);
 
     //  isTextBox true ho to name required
@@ -232,6 +242,14 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
       reader.readAsDataURL(file);
     }
   };
+
+  const isOutOfStock =
+  !product?.status ||
+  (
+    product?.isVarientStatus
+      ? (selectedVariant?.stock ?? 0) <= 0
+      : (product?.stock ?? 0) <= 0
+  );
 
   return (
     <>
@@ -504,11 +522,15 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
             <div className="flex gap-2">
               <button
                 onClick={handleAddToCart}
-                disabled={selectedVariant?.stock === 0}
+                disabled={isOutOfStock}
                 className="flex-1 bg-yellow-400 text-slate-700 py-3 px-6 rounded-md font-medium hover:bg-yellow-500 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <RiShoppingBag2Line className="w-5 h-5" />
-                {product?.isCustomize ? 'Customize & Buy' : selectedVariant?.stock === 0 ? 'Out of Stock' : 'ADD TO BAG'}
+                 {product?.isCustomize
+    ? 'Customize & Buy'
+    : isOutOfStock
+    ? 'Out of Stock'
+    : 'ADD TO BAG'}
               </button>
               <button onClick={handleAddToWishlist} className="px-6 py-3 border border-gray-300 rounded-md hover:bg-gray-50">
                 <BiHeart className="w-6 h-6" />
