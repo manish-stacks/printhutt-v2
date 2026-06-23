@@ -207,7 +207,12 @@ const Checkout = () => {
       },
       paymentMethod: paymentMethod,
       address: selectAddress,
-      payAmt: totalPrice.discountPrice
+      // payAmt = Total Payable (round, +shipping for online). pehle raw discountPrice tha.
+      payAmt: (
+        paymentMethod === 'online'
+          ? Math.round(totalPrice.discountPrice + (Number(totalPrice.shippingTotal) || 0))
+          : Math.round(totalPrice.discountPrice)
+      ).toFixed(2)
     };
 
     // console.log(order)

@@ -60,6 +60,9 @@ const orderSchema: Schema<IOrder> = new Schema({
         provider: { type: String },
         trackingId: { type: String },
         order_id: { type: String },
+        shipment_id: { type: String },
+        labelUrl: { type: String },
+        courierName: { type: String },
         height: { type: String },
         width: { type: String },
         length: { type: String },
@@ -82,6 +85,14 @@ const orderSchema: Schema<IOrder> = new Schema({
         default: 'pending'
     },
     reminderSent: {
+        type: Boolean,
+        default: false
+    },
+    stockReduced: {
+        type: Boolean,
+        default: false
+    },
+    confirmationSent: {
         type: Boolean,
         default: false
     },

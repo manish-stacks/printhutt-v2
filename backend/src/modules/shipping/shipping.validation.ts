@@ -15,10 +15,11 @@ export const upsertSchema = z
   .passthrough();
 export type UpsertDTO = z.infer<typeof upsertSchema>;
 
-/* ─── Create shipment (FShip / Shiprocket) ─── */
+/* ─── Create shipment (FShip / Shiprocket / Velocity) ─── */
 export const createShipmentSchema = z.object({
   orderId: z.string().min(1, 'Order ID is required'),
-  provider: z.enum(['fship', 'shiprocket']),
+  provider: z.enum(['fship', 'shiprocket', 'velocity']),
+  carrierId: z.string().optional(), // Velocity ke liye optional (blank = auto courier)
   shipmentDetails: z.object({
     length: z.union([z.string(), z.number()]),
     width: z.union([z.string(), z.number()]),
@@ -30,5 +31,5 @@ export type CreateShipmentDTO = z.infer<typeof createShipmentSchema>;
 
 /* ─── Webhook param ─── */
 export const providerParamSchema = z.object({
-  provider: z.enum(['fship', 'shiprocket']),
+  provider: z.enum(['fship', 'shiprocket', 'velocity']),
 });

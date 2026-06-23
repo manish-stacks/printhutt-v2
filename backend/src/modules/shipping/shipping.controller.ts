@@ -47,14 +47,14 @@ export const cancelShipment = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const track = asyncHandler(async (req: Request, res: Response) => {
-  const provider = param(req, 'provider') as 'fship' | 'shiprocket';
+  const provider = param(req, 'provider') as 'fship' | 'shiprocket' | 'velocity';
   const waybill = param(req, 'waybill');
   const data = await service.track(provider, waybill);
   return res.json(data);
 });
 
 export const webhook = asyncHandler(async (req: Request, res: Response) => {
-  const provider = param(req, 'provider') as 'fship' | 'shiprocket';
+  const provider = param(req, 'provider') as 'fship' | 'shiprocket' | 'velocity';
   const data = await service.handleWebhook(provider, req.body as Record<string, unknown>);
   return res.json(data);
 });

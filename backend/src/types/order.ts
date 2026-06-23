@@ -60,5 +60,7 @@ export interface IOrder extends Document {
     createdAt: Date;
     updatedAt: Date;
     reminderSent: boolean;
+    stockReduced?: boolean;
+    confirmationSent?: boolean;
     razorpayOrderId: string;
 }

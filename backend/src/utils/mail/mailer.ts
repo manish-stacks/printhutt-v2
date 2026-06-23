@@ -306,70 +306,118 @@ export const sendOtpBySms = async (mobile: string, otp: string) => {
 
 export async function sendOrderConfirmationEmail(order: any) {
   const email = order.shipping?.email;
-  if (!email) {
-    console.log("No customer email found");
-    return;
-  }
 
-  const commonData = {
-    orderId: order.orderId,
-    items: order.items,
-    totalAmount: order.totalAmount,
-    payment: order.payment,
-    shipping: order.shipping,
-    coupon: order.coupon,
-    formatCurrency,
-    paymentType: order.paymentType,
-    payAmt: order.payAmt,
-  };
+  // ── EMAIL ── (sirf tab jab valid email ho; warna skip — WhatsApp fir bhi jayega)
+  if (email && String(email).includes("@")) {
+    const commonData = {
+      orderId: order.orderId,
+      items: order.items,
+      totalAmount: order.totalAmount,
+      payment: order.payment,
+      shipping: order.shipping,
+      coupon: order.coupon,
+      formatCurrency,
+      paymentType: order.paymentType,
+      payAmt: order.payAmt,
+    };
 
-  try {
-    await Promise.all([
-      transporter.sendMail({
+    // Customer aur owner email ALAG-ALAG bhejo — ek fail ho to doosra na ruke
+    // (Promise.all me owner email undefined hone par customer email bhi block ho rahi thi)
+    const customerMail = transporter
+      .sendMail({
         from: process.env.SMTP_FROM,
         to: email,
         subject: `Order Confirmed - ${order.orderId}`,
         html: getCustomerEmailTemplate(commonData),
-      }),
-      transporter.sendMail({
-        from: process.env.SMTP_FROM,
-        to: process.env.SHOP_OWNER_EMAIL,
-        subject: `New Order Received - ${order.orderId}`,
-        html: getOwnerEmailTemplate(commonData),
-      }),
-    ]);
-  } catch (err) {
-    console.error("Mail send failed:", err);
+      })
+      .then(() => console.log(`[mailer] customer email sent → ${email}`))
+      .catch((err) => console.error("Customer mail failed:", (err as Error)?.message || err));
+
+    const ownerEmail = process.env.SHOP_OWNER_EMAIL;
+    const ownerMail = ownerEmail
+      ? transporter
+          .sendMail({
+            from: process.env.SMTP_FROM,
+            to: ownerEmail,
+            subject: `New Order Received - ${order.orderId}`,
+            html: getOwnerEmailTemplate(commonData),
+          })
+          .then(() => console.log(`[mailer] owner email sent → ${ownerEmail}`))
+          .catch((err) => console.error("Owner mail failed:", (err as Error)?.message || err))
+      : Promise.resolve(console.warn("[mailer] SHOP_OWNER_EMAIL not set — owner email skipped"));
+
+    await Promise.allSettled([customerMail, ownerMail]);
+  } else {
+    console.log(`[mailer] order ${order.orderId} — no valid email, email skipped (WhatsApp continue)`);
   }
 
-  if (order.shipping?.mobileNumber) {
-    const params = [
-      order.shipping.userName || "", // {{1}}
-      order.orderId || "", // {{2}}
-      order.status || "", // {{3}}
-      order.paymentType === "online" ? "Prepaid" : "COD", // {{4}}
-      formatCurrency(order.totalAmount.discountPrice), // {{5}}
-      formatCurrency(order.payAmt), // {{6}}
-      `${order.shipping.addressLine}, ${order.shipping.city}, ${order.shipping.state} ${order.shipping.postCode}`, // {{7}}
-    ];
+  // ── WHATSAPP ── (email se INDEPENDENT — ab email na ho to bhi jayega)
+  await sendOrderConfirmationWhatsApp(order);
+}
 
-    const waUrl =
-      `http://waapi.hoverbusinessservices.com/api/sendmsgutil.php` +
-      `?user=Printhutt_BW` +
-      `&pass=123456` +
-      `&sender=BUZWAP` +
-      `&phone=${order.shipping.mobileNumber}` +
-      `&text=printhutt_order_confirmation` +
-      `&priority=wa` +
-      `&stype=normal` +
-      `&Params=${encodeURIComponent(params.join(","))}`;
+/**
+ * BUZWAP positional-param fix:
+ * Params comma-separated bhejte hain. Agar kisi param ke andar comma/newline ho
+ * (jaise address ya formatCurrency ka "₹1,141" thousand-comma) to provider extra
+ * value bana deta hai aur 7 ki jagah 8 params ban jate hain → template MISMATCH
+ * → message FAIL. Isliye har param se comma/newline/extra-space strip karte hain.
+ */
+function sanitizeWaParam(v: unknown): string {
+  return String(v ?? "")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/,/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
-    try {
-      const response = await axios.get(waUrl);
-      console.log("WhatsApp sent:", response.data);
-    } catch (error) {
-      console.error("WhatsApp failed:", error);
-    }
+/** Amount ko CLEAN number string banao — koi ₹ symbol, comma ya Intl special-space nahi
+ *  (₹ multibyte glyph + thousand-comma utility template ko fail kara dete the). */
+function waAmount(v: unknown): string {
+  const n = Math.round(Number(v) || 0);
+  return String(n);
+}
+
+/** Sirf digits — raw 10-digit (jaise order_status template me chal raha hai). */
+function waPhone(num: unknown): string {
+  return String(num ?? "").replace(/\D/g, "");
+}
+
+export async function sendOrderConfirmationWhatsApp(order: any): Promise<void> {
+  const phone = waPhone(order.shipping?.mobileNumber);
+  if (!phone) {
+    console.log(`[whatsapp] order ${order.orderId} — no mobile number, skip`);
+    return;
+  }
+
+  // Template: printhutt_order_confirmation → 7 params {{1}}..{{7}}
+  const params = [
+    sanitizeWaParam(order.shipping?.userName), // {{1}} name
+    sanitizeWaParam(order.orderId), // {{2}} Order ID
+    sanitizeWaParam(order.status), // {{3}} Status
+    order.paymentType === "online" ? "Prepaid" : "COD", // {{4}} Payment Mode
+    waAmount(order.totalAmount?.discountPrice), // {{5}} Total Amount (plain number)
+    waAmount(order.payAmt), // {{6}} Paid Amount (plain number)
+    sanitizeWaParam( // {{7}} Address (commas → space)
+      `${order.shipping?.addressLine || ""} ${order.shipping?.city || ""} ${order.shipping?.state || ""} ${order.shipping?.postCode || ""}`
+    ),
+  ];
+
+  const waUrl =
+    `http://waapi.hoverbusinessservices.com/api/sendmsgutil.php` +
+    `?user=Printhutt_BW` +
+    `&pass=123456` +
+    `&sender=BUZWAP` +
+    `&phone=${phone}` +
+    `&text=printhutt_order_confirmation` +
+    `&priority=wa` +
+    `&stype=normal` +
+    `&Params=${encodeURIComponent(params.join(","))}`;
+
+  try {
+    const response = await axios.get(waUrl, { timeout: 15000 });
+    console.log(`[whatsapp] order_confirmation → ${phone} | params=[${params.join(" | ")}]`, response.data);
+  } catch (error) {
+    console.error("WhatsApp order_confirmation failed:", (error as Error)?.message || error);
   }
 }
 

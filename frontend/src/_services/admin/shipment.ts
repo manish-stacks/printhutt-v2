@@ -3,7 +3,7 @@ import { axiosInstance } from '@/utils/axios';
 export const shipmentService = {
   create: (data: {
     orderId: string;
-    provider: 'fship' | 'shiprocket';
+    provider: 'fship' | 'shiprocket' | 'velocity';
     shipmentDetails: {
       length: string | number;
       width: string | number;
@@ -14,6 +14,6 @@ export const shipmentService = {
 
   cancel: (orderId: string) => axiosInstance.post(`/shipping/cancel/${orderId}`),
 
-  track: (provider: 'fship' | 'shiprocket', waybill: string) =>
+  track: (provider: 'fship' | 'shiprocket' | 'velocity', waybill: string) =>
     axiosInstance.get(`/shipping/track/${provider}/${waybill}`),
 };

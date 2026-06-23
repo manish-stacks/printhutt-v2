@@ -60,7 +60,7 @@ export default function OrderDetailsPage() {
         width: '',
         height: '',
         weight: '',
-        provider: 'fship' as 'fship' | 'shiprocket',
+        provider: 'fship' as 'fship' | 'shiprocket' | 'velocity',
     });
 
     const [showEditCustomer, setShowEditCustomer] = useState(false);
@@ -170,7 +170,7 @@ export default function OrderDetailsPage() {
                         throw new Error('Failed to update order status');
                     }
                     toast.success('Order status updated successfully');
-                    console.log('Updated order status:', selectedOption);
+                    // console.log('Updated order status:', selectedOption);
                 } catch (error) {
                     console.error('Error updating order status:', error);
                 }
@@ -186,7 +186,7 @@ export default function OrderDetailsPage() {
                     throw new Error('Failed to update order status');
                 }
                 toast.success('Order status updated successfully');
-                console.log('Updated order status:', selectedOption);
+                // console.log('Updated order status:', selectedOption);
             } catch (error) {
                 console.error('Error updating order status:', error);
             }
@@ -442,10 +442,10 @@ export default function OrderDetailsPage() {
                                         {/* Provider */}
                                         <div className="md:col-span-2">
                                             <label className="text-sm font-medium text-gray-700 mb-1 block">
-                                                Shipping Provider
+                                                Shipping Providerfdsf
                                             </label>
 
-                                            <div className="grid grid-cols-2 gap-3">
+                                            <div className="grid grid-cols-3 gap-3">
                                                 <label
                                                     className={`flex items-center justify-center p-2 border rounded-md cursor-pointer text-sm
               ${shipmentDetails.provider === "fship"
@@ -487,6 +487,29 @@ export default function OrderDetailsPage() {
                                                         className="hidden"
                                                     />
                                                     Shiprocket
+                                                </label>
+
+                                                <label
+                                                    className={`flex items-center justify-center p-2 border rounded-md cursor-pointer text-sm
+              ${shipmentDetails.provider === "velocity"
+                                                            ? "border-blue-500 bg-blue-50"
+                                                            : "border-gray-200"
+                                                        }`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="provider"
+                                                        value="velocity"
+                                                        checked={shipmentDetails.provider === "velocity"}
+                                                        onChange={() =>
+                                                            setShipmentDetails((p) => ({
+                                                                ...p,
+                                                                provider: "velocity",
+                                                            }))
+                                                        }
+                                                        className="hidden"
+                                                    />
+                                                    Velocity
                                                 </label>
                                             </div>
                                         </div>

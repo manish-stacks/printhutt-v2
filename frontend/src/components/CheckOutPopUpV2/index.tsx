@@ -276,21 +276,31 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             })),
             getTotalItems: getTotalItems(),
             totalPrice: {
-                discountPrice: Math.floor(totalPrice.discountPrice),
-                shippingTotal: Math.floor(totalPrice.shippingTotal),
-                totalPrice: Math.floor(getPrice.totalPrice),
-                coupon_discount: Math.floor(Number(totalPrice?.coupon_discount) || 0),
+                discountPrice: Math.round(totalPrice.discountPrice),
+                shippingTotal: Math.round(totalPrice.shippingTotal),
+                totalPrice: Math.round(getPrice.totalPrice),
+                coupon_discount: Math.round(Number(totalPrice?.coupon_discount) || 0),
             },
             coupon: {
                 id: selectedCoupon?._id || null,
                 code: selectedCoupon?.code || '',
-                discountAmount: Math.floor(Number(selectedCoupon?.discountValue) || 0),
+                discountAmount: Math.round(Number(selectedCoupon?.discountValue) || 0),
                 discountType: selectedCoupon?.discountType || "",
                 isApplied: selectedCoupon?.isActive || false,
             },
             paymentMethod,
             address: selectAddress,
-            payAmt: Math.floor(totalPrice.discountPrice).toFixed(2),
+            // ⚠️ payAmt display ke "Total Payable" se EXACT match hona chahiye.
+            //  - formatCurrency Math.round use karta hai → yahan bhi round (pehle floor tha
+            //    isliye ₹699 dikhta tha par ₹698 charge hota tha).
+            //  - Online: Total Payable = discountPrice + shippingTotal, isliye shipping bhi add.
+            //    (pehle sirf discountPrice tha → shipping charge hone par undercharge hota.)
+            //  - COD: base wahi (discountPrice); backend iska 20% advance leta hai.
+            payAmt: (
+                paymentMethod === 'online'
+                    ? Math.round(totalPrice.discountPrice + (Number(totalPrice.shippingTotal) || 0))
+                    : Math.round(totalPrice.discountPrice)
+            ).toFixed(2),
             paymentPartner,
         };
 

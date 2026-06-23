@@ -44,6 +44,12 @@ const envSchema = z.object({
   SHIPROCKET_EMAIL: z.string().optional(),
   SHIPROCKET_PASSWORD: z.string().optional(),
 
+  VELOCITY_BASE_URL: z.string().default('https://shazam.velocity.in'),
+  VELOCITY_USERNAME: z.string().optional(),
+  VELOCITY_PASSWORD: z.string().optional(),
+  VELOCITY_WAREHOUSE_ID: z.string().optional(),
+  VELOCITY_PICKUP_LOCATION: z.string().optional(),
+
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),

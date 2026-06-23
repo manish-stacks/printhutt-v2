@@ -182,7 +182,7 @@ export const productRepo = {
 
   /* ─── Products with at least one offer (newest first) ─── */
   withOffers: (limit: number) =>
-    Product.find({ offers: { $exists: true, $not: { $size: 0 } } })
+    Product.find({ status: true, offers: { $exists: true, $not: { $size: 0 } } })
       .sort({ createdAt: -1 })
       .limit(limit)
       .populate({ path: 'category', model: Category, select: 'name slug' })
@@ -193,12 +193,13 @@ export const productRepo = {
   suggest: (q: string, limit: number) => {
     const filter: FilterQuery<unknown> = q
       ? {
+        status: true,
         $or: [
           { title: { $regex: q, $options: 'i' } },
           { tags: { $regex: q, $options: 'i' } },
         ],
       }
-      : {};
+      : { status: true };
     return Product.find(filter).select('title slug _id tags').limit(limit).lean();
   },
 

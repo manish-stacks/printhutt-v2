@@ -65,3 +65,41 @@ export const norm = (v: unknown): string =>
   String(v ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
 
 export const normDigits = (v: unknown): string => String(v ?? '').replace(/\D/g, '');
+
+/* ─── Velocity Shipping (formerly Shipfast) ─── */
+export function velocityBaseUrl(): string {
+  return (env.VELOCITY_BASE_URL || 'https://shazam.velocity.in').replace(/\/+$/, '');
+}
+
+// Token 24h valid hota hai — cache karke reuse karte hain
+let cachedVelocityToken: string | null = null;
+let velocityTokenExpiry = 0;
+
+export async function velocityAuth(force = false): Promise<string> {
+  const now = Date.now();
+  if (!force && cachedVelocityToken && now < velocityTokenExpiry) {
+    return cachedVelocityToken;
+  }
+
+  const username = env.VELOCITY_USERNAME;
+  const password = env.VELOCITY_PASSWORD;
+  if (!username || !password) {
+    throw new Error('VELOCITY_USERNAME / VELOCITY_PASSWORD env missing');
+  }
+
+  const { data } = await axios.post(
+    `${velocityBaseUrl()}/custom/api/v1/auth-token`,
+    { username, password },
+    { headers: { 'Content-Type': 'application/json' } }
+  );
+
+  const token = data?.token as string | undefined;
+  if (!token) throw new Error('Velocity auth: token not returned');
+
+  cachedVelocityToken = token;
+  // expires_at parse karo; warna safe 23h cache
+  const exp = data?.expires_at ? new Date(data.expires_at).getTime() : 0;
+  velocityTokenExpiry = exp > now ? exp - 60_000 : now + 23 * 60 * 60 * 1000;
+
+  return token;
+}

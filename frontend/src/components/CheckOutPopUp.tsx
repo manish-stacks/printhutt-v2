@@ -312,7 +312,13 @@ function CheckOutPopUp({ isOpen, onClose }: ModalProps) {
             },
             paymentMethod: paymentMethod,
             address: selectAddress,
-            payAmt: Math.floor(totalPrice.discountPrice)
+            // payAmt = displayed total se EXACT match (round, +shipping for online).
+            // pehle Math.floor(discountPrice) tha → ₹1 kam aur shipping bhi miss.
+            payAmt: (
+                paymentMethod === 'online'
+                    ? Math.round(totalPrice.discountPrice + (Number(totalPrice.shippingTotal) || 0))
+                    : Math.round(totalPrice.discountPrice)
+            ).toFixed(2)
         };
 
         try {

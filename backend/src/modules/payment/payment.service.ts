@@ -9,10 +9,10 @@
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { env } from '@/config/env';
-import { logger } from '@/config/logger';
 import { BadRequestError, NotFoundError } from '@/utils/errors';
 import Order from '@/db/models/orderModel';
 import User from '@/db/models/userModel';
+import { finalizeConfirmedOrder } from '@/utils/order-confirm';
 import { PhonePePayment } from './phonepe';
 
 const phonePe = new PhonePePayment(
@@ -93,14 +93,9 @@ export async function phonePeCallback(merchantTransactionId: string): Promise<Ph
   order.status = 'confirmed';
   await order.save();
 
-  try {
-    const mailer = (await import('@/utils/mail/mailer')) as unknown as {
-      sendOrderConfirmationEmail?: (o: unknown) => Promise<unknown>;
-    };
-    await mailer.sendOrderConfirmationEmail?.(order);
-  } catch (err) {
-    logger.error('PhonePe confirmation email failed', err);
-  }
+  // 🔒 Ek hi baar: stock + email + whatsapp (idempotent)
+  await finalizeConfirmedOrder(order._id);
+
   return { redirectTo: `${base}/orders/confirmation?success=true`, status: 301 };
 }
 
@@ -157,14 +152,9 @@ export async function razorpayVerify(body: {
   order.status = 'confirmed';
   await order.save();
 
-  try {
-    const mailer = (await import('@/utils/mail/mailer')) as unknown as {
-      sendOrderConfirmationEmail?: (o: unknown) => Promise<unknown>;
-    };
-    await mailer.sendOrderConfirmationEmail?.(order);
-  } catch (err) {
-    logger.error('Razorpay confirmation email failed', err);
-  }
+  // 🔒 Ek hi baar: stock + email + whatsapp (idempotent — webhook se duplicate nahi)
+  await finalizeConfirmedOrder(order._id);
+
   return { success: true, order };
 }
 
@@ -195,6 +185,9 @@ export async function razorpayWebhook(rawBody: string, signature: string): Promi
         };
         order.status = 'confirmed';
         await order.save();
+
+        // 🔒 Ek hi baar: stock + email + whatsapp (verify se duplicate nahi)
+        await finalizeConfirmedOrder(order._id);
       }
       break;
     }

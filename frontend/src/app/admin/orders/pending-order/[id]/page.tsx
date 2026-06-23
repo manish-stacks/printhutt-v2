@@ -2,7 +2,7 @@
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { BsCheckCircle, BsClock, BsTruck, BsXCircle } from 'react-icons/bs';
-import { BiCheckCircle, BiMapPin, BiPackage, BiPhone, BiXCircle } from 'react-icons/bi';
+import { BiCheckCircle, BiMailSend, BiMapPin, BiPackage, BiPhone, BiXCircle } from 'react-icons/bi';
 import { formatCurrency, formatDate } from '@/helpers/helpers';
 import Select from 'react-select';
 import { useEffect, useState } from 'react';
@@ -59,7 +59,7 @@ export default function OrderDetailsPage() {
         width: '',
         height: '',
         weight: '',
-        provider: 'fship' as 'fship' | 'shiprocket',
+        provider: 'fship' as 'fship' | 'shiprocket' | 'velocity',
     });
 
     const fetchOrder = async () => {
@@ -242,7 +242,7 @@ export default function OrderDetailsPage() {
                     <div className="flex justify-between items-center">
                         <div className="flex items-center space-x-4">
                             <h1 className="text-2xl font-bold">Order #{order?.orderId}</h1>
-                            <div className={statusConfig[orderStatus as keyof typeof statusConfig].color}>
+                            <div className={statusConfig[orderStatus as keyof typeof statusConfig]?.color}>
                                 {orderStatus.charAt(0).toUpperCase() + orderStatus.slice(1)}
                             </div>
                         </div>
@@ -276,6 +276,12 @@ export default function OrderDetailsPage() {
                         <div className="bg-white rounded-lg shadow">
                             <div className="p-6">
                                 <h2 className="text-xl font-semibold mb-6">Order Items</h2>
+                                <p>{new Date(order?.createdAt).toLocaleDateString('en-GB', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                })}
+                                </p>
                                 <div className="divide-y divide-gray-200">
                                     {order.items.map((item, index) => (
                                         <div key={index} className="py-4">
@@ -333,7 +339,7 @@ export default function OrderDetailsPage() {
 
                             {/* Refund Form */}
                             {showRefundForm && (
-                                <div className="mt-4 border-t pt-4">
+                                <div className="mt-4 border rounded-lg p-4 bg-white">
                                     {/* <h3 className="text-lg font-medium mb-4">Refund Details</h3> */}
                                     <form onSubmit={handleRefundSubmit} className="space-y-4">
                                         <div className="space-y-2">
@@ -375,12 +381,12 @@ export default function OrderDetailsPage() {
 
                             {/* Shipment Form */}
                             {showShipmentForm && (
-                                <div className="mt-4 border-t pt-4">
+                                <div className="mt-4 border rounded-lg p-4 bg-white">
                                     <h3 className="text-lg font-medium mb-4">Shipment Details</h3>
                                     <form onSubmit={handleShipmentSubmit} className="grid grid-cols-2 gap-4">
                                         <div className="col-span-2 space-y-2">
                                             <label className="text-sm font-medium">Shipping Provider</label>
-                                            <div className="flex gap-3">
+                                            <div className="grid grid-cols-3 gap-3">
                                                 <label className={`flex-1 flex items-center gap-2 p-3 border-2 rounded-lg cursor-pointer transition ${shipmentDetails.provider === 'fship'
                                                     ? 'border-blue-500 bg-blue-50'
                                                     : 'border-gray-200 hover:border-gray-300'
@@ -409,6 +415,28 @@ export default function OrderDetailsPage() {
                                                         className="hidden"
                                                     />
                                                     <span className="font-medium">Shiprocket</span>
+                                                </label>
+                                                <label
+                                                    className={`flex items-center justify-center p-2 border rounded-md cursor-pointer text-sm
+              ${shipmentDetails.provider === "velocity"
+                                                            ? "border-blue-500 bg-blue-50"
+                                                            : "border-gray-200"
+                                                        }`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="provider"
+                                                        value="velocity"
+                                                        checked={shipmentDetails.provider === "velocity"}
+                                                        onChange={() =>
+                                                            setShipmentDetails((p) => ({
+                                                                ...p,
+                                                                provider: "velocity",
+                                                            }))
+                                                        }
+                                                        className="hidden"
+                                                    />
+                                                    Velocity
                                                 </label>
                                             </div>
                                         </div>
@@ -556,16 +584,20 @@ export default function OrderDetailsPage() {
                                 <div className="flex items-start gap-3">
                                     <BiMapPin className="h-5 w-5 text-gray-400 mt-1" />
                                     <div>
-                                        <p className="font-medium">{order.shipping.userName || 'Guest'}</p>
-                                        <p className="text-gray-600">{order.shipping.addressLine}</p>
+                                        <p className="font-medium">{order?.shipping?.userName || 'Guest'}</p>
+                                        <p className="text-gray-600">{order?.shipping?.addressLine}</p>
                                         <p className="text-gray-600">
-                                            {order.shipping.city}, {order.shipping.state} {order.shipping.postCode}
+                                            {order?.shipping?.city}, {order?.shipping?.state} {order?.shipping?.postCode}
                                         </p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <BiPhone className="h-5 w-5 text-gray-400" />
-                                    <p className="text-gray-600">{order.shipping.mobileNumber}</p>
+                                    <p className="text-gray-600">{order?.shipping?.mobileNumber}</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <BiMailSend className="h-5 w-5 text-gray-400" />
+                                    <p className="text-gray-600">{order?.shipping?.email}</p>
                                 </div>
                             </div>
                         </div>
@@ -576,12 +608,12 @@ export default function OrderDetailsPage() {
                             <div className="space-y-3">
                                 <div className="flex justify-between text-gray-600">
                                     <span>Payment Method</span>
-                                    <span className="capitalize">{order.payment.method}</span>
+                                    <span className="capitalize">{order?.payment?.method}</span>
                                 </div>
                                 <div className="flex justify-between text-gray-600">
                                     <span>Payment Status</span>
                                     <div className="flex items-center gap-2">
-                                        {order.payment.isPaid ? (
+                                        {order?.payment?.isPaid ? (
                                             <>
                                                 <BsCheckCircle className="h-4 w-4 text-green-500" />
                                                 <span className="text-green-500">Paid</span>

@@ -26,6 +26,7 @@ import {
   UnauthorizedError,
 } from '@/utils/errors';
 import { deleteImage, uploadImageOrder } from '@/utils/storage';
+import { validateStockForItems, restoreStockForOrder } from '@/utils/stock';
 import { logger } from '@/config/logger';
 import { authRepo } from '@/modules/auth/auth.repository';
 import { ordersRepo } from './orders.repository';
@@ -184,6 +185,15 @@ export async function createOrder(
   if (!body.items || body.items.length === 0) {
     throw new BadRequestError('No items in the order.');
   }
+
+  /* ── 🔒 STOCK CHECK: stock na ho to order yahin reject ───────────────── */
+  await validateStockForItems(
+    (body.items as Array<{ productId: string; name?: string; quantity: number }>).map((i) => ({
+      productId: i.productId,
+      name: i.name,
+      quantity: i.quantity,
+    }))
+  );
 
   /* ── Address: skip duplicates ───────────────────────── */
   const incoming = {
@@ -395,6 +405,11 @@ export async function updateOrderStatus(
 
   const order = await ordersRepo.updateById(id, { status: body.status });
   if (!order) throw new NotFoundError('Order not found');
+
+  // 🔺 Cancel/refund par stock wapas (sirf agar pehle reduce hua tha)
+  if (body.status === 'cancelled' || body.status === 'refunded' || body.status === 'returned') {
+    await restoreStockForOrder(order);
+  }
 
   // Side-effects: cancel via fship API + email notifications
   if (body.status === 'cancelled' && (order as unknown as { shipment?: { order_id?: string; trackingId?: string } }).shipment?.order_id) {

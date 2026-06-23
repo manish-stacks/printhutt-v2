@@ -1,14 +1,12 @@
 /**
  * Shipping service. Unified provider integration:
- *   - FShip  (create / track / cancel / webhook)
+ *   - FShip      (create / track / cancel / webhook)
  *   - Shiprocket (create / track / cancel / webhook)
- *
- * Ports:
- *   src/app/api/fship/* and src/app/api/shiprocket/*
+ *   - Velocity   (create / track / cancel / webhook)  ← Velocity Shipping (ex-Shipfast)
  */
 import axios, { AxiosError } from 'axios';
 import { BadRequestError, NotFoundError } from '@/utils/errors';
-import { fshipToken, shiprocketAuth } from '@/utils/helpers';
+import { fshipToken, shiprocketAuth, velocityAuth, velocityBaseUrl } from '@/utils/helpers';
 import { logger } from '@/config/logger';
 import Order from '@/db/models/orderModel';
 import { shippingRepo } from './shipping.repository';
@@ -428,6 +426,181 @@ export async function shiprocketTrack(awb: string): Promise<unknown> {
 }
 
 /* ============================================================
+ * VELOCITY SHIPPING integration  (ex-Shipfast)
+ *   Base: https://shazam.velocity.in
+ *   Auth: POST /custom/api/v1/auth-token  → token (24h)
+ *   Header: Authorization: {{token}}  (raw token, NO Bearer)
+ * ============================================================ */
+
+/** 'YYYY-MM-DD HH:mm' format chahiye Velocity ko */
+function velocityOrderDate(d = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+async function velocityCreate(
+  order: OrderDoc,
+  shipmentDetails: ShipmentDetails,
+  carrierId?: string
+): Promise<unknown> {
+  const token = await velocityAuth();
+  const base = velocityBaseUrl();
+
+  const warehouseId = process.env.VELOCITY_WAREHOUSE_ID;
+  if (!warehouseId) {
+    throw new BadRequestError('VELOCITY_WAREHOUSE_ID env not configured');
+  }
+  const pickupLocation = process.env.VELOCITY_PICKUP_LOCATION || 'Primary';
+
+  // Final tax-inclusive amount customer pays
+  const finalTotal = order.totalAmount.discountPrice;                 // e.g. 800
+  // COD orders me advance already liya gaya (20%) — usse COD collectible kam karo
+  const advancePaid = order.paymentType === 'offline' ? (order.payAmt || 0) : 0;
+  const isPrepaid = order.paymentType === 'online';
+  const codCollectible = isPrepaid ? 0 : Math.max(0, finalTotal - advancePaid);
+
+  const payload: Record<string, unknown> = {
+    order_id: order.orderId,
+    order_date: velocityOrderDate(),
+    // blank carrier_id = Velocity automatic courier assignment (shipping rules)
+    carrier_id: carrierId || '',
+
+    /* ─── Billing (shipping = billing) ─── */
+    billing_customer_name: order.shipping.userName || 'Customer',
+    billing_last_name: '',
+    billing_address: order.shipping.addressLine || '',
+    billing_city: order.shipping.city || '',
+    billing_pincode: order.shipping.postCode || '',
+    billing_state: order.shipping.state || '',
+    billing_country: 'India',
+    billing_email: order.shipping.email || '',
+    billing_phone: order.shipping.mobileNumber || '',
+    shipping_is_billing: true,
+    print_label: true,
+
+    /* ─── Items ─── */
+    order_items: order.items.map((item) => {
+      let discount = 0;
+      if (item.discountPrice) {
+        discount =
+          item.discountType === 'percentage'
+            ? Math.round((item.price * item.discountPrice) / 100)
+            : Math.round(item.discountPrice);
+      }
+      const priceAfterDiscount = item.price - discount;
+      const basePrice = +(priceAfterDiscount / 1.18).toFixed(2); // base (without 18% GST)
+
+      return {
+        name: item.name,
+        sku: item.sku || `SKU${item.productId}`,
+        units: item.quantity,
+        selling_price: basePrice,
+        discount: 0,
+        tax: 18,
+      };
+    }),
+
+    /* ─── Payment + totals ─── */
+    payment_method: isPrepaid ? 'PREPAID' : 'COD',
+    sub_total: finalTotal,
+    cod_collectible: codCollectible,
+
+    /* ─── Dimensions ─── */
+    length: shipmentDetails.length,
+    breadth: shipmentDetails.width, // Velocity me "breadth" = width
+    height: shipmentDetails.height,
+    weight: shipmentDetails.weight,
+
+    /* ─── Warehouse ─── */
+    pickup_location: pickupLocation,
+    warehouse_id: warehouseId,
+  };
+
+  try {
+    const { data } = await axios.post(
+      `${base}/custom/api/v1/forward-order-orchestration`,
+      payload,
+      { headers: { 'Content-Type': 'application/json', Authorization: token } }
+    );
+
+    // Velocity success: status === 1
+    if (data?.status !== 1) {
+      throw new BadRequestError(data?.message || 'Velocity rejected the shipment');
+    }
+
+    const p = (data.payload ?? {}) as Record<string, any>;
+
+    order.status = 'shipped';
+    order.shipment = {
+      provider: 'velocity',
+      trackingId: p.awb_code || '',
+      order_id: p.order_id || '',
+      shipment_id: p.shipment_id || '',
+      labelUrl: p.label_url || '',
+      courierName: p.courier_name || '',
+      ...shipmentDetails,
+    };
+    await order.save();
+
+    // Fire-and-forget confirmation/status mail
+    try {
+      const mailer = (await import('@/utils/mail/mailer')) as unknown as {
+        sendOrderStatus?: (o: unknown) => Promise<unknown>;
+      };
+      await mailer.sendOrderStatus?.(order);
+    } catch (mailErr) {
+      logger.error('Velocity shipment mail failed', mailErr);
+    }
+
+    return { success: true, provider: 'velocity', data };
+  } catch (err) {
+    if (err instanceof BadRequestError) throw err;
+    const { message, details } = extractApiError(err);
+    logger.error('Velocity create failed', { message, details });
+    throw new BadRequestError(`Velocity: ${message}`, details);
+  }
+}
+
+async function velocityCancel(order: OrderDoc): Promise<unknown> {
+  const token = await velocityAuth();
+  const base = velocityBaseUrl();
+  const awb = (order.shipment as { trackingId?: string } | undefined)?.trackingId;
+  if (!awb) throw new BadRequestError('No AWB found on this order');
+
+  try {
+    const { data } = await axios.post(
+      `${base}/custom/api/v1/cancel-order`,
+      { awbs: [awb] },
+      { headers: { 'Content-Type': 'application/json', Authorization: token } }
+    );
+
+    order.status = 'cancelled';
+    await order.save();
+    return { success: true, data };
+  } catch (err) {
+    const { message, details } = extractApiError(err);
+    throw new BadRequestError(`Velocity cancel: ${message}`, details);
+  }
+}
+
+export async function velocityTrack(awb: string): Promise<unknown> {
+  if (!awb) throw new BadRequestError('awb is required');
+  const token = await velocityAuth();
+  const base = velocityBaseUrl();
+  try {
+    const { data } = await axios.post(
+      `${base}/custom/api/v1/order-tracking`,
+      { awbs: [awb] },
+      { headers: { 'Content-Type': 'application/json', Authorization: token } }
+    );
+    return data;
+  } catch (err) {
+    const { message, details } = extractApiError(err);
+    throw new BadRequestError(`Velocity track: ${message}`, details);
+  }
+}
+
+/* ============================================================
  * UNIFIED PUBLIC API (used by controller)
  * ============================================================ */
 export async function createShipment(body: CreateShipmentDTO): Promise<unknown> {
@@ -441,6 +614,9 @@ export async function createShipment(body: CreateShipmentDTO): Promise<unknown> 
   if (body.provider === 'fship') {
     return fshipCreate(order, body.shipmentDetails);
   }
+  if (body.provider === 'velocity') {
+    return velocityCreate(order, body.shipmentDetails, body.carrierId);
+  }
   return shiprocketCreate(order, body.shipmentDetails);
 }
 
@@ -453,11 +629,16 @@ export async function cancelShipment(orderId: string): Promise<unknown> {
 
   if (provider === 'fship') return fshipCancel(order);
   if (provider === 'shiprocket') return shiprocketCancel(order);
+  if (provider === 'velocity') return velocityCancel(order);
   throw new BadRequestError(`Unknown shipment provider: ${provider}`);
 }
 
-export async function track(provider: 'fship' | 'shiprocket', waybill: string): Promise<unknown> {
+export async function track(
+  provider: 'fship' | 'shiprocket' | 'velocity',
+  waybill: string
+): Promise<unknown> {
   if (provider === 'fship') return fshipTrack(waybill);
+  if (provider === 'velocity') return velocityTrack(waybill);
   return shiprocketTrack(waybill);
 }
 
@@ -484,8 +665,23 @@ const SHIPROCKET_STATUS_MAP: Record<string, string> = {
   CANCELED: 'cancelled',
 };
 
+const VELOCITY_STATUS_MAP: Record<string, string> = {
+  'PICKED UP': 'shipped',
+  PICKED_UP: 'shipped',
+  'IN-TRANSIT': 'shipped',
+  IN_TRANSIT: 'shipped',
+  'OUT FOR DELIVERY': 'shipped',
+  OUT_FOR_DELIVERY: 'shipped',
+  DELIVERED: 'delivered',
+  RTO: 'refunded',
+  'RTO DELIVERED': 'refunded',
+  RTO_DELIVERED: 'refunded',
+  CANCELLED: 'cancelled',
+  CANCELED: 'cancelled',
+};
+
 export async function handleWebhook(
-  provider: 'fship' | 'shiprocket',
+  provider: 'fship' | 'shiprocket' | 'velocity',
   body: Record<string, unknown>
 ): Promise<unknown> {
   logger.info(`Webhook received [${provider}]`, body);
@@ -500,6 +696,20 @@ export async function handleWebhook(
       if (!mapped) return { ok: true, ignored: true };
 
       await Order.updateOne({ 'shipment.trackingId': waybill }, { status: mapped });
+      return { ok: true, status: mapped };
+    }
+
+    if (provider === 'velocity') {
+      const awb = (body.awb ?? body.awb_code ?? body.waybill) as string | undefined;
+      const status = String(
+        body.current_status ?? body.shipment_status ?? body.status ?? ''
+      ).toUpperCase();
+      if (!awb) return { ok: true, ignored: true };
+
+      const mapped = VELOCITY_STATUS_MAP[status];
+      if (!mapped) return { ok: true, ignored: true };
+
+      await Order.updateOne({ 'shipment.trackingId': awb }, { status: mapped });
       return { ok: true, status: mapped };
     }
 
