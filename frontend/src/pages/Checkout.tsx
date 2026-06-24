@@ -1,6 +1,7 @@
 "use client";
 import { getAllCouponsPagination } from "@/_services/admin/coupon";
 import { create_a_new_order, initiate_Payment } from "@/_services/common/order";
+import { setPendingPurchase } from "@/lib/pixel";
 import Breadcrumb from "@/components/Breadcrumb";
 import { CheckoutAddressForm } from "@/components/checkout/address-form";
 import { CheckoutloginForm } from "@/components/checkout/login-form";
@@ -221,6 +222,7 @@ const Checkout = () => {
       const response: { order: { _id: string } } = await create_a_new_order(order);
       // console.log(response)
       if (response.success) {
+        setPendingPurchase(response.order);
         await paymentintInitiation(response.order);
       } else {
         if (response.message == "Email address is required.") {

@@ -442,13 +442,13 @@ export default function OrderDetailsPage() {
                                         {/* Provider */}
                                         <div className="md:col-span-2">
                                             <label className="text-sm font-medium text-gray-700 mb-1 block">
-                                                Shipping Providerfdsf
+                                                Shipping Provider
                                             </label>
 
                                             <div className="grid grid-cols-3 gap-3">
                                                 <label
                                                     className={`flex items-center justify-center p-2 border rounded-md cursor-pointer text-sm
-              ${shipmentDetails.provider === "fship"
+                                                    ${shipmentDetails.provider === "fship"
                                                             ? "border-blue-500 bg-blue-50"
                                                             : "border-gray-200"
                                                         }`}
@@ -468,7 +468,7 @@ export default function OrderDetailsPage() {
 
                                                 <label
                                                     className={`flex items-center justify-center p-2 border rounded-md cursor-pointer text-sm
-              ${shipmentDetails.provider === "shiprocket"
+                                                        ${shipmentDetails.provider === "shiprocket"
                                                             ? "border-blue-500 bg-blue-50"
                                                             : "border-gray-200"
                                                         }`}
@@ -491,7 +491,7 @@ export default function OrderDetailsPage() {
 
                                                 <label
                                                     className={`flex items-center justify-center p-2 border rounded-md cursor-pointer text-sm
-              ${shipmentDetails.provider === "velocity"
+                                                        ${shipmentDetails.provider === "velocity"
                                                             ? "border-blue-500 bg-blue-50"
                                                             : "border-gray-200"
                                                         }`}

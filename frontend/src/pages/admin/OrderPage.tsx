@@ -471,8 +471,14 @@ export default function OrderPage() {
                                                     }
                                                 </td>
                                                 <td className="py-3 px-4 flex space-x-2">
-                                                    {
-                                                        order.status == 'shipped' && (
+                                                    {order.status === 'shipped' && (() => {
+                                                        const trackingUrls = {
+                                                            fship: `https://app.fship.in/shipment/tracking?awbno=${order.shipment.trackingId}`,
+                                                            velocity: `https://www.velocityshipping.in/track/${order.shipment.trackingId}`,
+                                                            shiprocket: `/user/order-track/${order?.shipment?.trackingId}`,
+                                                        };
+
+                                                        return (
                                                             <>
                                                                 <button
                                                                     title="Mark As Delivered"
@@ -481,26 +487,34 @@ export default function OrderPage() {
                                                                 >
                                                                     <FaCheck />
                                                                 </button>
+
                                                                 <a
                                                                     title="Track Order"
-                                                                    href={`https://app.fship.in/shipment/tracking?awbno=${order.shipment.trackingId}`}
+                                                                    href={trackingUrls[order.shipment.provider] || '#'}
                                                                     target="_blank"
+                                                                    rel="noopener noreferrer"
                                                                     className="text-orange-100 bg-orange-800 p-2 rounded-full"
                                                                 >
                                                                     <FaMapMarked />
                                                                 </a>
-                                                                <span className=" border-l-2 border-l-gray-400"></span>
 
+                                                                <span className="border-l-2 border-l-gray-400"></span>
                                                             </>
-                                                        )
-                                                    }
+                                                        );
+                                                    })()}
+
                                                     <Link
                                                         title="Edit Order"
-                                                        href={order.status == 'pending' ? `/admin/orders/pending-order/${order._id}` : `/admin/orders/orders-details/${order._id}`}
+                                                        href={
+                                                            order.status === 'pending'
+                                                                ? `/admin/orders/pending-order/${order._id}`
+                                                                : `/admin/orders/orders-details/${order._id}`
+                                                        }
                                                         className="text-green-800 bg-green-300 p-2 rounded-full"
                                                     >
                                                         <FaEdit />
                                                     </Link>
+
                                                     <Link
                                                         title="Invoice"
                                                         target="_blank"
@@ -509,6 +523,7 @@ export default function OrderPage() {
                                                     >
                                                         <FaDownload />
                                                     </Link>
+
                                                     <button
                                                         title="Message Customer"
                                                         onClick={() => sendMessage(order._id)}
@@ -516,20 +531,16 @@ export default function OrderPage() {
                                                     >
                                                         <RiMessageFill />
                                                     </button>
-                                                    {
-                                                        (order.status == 'pending' || order.status == 'cancelled') && (
-                                                            <>
 
-                                                                <button
-                                                                    title="Delete Order"
-                                                                    onClick={() => handleDelete(order._id)}
-                                                                    className="text-red-800 bg-red-300 p-2 rounded-full"
-                                                                >
-                                                                    <FaTrashAlt />
-                                                                </button>
-                                                            </>
-                                                        )
-                                                    }
+                                                    {(order.status === 'pending' || order.status === 'cancelled') && (
+                                                        <button
+                                                            title="Delete Order"
+                                                            onClick={() => handleDelete(order._id)}
+                                                            className="text-red-800 bg-red-300 p-2 rounded-full"
+                                                        >
+                                                            <FaTrashAlt />
+                                                        </button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))

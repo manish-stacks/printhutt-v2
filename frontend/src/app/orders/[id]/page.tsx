@@ -17,6 +17,7 @@ import { toast } from 'react-toastify';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Image from 'next/image';
 import CustomizeOderModel from '@/components/admin/order/CustomizeOderModel';
+import { FaMapMarked } from 'react-icons/fa';
 
 const STATUS_CONFIG: Record<string, { icon: any; color: string; bg: string }> = {
   pending: { icon: RiTimeLine, color: 'text-amber-700', bg: 'bg-amber-100' },
@@ -269,27 +270,27 @@ export default function OrderDetailsPage() {
 
               {/* Track button if shipped */}
               <div className="flex flex-wrap items-center gap-2 px-4 sm:px-5 py-3 border-t border-gray-100 bg-gray-50/50 mt-2">
-                
-                {order?.status === 'shipped' && order?.shipment?.trackingId &&
-                  (order?.shipment?.provider === 'fship' ? (
+
+                {order.status === 'shipped' && (() => {
+                  const trackingUrls = {
+                    fship: `https://app.fship.in/shipment/tracking?awbno=${order.shipment.trackingId}`,
+                    velocity: `https://www.velocityshipping.in/track/${order.shipment.trackingId}`,
+                    shiprocket: `/user/order-track/${order?.shipment?.trackingId}`,
+                  };
+
+                  return (
                     <a
-                      href={`https://app.fship.in/shipment/tracking?awbno=${order?.shipment?.trackingId}`}
+                      title="Track Order"
+                      href={trackingUrls[order.shipment.provider] || '#'}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 text-xs font-medium bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg transition"
                     >
-                      <RiTruckLine />
-                      Track Shipment
+                      <FaMapMarked /> Track Order
                     </a>
-                  ) : (
-                    <Link
-                      href={`/user/order-track/${order?.shipment?.trackingId}`}
-                      className="flex items-center gap-1.5 text-xs font-medium bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg transition"
-                    >
-                      <RiTruckLine />
-                      Track Order
-                    </Link>
-                  ))}
+
+                  );
+                })()}
               </div>
             </div>
 

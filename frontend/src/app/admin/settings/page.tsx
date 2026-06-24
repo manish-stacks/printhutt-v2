@@ -5,12 +5,11 @@ import { toast } from 'react-toastify';
 import Image from 'next/image';
 import { RiSaveLine, RiUploadCloud2Line } from 'react-icons/ri';
 
-type TabKey = 'identity' | 'seo' | 'analytics' | 'verification' | 'scripts' | 'robots';
+type TabKey = 'identity' | 'seo' | 'verification' | 'scripts' | 'robots';
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'identity', label: 'Site Identity' },
   { key: 'seo', label: 'SEO Defaults' },
-  { key: 'analytics', label: 'Analytics' },
   { key: 'verification', label: 'Verification' },
   { key: 'scripts', label: 'Custom Scripts' },
   { key: 'robots', label: 'Robots.txt' },
@@ -37,11 +36,7 @@ const FIELDS: Record<TabKey, Array<{
     { key: 'defaultDescription', label: 'Default Description', type: 'html', rows: 3 },
     { key: 'defaultKeywords', label: 'Default Keywords (comma-separated)', type: 'string' },
   ],
-  analytics: [
-    { key: 'googleAnalyticsId', label: 'Google Analytics ID', type: 'string', placeholder: 'G-XXXXXX' },
-    { key: 'metaPixelId', label: 'Meta Pixel ID', type: 'string', placeholder: '1234567890' },
-    { key: 'clarityId', label: 'Microsoft Clarity ID', type: 'string' },
-  ],
+  // analytics group removed — Meta Pixel / GA / Clarity ab "Custom Scripts" tab se paste karein
   verification: [
     { key: 'googleSiteVerification', label: 'Google Site Verification', type: 'string' },
     { key: 'bingVerification', label: 'Bing Verification', type: 'string' },
@@ -144,7 +139,7 @@ export default function SettingsPage() {
               {t.label}
             </button>
           ))}
-          <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="ml-auto px-5 py-3 text-sm text-gray-500 hover:text-gray-800">
+          <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="ml-auto px-5 py-3 text-sm text-blue-500 hover:text-gray-800">
             Sitemap Automatically Generated
           </a>
         </div>

@@ -14,6 +14,7 @@ import {
   RiSearchLine, RiEyeLine, RiDownload2Line, RiTruckLine,
   RiStarFill, RiStarLine, RiShoppingBag2Line,
 } from "react-icons/ri";
+import { FaMapMarked } from "react-icons/fa";
 
 const STATUS_STYLE: Record<string, string> = {
   delivered: 'bg-green-100 text-green-700',
@@ -209,26 +210,26 @@ const UserOrdersPage = () => {
                         <RiDownload2Line /> Invoice
                       </Link>
 
-                      {order?.status === 'shipped' && order?.shipment?.trackingId &&
-                        (order?.shipment?.provider === 'fship' ? (
+                      {order.status === 'shipped' && (() => {
+                        const trackingUrls = {
+                          fship: `https://app.fship.in/shipment/tracking?awbno=${order.shipment.trackingId}`,
+                          velocity: `https://www.velocityshipping.in/track/${order.shipment.trackingId}`,
+                          shiprocket: `/user/order-track/${order?.shipment?.trackingId}`,
+                        };
+
+                        return (
                           <a
-                            href={`https://app.fship.in/shipment/tracking?awbno=${order?.shipment?.trackingId}`}
+                            title="Track Order"
+                            href={trackingUrls[order.shipment.provider] || '#'}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1.5 text-xs font-medium bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg transition"
                           >
-                            <RiTruckLine />
-                            Track Shipment
+                            <FaMapMarked /> Track Order
                           </a>
-                        ) : (
-                          <Link
-                            href={`/user/order-track/${order?.shipment?.trackingId}`}
-                            className="flex items-center gap-1.5 text-xs font-medium bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg transition"
-                          >
-                            <RiTruckLine />
-                            Track Order
-                          </Link>
-                        ))}
+                        );
+                      })()}
+
                     </div>
                   </div>
                 ))}

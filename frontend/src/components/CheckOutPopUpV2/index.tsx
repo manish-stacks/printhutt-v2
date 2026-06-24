@@ -3,6 +3,7 @@ import { BiX } from 'react-icons/bi';
 import { syncCartOnLogin, useUserStore } from '@/store/useUserStore';
 import { useCartStore } from '@/store/useCartStore';
 import { CheckoutForm } from './CheckoutForm';
+import { setPendingPurchase } from '@/lib/pixel';
 import { ModalProps, TotalPrice, CouponItem } from './interfaces';
 import { PhoneVerification } from './PhoneVerification';
 import { axiosInstance } from '@/utils/axios';
@@ -341,6 +342,8 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             setIsSubmitting(true);
             const response: any = await create_a_new_order(order);
             if (response.success) {
+                // 📊 Meta Pixel: order value stash karo (confirmation page pe Purchase fire hoga)
+                setPendingPurchase(response.order);
                 await paymentintInitiation(response.order);
             } else {
                 setError(response.message || 'Something went wrong');

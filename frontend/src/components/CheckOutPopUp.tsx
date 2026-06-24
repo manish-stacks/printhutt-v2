@@ -8,6 +8,7 @@ import { useUserStore } from '@/store/useUserStore';
 import { CheckoutAddressForm } from './checkout/address-form';
 import Image from 'next/image';
 import { create_a_new_order, initiate_Payment } from '@/_services/common/order';
+import { setPendingPurchase } from '@/lib/pixel';
 import MailModal from './MailModal';
 import { getAllCouponsPagination } from '@/_services/admin/coupon';
 import confetti from 'canvas-confetti';
@@ -327,6 +328,7 @@ function CheckOutPopUp({ isOpen, onClose }: ModalProps) {
             // console.log(response)
             // return
             if (response.success) {
+                setPendingPurchase(response.order);
                 await paymentintInitiation(response.order);
             } else {
                 if (response.message == "Email address is required.") {

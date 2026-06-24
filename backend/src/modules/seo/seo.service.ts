@@ -2,6 +2,7 @@ import Product from '@/db/models/productModel';
 import Category from '@/db/models/categoryModel';
 import SubCategory from '@/db/models/subCategoryModel';
 import Blog from '@/db/models/blogModel';
+import Page from '@/db/models/pageModel';
 import { cacheGet, cacheSet } from '@/redis/client';
 import { settingsRepo } from '@/modules/settings/settings.repository';
 
@@ -36,23 +37,27 @@ export async function generateSitemap(): Promise<string> {
   const base = (baseSetting?.value as string) || 'http://localhost:3000';
   const baseClean = base.replace(/\/$/, '');
 
-  // static URLs
+  // static URLs (real routes — pehle /about /contact /shop the jo 404 the)
   const urls: Url[] = [
     { loc: `${baseClean}/`, changefreq: 'daily', priority: 1.0 },
-    { loc: `${baseClean}/about`, changefreq: 'monthly', priority: 0.5 },
-    { loc: `${baseClean}/contact`, changefreq: 'monthly', priority: 0.5 },
+    { loc: `${baseClean}/products`, changefreq: 'daily', priority: 0.9 },
     { loc: `${baseClean}/blog`, changefreq: 'weekly', priority: 0.7 },
-    { loc: `${baseClean}/shop`, changefreq: 'daily', priority: 0.9 },
+    { loc: `${baseClean}/offer`, changefreq: 'weekly', priority: 0.7 },
+    { loc: `${baseClean}/about-us`, changefreq: 'monthly', priority: 0.5 },
+    { loc: `${baseClean}/contact-us`, changefreq: 'monthly', priority: 0.5 },
+    { loc: `${baseClean}/faq`, changefreq: 'monthly', priority: 0.4 },
+    { loc: `${baseClean}/track-order`, changefreq: 'monthly', priority: 0.4 },
   ];
 
   // dynamic
-  const [products, categories, subcategories, blogs] = await Promise.all([
+  const [products, categories, subcategories, blogs, pages] = await Promise.all([
     Product.find({ status: true }).select('slug updatedAt').lean(),
     Category.find().select('slug updatedAt').lean(),
     SubCategory.find().select('slug parentCategory updatedAt')
       .populate({ path: 'parentCategory', select: 'slug' })
       .lean(),
-    Blog.find().select('slug updatedAt').lean(),
+    Blog.find({ status: true }).select('slug updatedAt').lean(),
+    Page.find().select('slug updatedAt').lean(),
   ]);
 
   for (const p of products as Array<{ slug: string; updatedAt: Date }>) {
@@ -94,9 +99,28 @@ export async function generateSitemap(): Promise<string> {
     });
   }
 
+  // CMS dynamic pages — har page apne slug route pe render hota hai (e.g. /privacy-policy)
+  for (const pg of pages as unknown as Array<{ slug: string; updatedAt: Date }>) {
+    if (!pg.slug) continue;
+    urls.push({
+      loc: `${baseClean}/${pg.slug}`,
+      lastmod: new Date(pg.updatedAt).toISOString().split('T')[0],
+      changefreq: 'monthly',
+      priority: 0.5,
+    });
+  }
+
+  // Duplicate loc hatao (CMS page slug agar kisi static URL se match kar jaye)
+  const seen = new Set<string>();
+  const uniqueUrls = urls.filter((u) => {
+    if (seen.has(u.loc)) return false;
+    seen.add(u.loc);
+    return true;
+  });
+
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map(urlToXml).join('\n')}
+${uniqueUrls.map(urlToXml).join('\n')}
 </urlset>`;
 
   await cacheSet(CACHE_KEY, xml, TTL);
