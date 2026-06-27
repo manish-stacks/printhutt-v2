@@ -87,7 +87,7 @@ export default function MessageComposerModal({ user, onClose, onSent }: Props) {
                     disabled={opt.disabled}
                     className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition ${
                       channel === opt.value
-                        ? 'border-purple-500 bg-purple-50 text-purple-700'
+                        ? 'border-purple-500 bg-purple-50 text-[#3C2A6D]'
                         : opt.disabled
                           ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
                           : 'border-gray-200 hover:border-purple-300 text-gray-700'
@@ -142,7 +142,7 @@ export default function MessageComposerModal({ user, onClose, onSent }: Props) {
           <button
             onClick={handleSend}
             disabled={sending}
-            className="px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2 bg-gradient-to-r from-[#3C2A6D] to-pink-600 text-white text-sm font-semibold rounded-lg disabled:opacity-50 flex items-center gap-2"
           >
             <RiMailSendLine className="w-4 h-4" />
             {sending ? 'Sending...' : 'Send Message'}

@@ -22,3 +22,10 @@ export async function deleteCoupon(id: string) {
 export async function validateCoupon(code: string) {
   return axiosInstance.post(`/coupons/apply`, { code });
 }
+
+// ✅ NEW: checkout par coupon validate karo (storefront endpoint, admin perms nahi).
+//    Server-side hi active/expire/limit/min-purchase sab check hota hai (Bug #4 + #7).
+//    Returns: { valid, message, coupon, discount }
+export async function checkCouponByCode(code: string, cartTotal: number) {
+  return axiosInstance.post(`/coupons/validate`, { code, cartTotal });
+}

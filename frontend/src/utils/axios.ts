@@ -133,7 +133,15 @@ _axios.interceptors.response.use(
     } catch (refreshErr) {
       drainQueue(refreshErr, null);
       setAccessToken(null);
-      if (typeof window !== 'undefined') {
+      // ⚠️ Bug #3 fix: Payment / order / verify ke beech token expire ho to
+      //    GLOBAL logout mat firao. Gateway redirect (PhonePe/Razorpay) ke baad
+      //    aksar cookie context kho jata tha → refresh fail → user logout.
+      //    In endpoints par sirf request fail hone do, session intact rahe.
+      const skipExpiry =
+        url.includes('/payment') ||
+        url.includes('/orders') ||
+        url.includes('/auth/me');
+      if (typeof window !== 'undefined' && !skipExpiry) {
         window.dispatchEvent(new CustomEvent('auth:expired'));
       }
       return Promise.reject(refreshErr);

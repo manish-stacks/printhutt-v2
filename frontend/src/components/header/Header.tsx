@@ -35,6 +35,11 @@ export default function Header() {
   const items = useCartStore((state) => state.items);
   const totalItem = items.length;
   const isLoggedIn = useUserStore((state) => state.isLoggedIn);
+  const hasHydrated = useUserStore((state) => state.hasHydrated);
+  // Hydration complete hone tak login/dashboard decide nahi karenge — warna
+  // localStorage load hone se pehle 'Login' flash hota tha (Bug #1).
+  const accountReady = hasHydrated;
+  const showDashboard = accountReady && isLoggedIn;
   const [categoriesData, setCategoriesData] = useState([]);
   const [wishlistCount, setWishlistCount] = useState(0);
   const { openCartSidebarView } = useCartSidebarStore();
@@ -135,7 +140,7 @@ export default function Header() {
 
                 {/* Account */}
                 <a
-                  href={isLoggedIn ? '/user/dashboard' : '/login'}
+                  href={showDashboard ? '/user/dashboard' : '/login'}
                   className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors"
                   title="Account"
                 >
@@ -143,7 +148,7 @@ export default function Header() {
                   <div className="hidden xl:flex flex-col leading-tight">
                     <span className="text-[11px] text-gray-500 uppercase tracking-wider">Account</span>
                     <span className="text-[13px] font-semibold text-[#3d4750]">
-                      {isLoggedIn ? 'Dashboard' : 'Login'}
+                      {!accountReady ? 'Account' : (isLoggedIn ? 'Dashboard' : 'Login')}
                     </span>
                   </div>
                 </a>
@@ -304,7 +309,7 @@ export default function Header() {
                 { href: '/products', label: 'Products' },
                 { href: '/about-us', label: 'About Us' },
                 { href: '/blog', label: 'Blog' },
-                { href: isLoggedIn ? '/user/dashboard' : '/login', label: isLoggedIn ? 'My Account' : 'Login' },
+                { href: showDashboard ? '/user/dashboard' : '/login', label: showDashboard ? 'My Account' : 'Login' },
                 { href: '/wishlist', label: `Wishlist (${wishlistCount})` },
                 { href: '/user/orders', label: 'Track Order' },
               ].map((item) => (

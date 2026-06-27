@@ -76,7 +76,7 @@ const Dashboard = () => {
       value: data?.totalOrders ?? 0,
       icon: RiShoppingBag2Line,
       bg: 'bg-purple-50',
-      color: 'text-purple-600',
+      color: 'text-[#3C2A6D]',
       link: '/user/orders',
     },
     {
@@ -108,7 +108,7 @@ const Dashboard = () => {
   const quickActions = [
     { label: 'Edit Profile', icon: RiUser2Line, href: '/user/profile', color: 'bg-blue-50 text-blue-600' },
     { label: 'Addresses', icon: RiMapPin2Line, href: '/user/address', color: 'bg-green-50 text-green-600' },
-    { label: 'My Orders', icon: RiShoppingBag2Line, href: '/user/orders', color: 'bg-purple-50 text-purple-600' },
+    { label: 'My Orders', icon: RiShoppingBag2Line, href: '/user/orders', color: 'bg-purple-50 text-[#3C2A6D]' },
     { label: 'Wishlist', icon: RiHeart2Line, href: '/wishlist', color: 'bg-pink-50 text-pink-600' },
   ];
 
@@ -160,7 +160,7 @@ const Dashboard = () => {
                       </div>
                       <Link
                         href="/user/profile"
-                        className="text-sm font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                        className="text-sm font-medium text-[#3C2A6D] hover:text-[#3C2A6D] flex items-center gap-1"
                       >
                         Complete now <RiArrowRightLine />
                       </Link>
@@ -232,7 +232,7 @@ const Dashboard = () => {
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900">Account Information</h3>
                 <Link
                   href="/user/profile"
-                  className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                  className="text-sm text-[#3C2A6D] hover:text-[#3C2A6D] font-medium"
                 >
                   Edit
                 </Link>

@@ -114,7 +114,7 @@ export default function AdminUserCartPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <RiShoppingCart2Line className="text-purple-600" /> User Carts
+                        <RiShoppingCart2Line className="text-[#3C2A6D]" /> User Carts
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">{total} users with cart items (abandoned)</p>
                 </div>
@@ -157,7 +157,7 @@ export default function AdminUserCartPage() {
                                     <td className="px-5 py-4">
                                         <Link href={`/admin/users/${row.userId}`}>
                                             <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-xs font-semibold">
+                                                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-[#3C2A6D] text-xs font-semibold">
                                                     {row.userName?.[0]?.toUpperCase() || '?'}
                                                 </div>
                                                 <span className="font-medium text-gray-900">{row.userName || 'Guest'}</span>
@@ -167,7 +167,7 @@ export default function AdminUserCartPage() {
                                     <td className="px-5 py-4 text-gray-600">{row.userEmail || '—'}</td>
                                     <td className="px-5 py-4 text-gray-600">{row.userNumber || '—'}</td>
                                     <td className="px-5 py-4 text-center">
-                                        <span className="inline-flex bg-purple-50 text-purple-700 px-2.5 py-1 rounded-full text-xs font-semibold">
+                                        <span className="inline-flex bg-purple-50 text-[#3C2A6D] px-2.5 py-1 rounded-full text-xs font-semibold">
                                             {row.itemCount}
                                         </span>
                                     </td>
@@ -189,7 +189,7 @@ export default function AdminUserCartPage() {
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 onClick={() => openViewModal(row)}
-                                                className="p-2 rounded-lg hover:bg-purple-50 text-gray-500 hover:text-purple-600"
+                                                className="p-2 rounded-lg hover:bg-purple-50 text-gray-500 hover:text-[#3C2A6D]"
                                                 title="View Cart"
                                             >
                                                 <RiEyeLine className="w-4 h-4" />
@@ -320,7 +320,7 @@ const ViewCartModal = ({
 
                                         <div className="flex items-center justify-between mt-1.5">
                                             <p className="text-sm">
-                                                <span className="font-bold text-purple-600">{formatCurrency(item.price)}</span>
+                                                <span className="font-bold text-[#3C2A6D]">{formatCurrency(item.price)}</span>
                                                 <span className="text-xs text-gray-500 ml-1">× {item.quantity}</span>
                                             </p>
                                             <p className="text-sm font-semibold text-gray-900">

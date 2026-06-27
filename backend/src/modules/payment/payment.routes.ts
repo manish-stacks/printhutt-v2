@@ -1,4 +1,5 @@
 import express, { Router } from 'express';
+import { requireAuth } from '@/middlewares/auth.middleware';
 import * as controller from './payment.controller';
 
 const router = Router();
@@ -6,6 +7,9 @@ const router = Router();
 /* PhonePe */
 router.post('/initiate', controller.phonePeInitiate);
 router.post('/callback', express.urlencoded({ extended: true }), controller.phonePeCallback);
+
+/* Free order (100% coupon → ₹0 payable, no gateway) */
+router.post('/free-order', requireAuth, controller.confirmFreeOrder);
 
 /* Razorpay */
 router.post('/razorpay/create-order', controller.razorpayCreate);

@@ -29,6 +29,7 @@ import { deleteImage, uploadImageOrder } from '@/utils/storage';
 import { validateStockForItems, restoreStockForOrder } from '@/utils/stock';
 import { logger } from '@/config/logger';
 import { authRepo } from '@/modules/auth/auth.repository';
+import { validateCoupon } from '@/modules/coupons/coupons.service';
 import { ordersRepo } from './orders.repository';
 import type {
   BulkDeleteOrdersDTO,
@@ -308,20 +309,88 @@ export async function createOrder(
   );
 
   const timestamp = Date.now();
-  const payAmtNum = Number(body.payAmt);
+
+  /* ─── 🔐 SERVER-SIDE RECOMPUTE (client par bharosa nahi) ─────────────────
+   * - Subtotal items ki discountPrice * qty se khud jodte hain (client total nahi lete).
+   * - Coupon ko server-side RE-VALIDATE karte hain (active/expire/usage/min-purchase/
+   *   per-user). Sirf 'online' par coupon allowed (COD me nahi).
+   * - Discount + final payAmt yahin compute hota hai. Isse fake/expired coupon se
+   *   ₹0 ya kam amount nahi banaya ja sakta.
+   */
+  // ⚠️ IMPORTANT: item.discountPrice product ka FINAL price nahi hai — yeh discount
+  //    ki VALUE hai (discountType='percentage' → % off, discountType='fixed' → ₹ off).
+  //    Final unit price isi se derive karna padta hai (jaisa useCartStore.getTotalPrice()
+  //    frontend mein karta hai). Pehle isko seedha unit-price maan liya jaata tha, jisse
+  //    subtotal bahut kam (sirf discount-value ka sum) ban jaata tha.
+  //
+  //    Do alag totals rakhte hain (frontend getTotalPrice() jaisa hi):
+  //    - mrpTotal        → product ki original price * qty (Subtotal / MRP row ke liye)
+  //    - discountedTotal → product-level discount lagne ke baad (coupon lagne se PEHLE)
+  //    Coupon discount aur payAmt isी discountedTotal par calculate hota hai.
+  let mrpTotal = 0;
+  let discountedTotal = 0;
+  for (const it of itemData as Array<{
+    discountPrice?: number;
+    discountType?: string;
+    price?: number;
+    quantity?: number;
+  }>) {
+    const price = Number(it.price ?? 0);
+    const discountVal = Number(it.discountPrice ?? 0);
+    const qty = Math.max(1, Number(it.quantity ?? 1));
+
+    let unit = price;
+    if (it.discountType === 'percentage' && discountVal > 0) {
+      unit = price - (price * discountVal) / 100;
+    } else if (it.discountType === 'fixed' && discountVal > 0) {
+      unit = price - discountVal;
+    }
+    unit = Math.max(0, unit);
+
+    mrpTotal += price * qty;
+    discountedTotal += unit * qty;
+  }
+  const subtotal = discountedTotal; // coupon/payAmt calculation isi par hoti hai
+
+  // ✅ Site policy: shipping hamesha free hai. Client se aayi shippingTotal
+  //    trust nahi karte (per-product shippingFee se kabhi accidentally non-zero
+  //    ban jaati thi → coupon ke baad bhi payment gateway pe alag se charge ho jaata tha).
+  const shippingTotal = 0;
+
+  let serverDiscount = 0;
+  let appliedCoupon = { code: '', discountAmount: 0, discountType: '', isApplied: false };
+
+  const couponCode = body.coupon?.code?.trim();
+  if (couponCode && body.paymentMethod === 'online') {
+    const result = await validateCoupon(couponCode, subtotal, userId);
+    if (result.valid) {
+      serverDiscount = Math.max(0, Math.min(Number(result.discount || 0), subtotal));
+      const c = result.coupon as { code?: string; discountType?: string } | undefined;
+      appliedCoupon = {
+        code: c?.code || couponCode.toUpperCase(),
+        discountAmount: serverDiscount,
+        discountType: c?.discountType || '',
+        isApplied: true,
+      };
+    }
+    // valid:false → coupon silently drop, full price charge hoga (secure default).
+  }
+
+  // Final payable — online: (subtotal - discount + shipping). COD: subtotal ka 20% advance.
+  const onlinePayable = Math.max(0, Math.round(subtotal - serverDiscount + shippingTotal));
   const payAmt =
     body.paymentMethod === 'online'
-      ? payAmtNum.toFixed(2)
-      : (payAmtNum * 0.2).toFixed(2);
+      ? onlinePayable.toFixed(2)
+      : Math.round(subtotal * 0.2).toFixed(2);
 
   const orderData: Record<string, unknown> = {
     orderId: `ORD-${timestamp}`,
     items: itemData,
     totalAmount: {
-      totalPrice: body.totalPrice.totalPrice,
-      discountPrice: body.totalPrice.discountPrice,
-      shippingTotal: body.totalPrice.shippingTotal,
-      coupon_discount: body.totalPrice.coupon_discount,
+      totalPrice: Math.round(mrpTotal),
+      discountPrice: Math.max(0, Math.round(subtotal - serverDiscount)),
+      shippingTotal,
+      coupon_discount: serverDiscount,
     },
     payAmt,
     paymentType: body.paymentMethod,
@@ -342,12 +411,7 @@ export async function createOrder(
       mobileNumber: addressData.mobileNumber,
       email: user.email,
     },
-    coupon: {
-      code: body.coupon?.code || '',
-      discountAmount: body.coupon?.discountAmount || 0,
-      discountType: body.coupon?.discountType || '',
-      isApplied: body.coupon?.isApplied || false,
-    },
+    coupon: appliedCoupon,
     totalQuantity: body.getTotalItems || 0,
     status: 'pending',
     userId,

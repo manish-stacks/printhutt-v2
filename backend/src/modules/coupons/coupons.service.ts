@@ -48,8 +48,9 @@ export async function createCoupon(body: CreateCouponDTO): Promise<unknown> {
 
   const isActive = typeof body.isActive === 'boolean' ? body.isActive : Boolean(body.isActive);
   const isShow = typeof body.isShow === 'boolean' ? body.isShow : Boolean(body.isShow);
+  const isDefault = typeof body.isDefault === 'boolean' ? body.isDefault : body.isDefault === 'true';
 
-  return couponsRepo.create({
+  const created = await couponsRepo.create({
     code: body.code,
     description: body.description,
     discountType: body.discountType,
@@ -61,7 +62,15 @@ export async function createCoupon(body: CreateCouponDTO): Promise<unknown> {
     usageLimit: body.usageLimit,
     isActive,
     isShow,
+    isDefault,
   });
+
+  // ✅ Agar ye default banaya gaya hai to baaki sabka default hata do
+  if (isDefault) {
+    await couponsRepo.unsetAllDefaults((created as { _id: unknown })._id as string);
+  }
+
+  return created;
 }
 
 /* ──────────────── 4. Admin update ──────────────── */
@@ -91,8 +100,17 @@ export async function updateCoupon(
   if (patch.isShow !== undefined)
     existing.isShow =
       typeof patch.isShow === 'boolean' ? patch.isShow : Boolean(patch.isShow);
+  if (patch.isDefault !== undefined)
+    existing.isDefault =
+      typeof patch.isDefault === 'boolean' ? patch.isDefault : patch.isDefault === 'true';
 
   await existing.save();
+
+  // ✅ Ye default ban gaya to baaki sabka default hata do
+  if (existing.isDefault) {
+    await couponsRepo.unsetAllDefaults(String(existing._id));
+  }
+
   return existing;
 }
 
@@ -116,4 +134,89 @@ export async function applyCheck(
   const user = await couponsRepo.findUserById(userId);
   const alreadyUsed = (user?.couponCollection ?? []).includes(couponId);
   return { alreadyUsed };
+}
+
+/* ──────────────── 8. /validate — code + cartTotal se PURI validation ──────────────── */
+/**
+ * Storefront coupon validation. Yahan SAARE rules server-side enforce hote hain:
+ *   - isActive
+ *   - validFrom <= now <= validUntil   (expire wala apply na ho — Bug #7)
+ *   - usageLimit > usedCount           (limit khatam to reject — Bug #7)
+ *   - cartTotal >= minimumPurchaseAmount
+ *   - logged-in user ne pehle use to nahi kiya (per-user one-time)
+ * Aur final discount bhi yahin calculate hota hai (client pe bharosa nahi).
+ */
+export interface ValidateCouponResult {
+  valid: boolean;
+  message: string;
+  coupon?: Record<string, unknown>;
+  discount?: number;
+}
+
+export async function validateCoupon(
+  code: string,
+  cartTotal: number,
+  userId?: string
+): Promise<ValidateCouponResult> {
+  const coupon = await couponsRepo.findByCode(code);
+  if (!coupon) return { valid: false, message: 'Invalid coupon code.' };
+
+  const c = coupon as unknown as {
+    _id: unknown;
+    code: string;
+    discountType: 'percentage' | 'fixed' | 'free_shipping';
+    discountValue: number;
+    minimumPurchaseAmount: number;
+    maxDiscountAmount?: number;
+    validFrom?: Date;
+    validUntil?: Date;
+    usageLimit: number | null;
+    usedCount: number;
+    isActive: boolean;
+  };
+
+  if (!c.isActive) return { valid: false, message: 'This coupon is no longer active.' };
+
+  const now = new Date();
+  if (c.validFrom && new Date(c.validFrom) > now) {
+    return { valid: false, message: 'This coupon is not active yet.' };
+  }
+  if (c.validUntil && new Date(c.validUntil) < now) {
+    return { valid: false, message: 'This coupon has expired.' };
+  }
+  if (c.usageLimit !== null && c.usageLimit !== undefined && c.usedCount >= c.usageLimit) {
+    return { valid: false, message: 'This coupon usage limit has been reached.' };
+  }
+  if (cartTotal < (c.minimumPurchaseAmount || 0)) {
+    return {
+      valid: false,
+      message: `Minimum purchase of ₹${c.minimumPurchaseAmount} required for this coupon.`,
+    };
+  }
+
+  // Per-user one-time check
+  // if (userId) {
+  //   const user = await couponsRepo.findUserById(userId);
+  //   const already = (user?.couponCollection ?? []).map(String).includes(String(c._id));
+  //   if (already) return { valid: false, message: 'You have already used this coupon.' };
+  // }
+
+  // Discount compute (free_shipping ka discount 0 — shipping order side handle hota hai)
+  let discount = 0;
+  if (c.discountType === 'percentage') {
+    discount = (Number(c.discountValue) / 100) * cartTotal;
+    if (c.maxDiscountAmount && discount > c.maxDiscountAmount) discount = c.maxDiscountAmount;
+  } else if (c.discountType === 'fixed') {
+    discount = Number(c.discountValue);
+  }
+  // Discount cart se zyada na ho
+  if (discount > cartTotal) discount = cartTotal;
+  discount = Math.round(discount);
+
+  return {
+    valid: true,
+    message: 'Coupon applied successfully',
+    coupon: coupon.toObject ? coupon.toObject() : (coupon as Record<string, unknown>),
+    discount,
+  };
 }

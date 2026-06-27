@@ -56,7 +56,7 @@ export default function OrderTrack() {
       <div className="container mx-auto px-4 max-w-5xl space-y-5">
 
         {/* Banner */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 text-white rounded-2xl p-6 sm:p-8 shadow-md">
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#3C2A6D] via-[#3C2A6D] to-pink-600 text-white rounded-2xl p-6 sm:p-8 shadow-md">
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
@@ -130,7 +130,7 @@ export default function OrderTrack() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center">
-                <RiInboxLine className="w-5 h-5 text-purple-600" />
+                <RiInboxLine className="w-5 h-5 text-[#3C2A6D]" />
               </div>
               <h3 className="font-semibold text-gray-900">Order Details</h3>
             </div>
@@ -148,7 +148,7 @@ export default function OrderTrack() {
           <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center">
-                <RiTruckLine className="w-5 h-5 text-purple-600" />
+                <RiTruckLine className="w-5 h-5 text-[#3C2A6D]" />
               </div>
               <h3 className="font-semibold text-gray-900">Shipment Activity</h3>
             </div>

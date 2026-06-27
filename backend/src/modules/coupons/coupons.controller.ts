@@ -9,6 +9,7 @@ import type {
   CreateCouponDTO,
   ListCouponsQueryDTO,
   UpdateCouponDTO,
+  ValidateCouponDTO,
 } from './coupons.validation';
 
 /* GET /api/coupons */
@@ -56,4 +57,12 @@ export const applyCheck = asyncHandler(async (req: Request, res: Response) => {
     return sendOk(res, { message: 'Coupon already used.' });
   }
   return sendOk(res, { message: 'Coupon available' });
+});
+
+/* POST /api/coupons/validate — code + cartTotal se public validation (login optional) */
+export const validateByCode = asyncHandler(async (req: Request, res: Response) => {
+  const body = req.body as ValidateCouponDTO;
+  const result = await service.validateCoupon(body.code, body.cartTotal, req.user?.id);
+  // valid:false bhi 200 ke saath bhejo — front pe message dikhana hai, throw nahi karna
+  return sendOk(res, result as unknown as Record<string, unknown>);
 });

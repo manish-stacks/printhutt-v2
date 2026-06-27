@@ -66,3 +66,8 @@ export const get_order_details = async (id: string) => {
 
   return axiosInstance.get(`/orders/${id}`)
 }
+
+// ✅ NEW: 100% coupon → payable 0. Gateway skip karke order ko free confirm karo (Bug #6).
+export const confirm_free_order = async (orderMongoId: string) => {
+  return axiosInstance.post(`/payment/free-order`, { _id: orderMongoId });
+};

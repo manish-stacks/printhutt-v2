@@ -30,6 +30,28 @@ export async function finalizeConfirmedOrder(orderId: unknown): Promise<void> {
     // 1) Stock kam (khud bhi idempotent hai)
     await reduceStockForOrder(order);
 
+    // 1b) ✅ Coupon usage record karo (sirf paid+confirmed order par — usageLimit
+    //     aur per-user one-time isi se enforce hota hai, Bug #7)
+    try {
+      const couponCode = order?.coupon?.code;
+      if (couponCode) {
+        const Coupon = (await import('@/db/models/couponModel')).default;
+        const coupon = await Coupon.findOne({ code: String(couponCode).toUpperCase() });
+        if (coupon) {
+          await Coupon.updateOne({ _id: coupon._id }, { $inc: { usedCount: 1 } });
+          const uid = order?.userId?._id ?? order?.userId;
+          if (uid) {
+            await User.updateOne(
+              { _id: uid },
+              { $addToSet: { couponCollection: String(coupon._id) } }
+            );
+          }
+        }
+      }
+    } catch (err) {
+      logger.error('[confirm] coupon usage update failed', err);
+    }
+
     // 2) + 3) Email + WhatsApp (mailer dono handle karta hai, ek dusre se independent)
     try {
       const mailer = (await import('@/utils/mail/mailer')) as unknown as {

@@ -21,6 +21,7 @@ export const createCouponSchema = z.object({
   usageLimit: z.coerce.number().int().optional(),
   isActive: z.union([z.boolean(), z.string()]).optional(),
   isShow: z.union([z.boolean(), z.string()]).optional(),
+  isDefault: z.union([z.boolean(), z.string()]).optional(),
 });
 export type CreateCouponDTO = z.infer<typeof createCouponSchema>;
 
@@ -35,3 +36,10 @@ export const applyCouponSchema = z.object({
   }).passthrough(),
 });
 export type ApplyCouponDTO = z.infer<typeof applyCouponSchema>;
+
+/* ─────────── POST /api/coupons/validate (storefront, code se) ─────────── */
+export const validateCouponSchema = z.object({
+  code: z.string().min(1),
+  cartTotal: z.coerce.number().nonnegative().default(0),
+});
+export type ValidateCouponDTO = z.infer<typeof validateCouponSchema>;

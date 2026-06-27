@@ -11,8 +11,8 @@ import { toast } from 'react-toastify';
 import { commonApi } from '@/_services/common/common';
 import confetti from 'canvas-confetti';
 import { formatCurrency } from '@/helpers/helpers';
-import { getAllCouponsPagination } from '@/_services/admin/coupon';
-import { create_a_new_order, initiate_Payment } from '@/_services/common/order';
+import { checkCouponByCode } from '@/_services/admin/coupon';
+import { create_a_new_order, initiate_Payment, confirm_free_order } from '@/_services/common/order';
 
 const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -73,22 +73,12 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                 const data = await commonApi.getCouponsCode();
                 setAvailableCoupons(data?.coupons || []);
 
+                // ✅ Bug #5: sirf admin-flagged isDefault coupon auto-apply hoga (best/last nahi).
+                //    Validation + discount server se aata hai (silent — na lage to error toast nahi).
                 if (data.coupons?.length > 0 && paymentMethod === 'online') {
-                    const validCoupons = data.coupons.filter(coupon =>
-                        totalPrice.totalPrice >= coupon.minimumPurchaseAmount
-                    );
-
-                    if (validCoupons.length > 0) {
-                        const bestCoupon = validCoupons.reduce((best, current) => {
-                            const currentDiscount = current.discountType === "percentage"
-                                ? Math.min((current.discountValue / 100) * totalPrice.totalPrice, current.maxDiscountAmount)
-                                : current.discountValue;
-                            const bestDiscount = best.discountType === "percentage"
-                                ? Math.min((best.discountValue / 100) * totalPrice.totalPrice, best.maxDiscountAmount)
-                                : best.discountValue;
-                            return currentDiscount > bestDiscount ? current : best;
-                        });
-                        applyCouponDiscount(bestCoupon);
+                    const defaultCoupon = data.coupons.find((coupon: any) => coupon.isDefault === true);
+                    if (defaultCoupon) {
+                        applyCouponDiscount(defaultCoupon as CouponItem, true);
                     }
                 }
             } catch (error) {
@@ -96,8 +86,9 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             }
         };
         if (selectedCoupon) return;
+        if (originalPrice <= 0) return; // price ready hone tak ruko
         fetchCoupons();
-    }, [totalPrice.totalPrice, paymentMethod]);
+    }, [originalPrice, paymentMethod]);
 
     const handleMarkChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setCoupon_mark(e.target.value);
@@ -107,43 +98,38 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         if (paymentMethod === 'offline') { setError('COD Not Applied for Coupons'); return; }
         if (!coupon_mark.trim()) { setError('Please enter a coupon code'); return; }
         if (selectedCoupon?.code === coupon_mark) { setError('This coupon has already been applied'); return; }
-        try {
-            const data = await getAllCouponsPagination(1, "");
-            const coupon = data.coupons.find((c) => c.code === coupon_mark);
-            if (!coupon || coupon.isActive === false) { setError('Invalid coupon code. Please try again.'); return; }
-            handle_select(coupon);
-            toast.success('Coupon applied successfully');
-        } catch (error) {
-            console.error(error);
-            setError('Failed to apply coupon. Please try again.');
-        }
+        // ✅ Bug #4 + #7: server-side validate endpoint (admin list nahi). Display = server discount.
+        await applyCouponDiscount({ code: coupon_mark.trim() } as CouponItem);
     };
 
     const handle_select = (coupon: CouponItem) => {
         if (selectedCoupon?.code === coupon.code) { setError('This coupon has already been applied'); return; }
-        if (originalPrice < coupon.minimumPurchaseAmount) {
-            setError(`Minimum purchase amount of ${formatCurrency(coupon.minimumPurchaseAmount)} required`);
-            return;
-        }
         applyCouponDiscount(coupon);
     };
 
-    const applyCouponDiscount = (coupon: CouponItem) => {
-        let discount = 0;
-        if (originalPrice >= coupon.minimumPurchaseAmount) {
-            if (coupon.discountType === "percentage") {
-                discount = (coupon.discountValue as number / 100) * originalPrice;
-                if (discount > coupon.maxDiscountAmount) discount = coupon.maxDiscountAmount;
-            } else if (coupon.discountType === "fixed") {
-                discount = coupon.discountValue as number;
+    // ✅ Sabhi coupon paths (manual / list / auto-default) ISI se jaate hain — discount
+    //    server se aata hai, isliye checkout par jo dikhta hai WAHI charge hota hai.
+    //    `silent` = auto-apply ke liye (default coupon na lage to error toast na ho).
+    const applyCouponDiscount = useCallback(async (coupon: CouponItem, silent = false) => {
+        try {
+            const res: any = await checkCouponByCode(coupon.code, originalPrice);
+            if (!res?.valid || !res?.coupon) {
+                if (!silent) setError(res?.message || 'Coupon could not be applied');
+                return;
             }
             confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, zIndex: 10000 });
-            setTotalPrice(prev => ({ ...prev, discountPrice: originalPrice - discount, coupon_discount: discount }));
-            setSelectedCoupon(coupon);
-        } else {
-            setError(`Minimum purchase amount of ${formatCurrency(coupon.minimumPurchaseAmount)} required`);
+            setTotalPrice(prev => ({
+                ...prev,
+                discountPrice: Math.max(0, originalPrice - Number(res.discount || 0)),
+                coupon_discount: Number(res.discount || 0),
+            }));
+            setSelectedCoupon(res.coupon as CouponItem);
+            setError('');
+        } catch (e: any) {
+            console.error(e);
+            if (!silent) setError(e?.message || 'Failed to apply coupon. Please try again.');
         }
-    };
+    }, [originalPrice]);
 
     const setPaymentFunction = (value: string) => {
         setPaymentMethod(value as 'online' | 'offline');
@@ -344,6 +330,21 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             if (response.success) {
                 // 📊 Meta Pixel: order value stash karo (confirmation page pe Purchase fire hoga)
                 setPendingPurchase(response.order);
+
+                // ✅ Bug #6: 100% coupon → payable 0. Gateway (Razorpay/PhonePe ₹0 reject) skip karke
+                //    free order confirm karo, fir confirmation page.
+                const payableNow = Number(response.order?.payAmt ?? 0);
+                if (paymentMethod === 'online' && payableNow <= 0.5) {
+                    try {
+                        await confirm_free_order(response.order._id);
+                        window.location.href = '/orders/confirmation?success=true';
+                        return;
+                    } catch (freeErr: any) {
+                        setError(freeErr?.message || 'Could not confirm free order. Please try again.');
+                        return;
+                    }
+                }
+
                 await paymentintInitiation(response.order);
             } else {
                 setError(response.message || 'Something went wrong');
@@ -360,9 +361,11 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                 return;
             }
 
-            if (errMsg === "Unauthorized") {
-                window.localStorage.removeItem('user-store');
-                window.location.reload();
+            // ⚠️ Bug #2/#3: pehle yahan localStorage clear + window.location.reload() tha,
+            //    jisse OTP/order ke beech page reload aur logout ho jata tha. Ab sirf
+            //    saaf error dikhate hain — session ko forcefully nuke nahi karte.
+            if (/unauthor/i.test(errMsg)) {
+                setError('Session expired. Please verify your number again and retry.');
                 return;
             }
             setError(errMsg || 'Something Went Wrong');

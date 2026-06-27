@@ -102,7 +102,7 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center">
-              <RiShoppingCart2Line className="w-5 h-5 text-purple-600" />
+              <RiShoppingCart2Line className="w-5 h-5 text-[#241B4F]" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 text-base leading-tight">My Cart</h3>
@@ -125,11 +125,11 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
         {items.length > 0 && (
           <div className="px-5 py-3 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100 flex-shrink-0">
             <div className="flex items-center gap-2 mb-1.5">
-              <RiGift2Line className="w-4 h-4 text-purple-600" />
+              <RiGift2Line className="w-4 h-4 text-[#241B4F]" />
               <p className="text-xs font-medium text-gray-700 flex-1">
                 {remainingForGift > 0 ? (
                   <>
-                    Add <strong className="text-purple-600">{formatCurrency(remainingForGift)}</strong> more for a{" "}
+                    Add <strong className="text-[#241B4F]">{formatCurrency(remainingForGift)}</strong> more for a{" "}
                     <strong>FREE gift</strong> 🎁
                   </>
                 ) : (
@@ -139,7 +139,7 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
             </div>
             <div className="h-1.5 bg-white rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
+                className="h-full bg-gradient-to-r from-[#241B4F] to-[#3f2f8d] transition-all duration-500"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -158,7 +158,7 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
               <Link
                 href="/products"
                 onClick={onClose}
-                className="mt-5 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition"
+                className="mt-5 bg-[#241B4F]/90 hover:bg-[#241B4F] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition"
               >
                 Continue Shopping
               </Link>
@@ -201,7 +201,7 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
                           </p>
                           <button
                             onClick={() => setShowGiftModal(true)}
-                            className="text-xs text-purple-600 hover:text-purple-700 underline mt-1 font-medium"
+                            className="text-xs text-[#241B4F] hover:text-[#423488] underline mt-1 font-medium"
                           >
                             Customize / Upload photo
                           </button>
@@ -213,7 +213,7 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
                           className="block"
                         >
                           <p
-                            className="text-sm font-medium text-gray-900 line-clamp-2 leading-snug hover:text-purple-600 transition"
+                            className="text-sm font-medium text-gray-900 line-clamp-2 leading-snug hover:text-[#241B4F] transition"
                             dangerouslySetInnerHTML={{ __html: item.title }}
                           />
                         </Link>
@@ -308,7 +308,7 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
               </div>
               <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-100">
                 <span className="text-base font-semibold text-gray-900">Total</span>
-                <span className="text-xl font-bold text-purple-600">
+                <span className="text-xl font-bold text-[#241B4F]">
                   {formatCurrency(totalPrice.discountPrice + totalPrice.shippingTotal)}
                 </span>
               </div>
@@ -317,7 +317,7 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
             {/* Checkout button */}
             <button
               onClick={checkoutPage}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3.5 rounded-xl text-base font-semibold shadow-md shadow-purple-200 transition active:scale-[0.99]"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#241B4F] to-[#7a66db] hover:from-[#352972] hover:to-[#725dda] text-white py-3.5 rounded-xl text-base font-semibold shadow-md shadow-purple-200 transition active:scale-[0.99]"
             >
               Proceed to Checkout
               <RiArrowRightSLine className="w-5 h-5" />

@@ -110,7 +110,7 @@ const UserSidebar = ({ activemenu }: Props) => {
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition mb-1 ${
                 active
                   ? 'bg-[#3C2A6D] text-white shadow-md shadow-purple-200'
-                  : 'text-gray-600 hover:bg-purple-50 hover:text-purple-600'
+                  : 'text-gray-600 hover:bg-purple-50 hover:text-[#3C2A6D]'
               }`}
             >
               <Icon className={`w-5 h-5 ${active ? '' : 'text-gray-400'}`} />

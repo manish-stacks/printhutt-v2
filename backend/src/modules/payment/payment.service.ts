@@ -36,8 +36,17 @@ export async function phonePeInitiate(body: {
   userDetails?: { name?: string; email?: string; phone?: string };
 }): Promise<Record<string, unknown>> {
   const callbackUrl = `${env.API_URL}/api/payment/callback`;
+
+  // 🔐 Amount client se NAHI — DB stored payAmt authoritative (order create par recompute).
+  const order = await Order.findById(body.orderId);
+  if (!order) throw new NotFoundError('Order not found');
+  const serverAmount = Number((order as unknown as { payAmt?: string | number }).payAmt);
+  if (!serverAmount || serverAmount < 1) {
+    throw new BadRequestError('Amount is zero — use free order confirmation flow.');
+  }
+
   const response = await phonePe.initiatePayment(
-    body.amount,
+    serverAmount,
     body.transactionId,
     callbackUrl,
     body.userDetails
@@ -45,12 +54,9 @@ export async function phonePeInitiate(body: {
   if (!response.success) {
     throw new BadRequestError(response.error || 'Payment initiation failed');
   }
-  const order = await Order.findById(body.orderId);
-  if (order) {
-    (order as unknown as { payment: { transactionId?: string } }).payment.transactionId =
-      (response.data as { merchantTransactionId?: string })?.merchantTransactionId ?? '';
-    await order.save();
-  }
+  (order as unknown as { payment: { transactionId?: string } }).payment.transactionId =
+    (response.data as { merchantTransactionId?: string })?.merchantTransactionId ?? '';
+  await order.save();
   return (response.data as Record<string, unknown>) ?? {};
 }
 
@@ -101,14 +107,24 @@ export async function phonePeCallback(merchantTransactionId: string): Promise<Ph
 
 /* ───────────────── Razorpay ───────────────── */
 export async function razorpayCreate(body: { _id: string; amount: number; orderId: string }): Promise<unknown> {
+  const order = await Order.findOne({ orderId: body.orderId });
+  if (!order) throw new NotFoundError('Order not found');
+
+  // 🔐 Amount client se NAHI lete — DB me store payAmt hi authoritative hai.
+  //    (Order create par payAmt server-side recompute hota hai — coupon re-validated.)
+  const serverAmount = Number((order as unknown as { payAmt?: string | number }).payAmt);
+
+  // ✅ Razorpay min ₹1 (100 paise). 100% coupon par amount 0 → free order flow use hota hai (Bug #6).
+  if (!serverAmount || serverAmount < 1) {
+    throw new BadRequestError('Amount is zero — use free order confirmation flow.');
+  }
+
   const rp = await razorpay.orders.create({
-    amount: Math.round(body.amount * 100),
+    amount: Math.round(serverAmount * 100),
     currency: 'INR',
     receipt: body._id,
     notes: { orderId: body.orderId },
   });
-  const order = await Order.findOne({ orderId: body.orderId });
-  if (!order) throw new NotFoundError('Order not found');
   (order as unknown as { razorpayOrderId: string }).razorpayOrderId = rp.id;
   await order.save();
   return {
@@ -122,6 +138,56 @@ export async function razorpayCreate(body: { _id: string; amount: number; orderI
     customerPhone:
       (order as unknown as { shipping?: { mobileNumber?: string } }).shipping?.mobileNumber || '1234567890',
   };
+}
+
+/* ───────────────── Free Order (100% coupon → payable 0) ───────────────── */
+/**
+ * Jab coupon ke baad payable amount 0 ho jaye (100% / full discount), tab koi
+ * payment gateway call nahi hoti (Razorpay/PhonePe ₹0 reject karte hain — Bug #6).
+ * Yahan order ko server-side verify karke seedha PAID + CONFIRMED mark karte hain,
+ * fir wahi idempotent side-effects (stock + email + whatsapp) chalte hain.
+ */
+export async function confirmFreeOrder(userId: string, orderMongoId: string): Promise<unknown> {
+  const order = await Order.findById(orderMongoId).populate({ path: 'userId', model: User });
+  if (!order) throw new NotFoundError('Order not found');
+
+  // 🔒 Ownership check — koi dusre ka order confirm na kar de
+  const rawOwner =
+    (order as unknown as { userId?: { _id?: unknown } }).userId?._id ??
+    (order as unknown as { userId?: unknown }).userId;
+  if (String(rawOwner) !== String(userId)) {
+    throw new BadRequestError('Order does not belong to this user');
+  }
+
+  // 🔒 Server-side amount check — client par bharosa nahi.
+  const payable = Number((order as unknown as { payAmt?: string | number }).payAmt);
+  if (payable > 0.5) {
+    throw new BadRequestError('This order is not free — payment required.');
+  }
+
+  const o = order as unknown as {
+    payment: Record<string, unknown>;
+    status: string;
+    save: () => Promise<unknown>;
+  };
+  if (o.payment?.isPaid) {
+    return { success: true, alreadyConfirmed: true, order };
+  }
+
+  o.payment = {
+    transactionId: `FREE-${Date.now()}`,
+    isPaid: true,
+    paidAt: new Date(),
+    method: 'coupon_full_discount',
+    paymentPartner: 'free',
+  };
+  o.status = 'confirmed';
+  await o.save();
+
+  // Stock + email + whatsapp (idempotent)
+  await finalizeConfirmedOrder((order as unknown as { _id: unknown })._id);
+
+  return { success: true, order };
 }
 
 export async function razorpayVerify(body: {

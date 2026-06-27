@@ -22,7 +22,7 @@ import { FaMapMarked } from 'react-icons/fa';
 const STATUS_CONFIG: Record<string, { icon: any; color: string; bg: string }> = {
   pending: { icon: RiTimeLine, color: 'text-amber-700', bg: 'bg-amber-100' },
   confirmed: { icon: RiCheckLine, color: 'text-blue-700', bg: 'bg-blue-100' },
-  shipped: { icon: RiTruckLine, color: 'text-purple-700', bg: 'bg-purple-100' },
+  shipped: { icon: RiTruckLine, color: 'text-[#3C2A6D]', bg: 'bg-purple-100' },
   delivered: { icon: RiBoxingLine, color: 'text-green-700', bg: 'bg-green-100' },
   cancelled: { icon: RiCloseLine, color: 'text-red-700', bg: 'bg-red-100' },
   refunded: { icon: RiCloseLine, color: 'text-orange-700', bg: 'bg-orange-100' },
@@ -54,8 +54,14 @@ export default function OrderDetailsPage() {
   const subtotal = order.totalAmount.totalPrice;
   const shipping = order.totalAmount.shippingTotal;
   const couponDiscount = order.coupon.isApplied ? order.totalAmount.coupon_discount : 0;
-  const extraDiscount = (subtotal + shipping) - (order.totalAmount.discountPrice + shipping);
-  const finalTotal = (order.totalAmount.discountPrice + shipping) - couponDiscount;
+  // ✅ FIX: coupon discount bhi subtract karna tha (pehle ignore ho raha tha,
+  //    shipping dono taraf cancel ho jaata tha aur formula effectively
+  //    "subtotal - discountPrice" reh jaata tha — coupon discount ka koi effect nahi padta tha).
+  const extraDiscount = subtotal - order.totalAmount.discountPrice - couponDiscount;
+  // ✅ FIX: order.totalAmount.discountPrice mein coupon discount ALREADY subtract
+  //    hota hai (backend createOrder mein), isliye yahan couponDiscount dobara
+  //    minus karna double-subtraction tha — finalTotal/Due Amount kam dikh rahe the.
+  const finalTotal = order.totalAmount.discountPrice + shipping;
   const dueAmount = order.paymentType === 'offline' ? finalTotal - order.payAmt : 0;
 
   return (
@@ -65,7 +71,7 @@ export default function OrderDetailsPage() {
         {/* Back link */}
         <Link
           href="/user/orders"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-purple-600 transition"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-[#3C2A6D] transition"
         >
           <RiArrowLeftLine className="w-4 h-4" /> Back to Orders
         </Link>
@@ -116,7 +122,7 @@ export default function OrderDetailsPage() {
                       <div className="flex-1 min-w-0">
                         <Link
                           href={`/product-details/${item.slug}`}
-                          className="text-sm font-medium text-gray-900 hover:text-purple-600 transition break-words"
+                          className="text-sm font-medium text-gray-900 hover:text-[#3C2A6D] transition break-words"
                         >
                           {item.name}
                         </Link>
@@ -143,7 +149,7 @@ export default function OrderDetailsPage() {
             {/* Payment summary */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <RiMoneyDollarCircleLine className="w-5 h-5 text-purple-600" />
+                <RiMoneyDollarCircleLine className="w-5 h-5 text-[#3C2A6D]" />
                 Payment Summary
               </h3>
 
@@ -169,7 +175,7 @@ export default function OrderDetailsPage() {
                 <div className="border-t border-gray-200 pt-3 mt-3">
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-900">Total Amount</span>
-                    <span className="text-xl font-bold text-purple-600">{formatCurrency(finalTotal)}</span>
+                    <span className="text-xl font-bold text-[#3C2A6D]">{formatCurrency(finalTotal)}</span>
                   </div>
                 </div>
 
@@ -195,7 +201,7 @@ export default function OrderDetailsPage() {
             {/* Payment details */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <RiBankCard2Line className="w-5 h-5 text-purple-600" />
+                <RiBankCard2Line className="w-5 h-5 text-[#3C2A6D]" />
                 Payment
               </h3>
 
@@ -244,7 +250,7 @@ export default function OrderDetailsPage() {
             {/* Shipping address */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <RiMapPin2Line className="w-5 h-5 text-purple-600" />
+                <RiMapPin2Line className="w-5 h-5 text-[#3C2A6D]" />
                 Delivery Address
               </h3>
 
@@ -296,13 +302,13 @@ export default function OrderDetailsPage() {
 
             {/* Help / Invoice */}
             <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border border-purple-100 p-5">
-              <RiInformationLine className="w-5 h-5 text-purple-600 mb-2" />
+              <RiInformationLine className="w-5 h-5 text-[#3C2A6D] mb-2" />
               <h4 className="font-semibold text-gray-900 text-sm">Need an invoice?</h4>
               <p className="text-xs text-gray-600 mt-1">Download a copy of your tax invoice</p>
               <Link
                 href={`/orders/${order._id}/billing`}
                 target="_blank"
-                className="mt-3 inline-block text-sm text-purple-600 hover:text-purple-700 font-semibold"
+                className="mt-3 inline-block text-sm text-[#3C2A6D] hover:text-[#3C2A6D] font-semibold"
               >
                 Download Invoice →
               </Link>

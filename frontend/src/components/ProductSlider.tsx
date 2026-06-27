@@ -40,7 +40,7 @@ const ProductSlider = ({ products, title, description }: Props) => {
               <span className="h-0.5 w-8 sm:w-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" />
               <Link
                 href={categorySlug ? `/category/${categorySlug}` : '#'}
-                className="text-xs sm:text-sm lg:text-2xl uppercase tracking-[0.25em] font-semibold text-purple-600 hover:text-purple-700 transition"
+                className="text-xs sm:text-sm lg:text-2xl uppercase tracking-[0.25em] font-semibold text-[#3C2A6D] hover:text-[#3C2A6D] transition"
               >
                 {title}
               </Link>
@@ -56,7 +56,7 @@ const ProductSlider = ({ products, title, description }: Props) => {
             {categorySlug && (
               <Link
                 href={`/category/${categorySlug}`}
-                className="hidden sm:flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-purple-600 transition group"
+                className="hidden sm:flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-[#3C2A6D] transition group"
               >
                 View All
                 <RiArrowRightLine className="w-4 h-4 group-hover:translate-x-0.5 transition" />
@@ -67,14 +67,14 @@ const ProductSlider = ({ products, title, description }: Props) => {
               <button
                 onClick={() => swiperRef.current?.slidePrev()}
                 aria-label="Previous"
-                className="w-10 h-10 rounded-full bg-white border border-gray-200 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md text-gray-700 hover:text-purple-600 flex items-center justify-center transition-all active:scale-95"
+                className="w-10 h-10 rounded-full bg-white border border-gray-200 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md text-gray-700 hover:text-[#3C2A6D] flex items-center justify-center transition-all active:scale-95"
               >
                 <RiArrowLeftSLine className="w-5 h-5" />
               </button>
               <button
                 onClick={() => swiperRef.current?.slideNext()}
                 aria-label="Next"
-                className="w-10 h-10 rounded-full bg-white border border-gray-200 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md text-gray-700 hover:text-purple-600 flex items-center justify-center transition-all active:scale-95"
+                className="w-10 h-10 rounded-full bg-white border border-gray-200 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md text-gray-700 hover:text-[#3C2A6D] flex items-center justify-center transition-all active:scale-95"
               >
                 <RiArrowRightSLine className="w-5 h-5" />
               </button>
@@ -123,7 +123,7 @@ const ProductSlider = ({ products, title, description }: Props) => {
           <div className="sm:hidden text-center mt-4">
             <Link
               href={`/category/${categorySlug}`}
-              className="inline-flex items-center gap-1 text-sm font-medium text-purple-600"
+              className="inline-flex items-center gap-1 text-sm font-medium text-[#3C2A6D]"
             >
               View All Products <RiArrowRightLine className="w-4 h-4" />
             </Link>

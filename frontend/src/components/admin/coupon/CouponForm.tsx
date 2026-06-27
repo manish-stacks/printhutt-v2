@@ -105,6 +105,24 @@ export function CouponForm({
                   </select>
                 </div>
 
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-900">
+                    Auto-apply at checkout (Default)
+                  </label>
+                  <select
+                    name="isDefault"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                    value={formData?.isDefault ? 'true' : 'false'}
+                    onChange={onChange}
+                  >
+                    <option value="false">No</option>
+                    <option value="true">Yes — auto-apply this one</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Only one coupon can be default at a time.
+                  </p>
+                </div>
+
               </div>
 
               <div>

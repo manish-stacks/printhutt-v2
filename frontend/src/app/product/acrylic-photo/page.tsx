@@ -517,7 +517,7 @@ export default function AcrylicPhoto() {
                       onClick={() => handleSizeChange(option.size)}
                       className={`px-4 py-2 rounded-xl text-sm font-semibold transition active:scale-[0.98] ${active
                         ? 'bg-purple-500 text-white shadow-md shadow-purple-200'
-                        : 'bg-white text-purple-600 border border-purple-200 hover:bg-purple-50'
+                        : 'bg-white text-[#3C2A6D] border border-purple-200 hover:bg-purple-50'
                         }`}
                     >
                       {option.size}

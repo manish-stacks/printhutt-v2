@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/utils/async-handler';
 import { sendOk } from '@/utils/api-response';
+import { UnauthorizedError } from '@/utils/errors';
 import * as service from './payment.service';
 
 /* PhonePe initiate */
@@ -28,6 +29,15 @@ export const phonePeCallback = asyncHandler(async (req: Request, res: Response) 
 export const razorpayCreate = asyncHandler(async (req: Request, res: Response) => {
   const data = await service.razorpayCreate(req.body as { _id: string; amount: number; orderId: string });
   return res.json(data);
+});
+
+/* Free order confirm (100% coupon → payable 0) */
+export const confirmFreeOrder = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) throw new UnauthorizedError('Authentication required');
+  const { _id } = (req.body as { _id?: string }) ?? {};
+  if (!_id) throw new UnauthorizedError('Order id required');
+  const result = await service.confirmFreeOrder(req.user.id, _id);
+  return sendOk(res, result as Record<string, unknown>);
 });
 
 /* Razorpay verify */

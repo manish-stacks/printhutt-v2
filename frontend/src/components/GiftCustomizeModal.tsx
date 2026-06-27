@@ -202,13 +202,13 @@ export default function GiftCustomizeModal({ onClose }: { onClose: () => void })
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
                 <div className="w-14 h-14 rounded-2xl bg-purple-100 flex items-center justify-center mb-3">
-                  <RiUploadCloud2Line className="w-7 h-7 text-purple-600" />
+                  <RiUploadCloud2Line className="w-7 h-7 text-[#3C2A6D]" />
                 </div>
                 <p className="text-sm font-semibold text-gray-800">
                   {isDragging ? "Drop your image here" : "Drag & drop your photo"}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  or <span className="text-purple-600 font-medium">browse files</span>
+                  or <span className="text-[#3C2A6D] font-medium">browse files</span>
                 </p>
                 <p className="text-[11px] text-gray-400 mt-2">
                   PNG, JPG · Max {MAX_SIZE_MB}MB
@@ -221,7 +221,7 @@ export default function GiftCustomizeModal({ onClose }: { onClose: () => void })
           {fileObj && previewImage && (
             <div className="mt-3 flex items-center gap-3 p-3 bg-purple-50 rounded-xl border border-purple-100">
               <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
-                <RiImageLine className="w-4 h-4 text-purple-600" />
+                <RiImageLine className="w-4 h-4 text-[#3C2A6D]" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-gray-900 truncate">{fileObj.name}</p>
@@ -229,7 +229,7 @@ export default function GiftCustomizeModal({ onClose }: { onClose: () => void })
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="text-xs text-purple-600 hover:text-purple-700 font-semibold flex items-center gap-1 flex-shrink-0"
+                className="text-xs text-[#3C2A6D] hover:text-[#3C2A6D] font-semibold flex items-center gap-1 flex-shrink-0"
               >
                 <RiRefreshLine className="w-3.5 h-3.5" /> Change
               </button>
@@ -264,7 +264,7 @@ export default function GiftCustomizeModal({ onClose }: { onClose: () => void })
           <button
             onClick={handleSave}
             disabled={!previewImage || saving}
-            className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-purple-200 transition active:scale-[0.99]"
+            className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-[#3C2A6D] to-pink-600 hover:from-[#3C2A6D] hover:to-pink-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-purple-200 transition active:scale-[0.99]"
           >
             <RiCheckLine className="w-4 h-4" />
             {saving ? "Saving..." : "Save Photo"}

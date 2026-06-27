@@ -34,6 +34,7 @@ export default function CouponPage() {
         usageLimit: '',
         isActive: true,
         isShow: true,
+        isDefault: false,
     });
 
     const searchParams = useSearchParams();
@@ -83,9 +84,12 @@ export default function CouponPage() {
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
+        // ✅ Boolean selects ko sahi boolean store karo (warna string 'false' bhi truthy ho jata
+        //    aur toggle persist nahi hota — isActive/isShow/isDefault sab par lagu).
+        const boolFields = ['isActive', 'isShow', 'isDefault'];
         setFormData((prevData) => ({
             ...prevData,
-            [name]: value,
+            [name]: boolFields.includes(name) ? value === 'true' : value,
         }));
     };
 
@@ -125,7 +129,17 @@ export default function CouponPage() {
 
     const handleEdit = (id: string) => {
         const couponToEdit = coupons.find(coupon => coupon._id === id);
-     
+
+        // datetime-local input local time expect karta hai. toISOString() UTC deta tha
+        // jisse edit par time shift ho jata tha — yahan local offset adjust karke format karo.
+        const toLocalInput = (d?: string | Date) => {
+            if (!d) return '';
+            const date = new Date(d);
+            if (isNaN(date.getTime())) return '';
+            const tz = date.getTimezoneOffset() * 60000;
+            return new Date(date.getTime() - tz).toISOString().slice(0, 16);
+        };
+
         if (couponToEdit) {
             setFormData({
                 code: couponToEdit.code,
@@ -134,11 +148,12 @@ export default function CouponPage() {
                 discountValue: couponToEdit.discountValue.toString(),
                 minimumPurchaseAmount: couponToEdit.minimumPurchaseAmount.toString(),
                 maxDiscountAmount: couponToEdit.maxDiscountAmount?.toString() || '',
-                validFrom: new Date(couponToEdit.validFrom).toISOString().slice(0, 16),
-                validUntil: new Date(couponToEdit.validUntil).toISOString().slice(0, 16),
+                validFrom: toLocalInput(couponToEdit.validFrom),
+                validUntil: toLocalInput(couponToEdit.validUntil),
                 usageLimit: couponToEdit.usageLimit?.toString() || '',
                 isActive: couponToEdit.isActive,
                 isShow: couponToEdit.isShow,
+                isDefault: (couponToEdit as any).isDefault ?? false,
             });
             setEditingId(id);
             setIsOpen(true);

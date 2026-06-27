@@ -230,7 +230,7 @@ const PersonalizedGiftPage = () => {
                     <span
                       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
                         item.type === "video"
-                          ? "bg-purple-50 text-purple-700"
+                          ? "bg-purple-50 text-[#3C2A6D]"
                           : "bg-blue-50 text-blue-700"
                       }`}
                     >

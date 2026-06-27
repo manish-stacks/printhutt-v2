@@ -137,7 +137,7 @@ export async function overview(): Promise<unknown> {
     { title: 'Blogs', value: totalBlogs, icon: 'ri-news-line', color: 'bg-pink-500' },
     { title: 'Coupons', value: totalCoupons, icon: 'ri-gift-line', color: 'bg-red-500' },
     { title: 'Daily Users', value: dailyUsers, icon: 'ri-user-add-line', color: 'bg-purple-500' },
-    { title: 'Daily Cart Visitors', value: dailyCartVisitors, icon: 'ri-shopping-cart-line', color: 'bg-purple-600' },
+    { title: 'Daily Cart Visitors', value: dailyCartVisitors, icon: 'ri-shopping-cart-line', color: 'bg-[#3C2A6D]' },
     { title: 'Total Carts', value: totalCarts, icon: 'ri-shopping-cart-line', color: 'bg-rose-600' },
     { title: 'Site Visitors', value: siteVisitors, icon: 'ri-user-add-line', color: 'bg-purple-800' },
   ];

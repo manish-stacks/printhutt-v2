@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAdmin, requireAuth } from '@/middlewares/auth.middleware';
+import { optionalAuth, requireAdmin, requireAuth } from '@/middlewares/auth.middleware';
 import { validate } from '@/middlewares/validate.middleware';
 import * as controller from './coupons.controller';
 import {
@@ -7,6 +7,7 @@ import {
   createCouponSchema,
   listCouponsQuerySchema,
   updateCouponSchema,
+  validateCouponSchema,
 } from './coupons.validation';
 
 const router = Router();
@@ -14,6 +15,9 @@ const router = Router();
 /* ─── Storefront ─────────────────────────────────────────────── */
 // Original: GET /api/v1/coupon
 router.get('/storefront', controller.storefrontActive);
+// ✅ NEW: code + cartTotal se validate (login optional — guest/user dono).
+//    Checkout par coupon apply isi se hoga (admin endpoint nahi → FORBIDDEN fix, Bug #4)
+router.post('/validate', optionalAuth, validate(validateCouponSchema), controller.validateByCode);
 // Original: POST /api/coupon/apply (logged-in users only)
 router.post('/apply', requireAuth, validate(applyCouponSchema), controller.applyCheck);
 

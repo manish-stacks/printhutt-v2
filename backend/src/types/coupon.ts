@@ -17,6 +17,7 @@ export interface CouponAttributes {
   applicableCategories: Types.ObjectId[];
   isActive: boolean;
   isShow: boolean;
+  isDefault: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

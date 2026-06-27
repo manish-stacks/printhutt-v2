@@ -117,7 +117,7 @@ const Address = () => {
                 {view === 'list' && (
                   <button
                     onClick={() => { resetForm(); setView('form'); }}
-                    className="flex items-center gap-2 bg-white text-purple-700 hover:bg-purple-50 px-4 py-2 rounded-xl text-sm font-semibold transition"
+                    className="flex items-center gap-2 bg-white text-[#3C2A6D] hover:bg-purple-50 px-4 py-2 rounded-xl text-sm font-semibold transition"
                   >
                     <RiAddLine className="w-5 h-5" /> Add New
                   </button>
@@ -132,7 +132,7 @@ const Address = () => {
               <button
                 onClick={() => { resetForm(); setView('list'); }}
                 className={`px-5 py-2 rounded-xl text-sm font-medium transition ${
-                  view === 'list' ? 'bg-purple-600 text-white shadow-md shadow-purple-200' : 'text-gray-600 hover:text-purple-600'
+                  view === 'list' ? 'bg-[#3C2A6D] text-white shadow-md shadow-purple-200' : 'text-gray-600 hover:text-[#3C2A6D]'
                 }`}
               >
                 My Addresses
@@ -140,7 +140,7 @@ const Address = () => {
               <button
                 onClick={() => { resetForm(); setView('form'); }}
                 className={`px-5 py-2 rounded-xl text-sm font-medium transition ${
-                  view === 'form' ? 'bg-purple-600 text-white shadow-md shadow-purple-200' : 'text-gray-600 hover:text-purple-600'
+                  view === 'form' ? 'bg-[#3C2A6D] text-white shadow-md shadow-purple-200' : 'text-gray-600 hover:text-[#3C2A6D]'
                 }`}
               >
                 {editingId ? 'Edit' : 'Add New'}
@@ -156,7 +156,7 @@ const Address = () => {
                     <p className="text-gray-500">No addresses saved yet</p>
                     <button
                       onClick={() => { resetForm(); setView('form'); }}
-                      className="mt-4 inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-xl text-sm font-medium"
+                      className="mt-4 inline-flex items-center gap-2 bg-[#3C2A6D] hover:bg-[#3C2A6D] text-white px-5 py-2 rounded-xl text-sm font-medium"
                     >
                       <RiAddLine /> Add First Address
                     </button>
@@ -172,11 +172,11 @@ const Address = () => {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
                           {address.addressType === 'home' ? (
-                            <RiHome2Line className="w-5 h-5 text-purple-600" />
+                            <RiHome2Line className="w-5 h-5 text-[#3C2A6D]" />
                           ) : (
-                            <RiBriefcase2Line className="w-5 h-5 text-purple-600" />
+                            <RiBriefcase2Line className="w-5 h-5 text-[#3C2A6D]" />
                           )}
-                          <span className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
+                          <span className="text-xs font-semibold text-[#3C2A6D] uppercase tracking-wider">
                             {address.addressType}
                           </span>
                         </div>
@@ -200,7 +200,7 @@ const Address = () => {
                       <div className="flex gap-2 pt-2 border-t border-gray-100">
                         <button
                           onClick={() => onEdit(address)}
-                          className="flex-1 flex items-center justify-center gap-1 text-sm text-purple-600 hover:bg-purple-50 py-2 rounded-lg font-medium transition"
+                          className="flex-1 flex items-center justify-center gap-1 text-sm text-[#3C2A6D] hover:bg-purple-50 py-2 rounded-lg font-medium transition"
                         >
                           <RiEdit2Line /> Edit
                         </button>
@@ -248,7 +248,7 @@ const Address = () => {
                             onClick={() => setFormData((p) => ({ ...p, addressType: type }))}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition ${
                               active
-                                ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
+                                ? 'bg-[#3C2A6D] text-white shadow-md shadow-purple-200'
                                 : 'bg-gray-50 text-gray-600 hover:bg-purple-50'
                             }`}
                           >
@@ -263,7 +263,7 @@ const Address = () => {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="flex-1 sm:flex-none sm:px-8 bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white py-2.5 rounded-xl text-sm font-semibold transition"
+                      className="flex-1 sm:flex-none sm:px-8 bg-[#3C2A6D] hover:bg-[#3C2A6D] disabled:opacity-60 text-white py-2.5 rounded-xl text-sm font-semibold transition"
                     >
                       {isSubmitting ? 'Saving...' : editingId ? 'Update Address' : 'Save Address'}
                     </button>

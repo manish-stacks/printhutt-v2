@@ -20,7 +20,7 @@ const STATUS_STYLE: Record<string, string> = {
   delivered: 'bg-green-100 text-green-700',
   shipped: 'bg-blue-100 text-blue-700',
   pending: 'bg-amber-100 text-amber-700',
-  confirmed: 'bg-purple-100 text-purple-700',
+  confirmed: 'bg-purple-100 text-[#3C2A6D]',
   cancelled: 'bg-red-100 text-red-700',
   refunded: 'bg-orange-100 text-orange-700',
 };
@@ -109,7 +109,7 @@ const UserOrdersPage = () => {
                 <p className="text-gray-500">No orders found</p>
                 <Link
                   href="/products"
-                  className="mt-4 inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-xl text-sm font-medium"
+                  className="mt-4 inline-flex items-center gap-2 bg-[#3C2A6D] hover:bg-[#3C2A6D] text-white px-5 py-2 rounded-xl text-sm font-medium"
                 >
                   Start Shopping
                 </Link>
@@ -163,7 +163,7 @@ const UserOrdersPage = () => {
                                 <a
                                   href={`/product-details/${item.slug}`}
                                   target="_blank"
-                                  className="text-sm text-gray-800 hover:text-purple-600 font-medium break-words"
+                                  className="text-sm text-gray-800 hover:text-[#3C2A6D] font-medium break-words"
                                 >
                                   {item.name}
                                 </a>
@@ -181,7 +181,7 @@ const UserOrdersPage = () => {
                                   ) : (
                                     <Link
                                       href={`/product-details/${item.slug}/write-review`}
-                                      className="text-xs text-purple-600 hover:underline mt-1 inline-block"
+                                      className="text-xs text-[#3C2A6D] hover:underline mt-1 inline-block"
                                     >
                                       ✍️ Write a review
                                     </Link>
@@ -198,7 +198,7 @@ const UserOrdersPage = () => {
                     <div className="flex flex-wrap items-center gap-2 px-4 sm:px-5 py-3 border-t border-gray-100 bg-gray-50/50">
                       <Link
                         href={`/orders/${order._id}`}
-                        className="flex items-center gap-1.5 text-xs font-medium bg-white text-purple-600 hover:bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-lg transition"
+                        className="flex items-center gap-1.5 text-xs font-medium bg-white text-[#3C2A6D] hover:bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-lg transition"
                       >
                         <RiEyeLine /> View Details
                       </Link>

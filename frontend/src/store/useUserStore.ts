@@ -25,7 +25,9 @@ interface MeResponse {
 
 interface UserState {
     isLoggedIn: boolean;
+    hasHydrated: boolean;
     userDetails: UserDetails | null;
+    setHasHydrated: (v: boolean) => void;
     login: (user: UserDetails) => void;
     logout: () => void;
     getUserDetails: () => UserDetails | null;
@@ -125,7 +127,9 @@ export const useUserStore = create<UserState>()(
     persist(
         (set, get) => ({
             isLoggedIn: false,
+            hasHydrated: false,
             userDetails: null,
+            setHasHydrated: (v) => set({ hasHydrated: v }),
             login: (user) => {
                 set({ isLoggedIn: true, userDetails: user });
             },
@@ -170,13 +174,21 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: 'user-store',
+            onRehydrateStorage: () => (state) => {
+                // localStorage se state load hone ke baad — flicker rokne ke liye
+                state?.setHasHydrated(true);
+            },
         }
     )
 )
 
-// Soft logout on `auth:expired` (dispatched by axios interceptor when refresh fails)
+// Soft logout on `auth:expired` (dispatched by axios interceptor when refresh fails).
+// ⚠️ Yahan /auth/logout network call NAHI karte — sirf local state clear.
+// Network logout call khud 401/timeout de sakti thi jisse payment ke beech
+// user logout ho jata tha (Bug #3). Ab sirf token + flag clear hota hai.
 if (typeof window !== 'undefined') {
     window.addEventListener('auth:expired', () => {
-        useUserStore.getState().logout();
+        setAccessToken(null);
+        useUserStore.setState({ isLoggedIn: false, userDetails: null });
     });
 }

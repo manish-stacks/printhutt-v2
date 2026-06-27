@@ -154,19 +154,25 @@ export function getOwnerEmailTemplate({
                             <tr>
                                 <td style="padding: 8px 0; color: #374151;">Extra Discount</td>
                                 <td style="padding: 8px 0; text-align: right; color: #22c55e;">
-                                  -${formatCurrency((totalAmount.totalPrice + totalAmount.shippingTotal) - (totalAmount.discountPrice + totalAmount.shippingTotal))}                                </td>
+                                  -${formatCurrency(totalAmount.totalPrice - totalAmount.discountPrice - (Number(totalAmount?.coupon_discount) || 0))}                                </td>
                               </tr>
                             <tr>
                               <td style="padding: 8px 0; color: #111827; font-weight: 600;">Total Amount</td>
                               <td style="padding: 8px 0; text-align: right; color: #111827; font-weight: 600;">
-                                ${formatCurrency((totalAmount.discountPrice + totalAmount.shippingTotal) - (Number(totalAmount?.coupon_discount) || 0))}
+                                ${formatCurrency(totalAmount.discountPrice + totalAmount.shippingTotal)}
                               </td>
                             </tr>
                             ${paymentType === 'offline' ? `
                               <tr>
+                                <td style="padding: 8px 0; color: #374151; font-weight: 600;">Paid Amount</td>
+                                <td style="padding: 8px 0; text-align: right; color: #22c55e; font-weight: 600;">
+                                  -${formatCurrency(payAmt)}
+                                </td>
+                              </tr>
+                              <tr>
                                 <td style="padding: 8px 0; color: #111827; font-weight: 600;">Due Amount</td>
                                 <td style="padding: 8px 0; text-align: right; color: #111827; font-weight: 600;">
-                                  ${formatCurrency((totalAmount.discountPrice + totalAmount.shippingTotal - (Number(totalAmount?.coupon_discount) || 0)) - Number(payAmt))}
+                                  ${formatCurrency((totalAmount.discountPrice + totalAmount.shippingTotal) - Number(payAmt))}
                                 </td>
                               </tr>
                           ` : ''}        

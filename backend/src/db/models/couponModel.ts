@@ -57,6 +57,8 @@ const couponSchema = new Schema<CouponDocument>({
   }],
   isActive: { type: Boolean, required: true, default: true },
   isShow: { type: Boolean, required: true, default: true },
+  // ✅ Sirf ek hi default coupon ho sakta hai — checkout par yahi auto-apply hoga.
+  isDefault: { type: Boolean, required: true, default: false },
 }, { 
   timestamps: true 
 });

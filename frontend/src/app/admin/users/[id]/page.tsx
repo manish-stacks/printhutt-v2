@@ -232,7 +232,7 @@ export default function UserDetailPage() {
                     <span className="text-sm font-medium text-gray-700">
                       {cart.length} item(s) in cart
                     </span>
-                    <span className="text-base font-bold text-purple-600">
+                    <span className="text-base font-bold text-[#3C2A6D]">
                       Total: ₹
                       {cart.reduce((s: number, i: any) => s + (i.price || 0) * (i.quantity || 0), 0)}
                     </span>
@@ -253,7 +253,7 @@ export default function UserDetailPage() {
                         <Link
                           target="_blank"
                           href={`/product-details/${item.productId?.slug}`}
-                          className="font-medium text-gray-900 hover:text-purple-600 line-clamp-2 block"
+                          className="font-medium text-gray-900 hover:text-[#3C2A6D] line-clamp-2 block"
                           dangerouslySetInnerHTML={{ __html: item.productId?.title || 'Product' }}
                         />
 
@@ -274,7 +274,7 @@ export default function UserDetailPage() {
 
                         <div className="flex items-center justify-between mt-2">
                           <p className="text-sm">
-                            <span className="font-bold text-purple-600">₹{item.price}</span>
+                            <span className="font-bold text-[#3C2A6D]">₹{item.price}</span>
                             <span className="text-gray-500 ml-1">× {item.quantity}</span>
                           </p>
                           <p className="font-semibold text-gray-900">

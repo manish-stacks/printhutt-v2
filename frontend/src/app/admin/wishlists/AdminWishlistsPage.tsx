@@ -120,7 +120,7 @@ export default function AdminWishlistsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <RiHeart3Line className="text-purple-600" /> Wishlists
+                        <RiHeart3Line className="text-[#3C2A6D]" /> Wishlists
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">{total} users with wishlist items</p>
                 </div>
@@ -161,7 +161,7 @@ export default function AdminWishlistsPage() {
                                     <td className="px-5 py-4">
                                         <Link href={`/admin/users/${row.userId}`}>
                                             <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-xs font-semibold">
+                                                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-[#3C2A6D] text-xs font-semibold">
                                                     {row.userName?.[0]?.toUpperCase() || '?'}
                                                 </div>
                                                 <span className="font-medium text-gray-900">{row.userName || 'Guest'}</span>
@@ -171,7 +171,7 @@ export default function AdminWishlistsPage() {
                                     <td className="px-5 py-4 text-gray-600">{row.userEmail || '—'}</td>
                                     <td className="px-5 py-4 text-gray-600">{row.userNumber || '—'}</td>
                                     <td className="px-5 py-4 text-center">
-                                        <span className="inline-flex bg-purple-50 text-purple-700 px-2.5 py-1 rounded-full text-xs font-semibold">
+                                        <span className="inline-flex bg-purple-50 text-[#3C2A6D] px-2.5 py-1 rounded-full text-xs font-semibold">
                                             {row.itemCount}
                                         </span>
                                     </td>
@@ -188,7 +188,7 @@ export default function AdminWishlistsPage() {
                                             {/* 🔥 View modal — page open nahi karega */}
                                             <button
                                                 onClick={() => openViewModal(row)}
-                                                className="p-2 rounded-lg hover:bg-purple-50 text-gray-500 hover:text-purple-600"
+                                                className="p-2 rounded-lg hover:bg-purple-50 text-gray-500 hover:text-[#3C2A6D]"
                                                 title="View Items"
                                             >
                                                 <RiEyeLine className="w-4 h-4" />
@@ -301,7 +301,7 @@ const ViewWishlistModal = ({
                                             className="text-sm font-medium text-gray-900 line-clamp-2"
                                             dangerouslySetInnerHTML={{ __html: item.productId?.title || 'Unknown product' }}
                                         />
-                                        <p className="text-sm font-bold text-purple-600 mt-1">
+                                        <p className="text-sm font-bold text-[#3C2A6D] mt-1">
                                             {formatCurrency(item.productId?.price || 0)}
                                         </p>
                                         <p className="text-[11px] text-gray-400 mt-0.5">

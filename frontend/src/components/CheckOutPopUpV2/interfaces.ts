@@ -19,6 +19,8 @@ export interface CouponItem {
     maxDiscountAmount: number;
     minimumPurchaseAmount: number;
     isActive: boolean;
+    isDefault?: boolean;
+    isShow?: boolean;
 }
 
 export interface TotalPrice {
