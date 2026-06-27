@@ -1,6 +1,6 @@
 {
   "name": "printhutt",
-  "version": "7.5.5",
+  "version": "7.7.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
