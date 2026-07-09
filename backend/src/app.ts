@@ -40,6 +40,7 @@ import pageRoutes from './modules/pages/pages.routes';
 import messagingRoutes from '@/modules/messaging/messaging.routes';
 import bullboardRoutes from './modules/bullboard/bullboard.routes';
 import { requireAdmin } from './middlewares/auth.middleware';
+import feedRoutes from './modules/feed/feed.routes';
 
 /* ─── Webhook/callback paths exempt from CORS, helmet, rate-limit ─── */
 /* ✅ FIX: Sirf actual server-to-server callbacks exempt hone chahiye.
@@ -141,7 +142,7 @@ export function buildApp(): Express {
       '/products/suggest', '/sliders/storefront',
       '/testimonials/storefront', '/offers/storefront',
       '/blogs/storefront', '/settings',
-      '/pages/', '/seo/', '/warranty', '/return-policy', '/shipping',
+      '/pages/', '/seo/', '/warranty', '/return-policy', '/shipping','/feed',
     ];
 
     const isPublic = publicStorefront.some(p => path.startsWith(p) || path.includes(p));
@@ -155,7 +156,7 @@ export function buildApp(): Express {
 
     next();
   });
-
+  app.use('/feed', feedRoutes);
   /* ─── 8. Routes ─── */
   app.use('/api/auth', authRoutes);
   app.use('/api/users', userRoutes);
@@ -164,7 +165,7 @@ export function buildApp(): Express {
   app.use('/api/products', productRoutes);
 
   /* ─── Bull Board — Queue Dashboard (admin only) ─── */
-  app.use('/api/admin/queues',  bullboardRoutes); //...requireAdmin,
+  app.use('/api/admin/queues', bullboardRoutes); //...requireAdmin,
   app.use('/api/cart', cartRoutes);
   app.use('/api/wishlist', wishlistRoutes);
   app.use('/api/addresses', addressRoutes);
