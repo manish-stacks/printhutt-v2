@@ -71,13 +71,13 @@ export function setPendingPurchase(order: AnyOrder): void {
       })),
       shipping: (order as any).shipping
         ? {
-            userName: (order as any).shipping.userName || '',
-            mobileNumber: (order as any).shipping.mobileNumber || '',
-            addressLine: (order as any).shipping.addressLine || '',
-            city: (order as any).shipping.city || '',
-            state: (order as any).shipping.state || '',
-            postCode: (order as any).shipping.postCode || '',
-          }
+          userName: (order as any).shipping.userName || '',
+          mobileNumber: (order as any).shipping.mobileNumber || '',
+          addressLine: (order as any).shipping.addressLine || '',
+          city: (order as any).shipping.city || '',
+          state: (order as any).shipping.state || '',
+          postCode: (order as any).shipping.postCode || '',
+        }
         : null,
     };
     sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify(lastOrder));
@@ -124,10 +124,8 @@ export function firePurchaseFromSession(): void {
     const raw = sessionStorage.getItem(PENDING_KEY);
     if (!raw) return;
 
-    // ek hi baar fire ho — turant remove
-    sessionStorage.removeItem(PENDING_KEY);
+    if (!fbqReady()) return;
 
-    if (!fbqReady()) return; // pixel script paste nahi hua to skip
     const p = JSON.parse(raw);
 
     (window as any).fbq('track', 'Purchase', {
@@ -139,6 +137,9 @@ export function firePurchaseFromSession(): void {
       num_items: p.num_items || 0,
       order_id: p.orderId || '',
     });
+
+    // Remove only after successful fire
+    sessionStorage.removeItem(PENDING_KEY);
   } catch {
     /* ignore */
   }

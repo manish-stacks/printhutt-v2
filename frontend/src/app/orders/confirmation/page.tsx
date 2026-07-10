@@ -55,25 +55,63 @@ function OrderConfirmationContent() {
     const { clearCart } = useCartStore();
     const [order, setOrder] = useState<LastOrder | null>(null);
 
+    // useEffect(() => {
+    //     clearCart();
+    //     if (success) {
+    //         // stashed order (checkout pe save kiya) — URL me id ki zarurat nahi
+    //         setOrder(getLastOrder());
+
+    //         // 📊 Meta Pixel Purchase event
+    //         firePurchaseFromSession();
+
+    //         const end = Date.now() + 2 * 1000;
+    //         const colors = ["#ffffff", "#E4037C"];
+    //         (function frame() {
+    //             confetti({ particleCount: 2, angle: 60, spread: 55, origin: { x: 0 }, colors });
+    //             confetti({ particleCount: 2, angle: 120, spread: 55, origin: { x: 1 }, colors });
+    //             if (Date.now() < end) requestAnimationFrame(frame);
+    //         })();
+    //     }
+    // }, [success]);
     useEffect(() => {
         clearCart();
-        if (success) {
-            // stashed order (checkout pe save kiya) — URL me id ki zarurat nahi
-            setOrder(getLastOrder());
 
-            // 📊 Meta Pixel Purchase event
-            firePurchaseFromSession();
+        if (success) {
+            const lastOrder = getLastOrder();
+
+            setOrder(lastOrder);
+
+            // Fire Purchase only if order exists
+            if (lastOrder) {
+                firePurchaseFromSession();
+            } else {
+                console.warn("Facebook Purchase Event skipped - No order found in session.");
+            }
 
             const end = Date.now() + 2 * 1000;
             const colors = ["#ffffff", "#E4037C"];
+
             (function frame() {
-                confetti({ particleCount: 2, angle: 60, spread: 55, origin: { x: 0 }, colors });
-                confetti({ particleCount: 2, angle: 120, spread: 55, origin: { x: 1 }, colors });
+                confetti({
+                    particleCount: 2,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors,
+                });
+
+                confetti({
+                    particleCount: 2,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors,
+                });
+
                 if (Date.now() < end) requestAnimationFrame(frame);
             })();
         }
-    }, [success]);
-
+    }, [success, clearCart]);
     if (!success) {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
