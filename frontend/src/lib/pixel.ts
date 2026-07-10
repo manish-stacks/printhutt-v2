@@ -43,9 +43,21 @@ export function setPendingPurchase(order: AnyOrder): void {
       value,
       currency: 'INR',
       orderId: order.orderId || order._id || '',
+
       content_ids: items.map((i) => i.productId).filter(Boolean),
-      contents: items.map((i) => ({ id: i.productId, quantity: i.quantity || 1 })),
+      contents: items.map((i) => ({
+        id: i.productId,
+        quantity: i.quantity || 1,
+      })),
       num_items: items.reduce((s, i) => s + (Number(i.quantity) || 0), 0),
+
+      // Customer data
+      email: (order as any).shipping?.email || '',
+      phone: (order as any).shipping?.mobileNumber || '',
+      city: (order as any).shipping?.city || '',
+      state: (order as any).shipping?.state || '',
+      zip: (order as any).shipping?.postCode || '',
+      name: (order as any).shipping?.userName || '',
     };
     sessionStorage.setItem(PENDING_KEY, JSON.stringify(payload));
 
@@ -131,11 +143,19 @@ export function firePurchaseFromSession(): void {
     (window as any).fbq('track', 'Purchase', {
       value: p.value,
       currency: p.currency || 'INR',
+
       content_type: 'product',
       content_ids: p.content_ids || [],
       contents: p.contents || [],
       num_items: p.num_items || 0,
       order_id: p.orderId || '',
+
+      em: p.email,
+      ph: p.phone,
+      ct: p.city,
+      st: p.state,
+      zp: p.zip,
+      fn: p.name,
     });
 
     // Remove only after successful fire
