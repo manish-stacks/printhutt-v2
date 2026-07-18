@@ -27,6 +27,10 @@ interface OrderItem {
     previewImageTwo?: { url: string };
     previewImageThree?: { url: string };
     previewImageFour?: { url: string };
+    /* 🆕 multi-photo products (heart LED frame = 9 photos).
+       order me url-object[] hote hain; safety ke liye string[] bhi handle. */
+    customImages?: Array<{ url?: string } | string>;
+    photoCount?: number;
 }
 
 interface OrderDetailRowProps {
@@ -138,6 +142,14 @@ const CustomizeOderModel: React.FC<{ item: OrderItem }> = ({ item }) => {
         { url: item?.previewImageFour?.url, alt: "Preview Image Four" }
     ];
 
+    /* 🆕 9-photo heart frame — customImages ko gallery format me normalize */
+    const heartImages = Array.isArray(item?.customImages)
+        ? item.customImages.map((im, idx) => ({
+              url: typeof im === 'string' ? im : im?.url,
+              alt: `Photo ${idx + 1}`,
+          }))
+        : [];
+
     return (
         <div className="space-y-4">
             <div className="p-6 rounded-lg bg-white shadow-sm">
@@ -173,6 +185,15 @@ const CustomizeOderModel: React.FC<{ item: OrderItem }> = ({ item }) => {
                             )}
                         </div>
                         <ImageGallery images={images} onImageClick={setSelectedImage} />
+
+                        {heartImages.length > 0 && (
+                            <div className="mt-4 border-t pt-4">
+                                <p className="font-semibold mb-2">
+                                    Uploaded Photos ({heartImages.filter((h) => h.url).length})
+                                </p>
+                                <ImageGallery images={heartImages} onImageClick={setSelectedImage} />
+                            </div>
+                        )}
                     </>
                 )}
             </div>

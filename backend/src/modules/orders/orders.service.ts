@@ -281,6 +281,19 @@ export async function createOrder(
         previewImageFour:
           (c.previewImageFour as string | undefined) &&
           (await uploadImageOrder(c.previewImageFour as string, 'customized image')),
+        // 🆕 Multi-photo products (e.g. 9-photo heart LED frame).
+        // Array of base64 → array of uploaded S3 urls. Already-uploaded urls skip.
+        customImages: Array.isArray(c.customImages)
+          ? await Promise.all(
+              (c.customImages as unknown[]).map(async (img) => {
+                if (typeof img === 'string' && img.startsWith('data:image')) {
+                  const up = await uploadImageOrder(img, 'customized heart frame');
+                  return up?.url || img;
+                }
+                return img; // pehle se url hai
+              })
+            )
+          : c.customImages,
       };
 
       let uploadedProductImage: unknown = item.product_image;
