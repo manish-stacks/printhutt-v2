@@ -11,6 +11,35 @@ export const listOrdersQuerySchema = z.object({
 });
 export type ListOrdersQueryDTO = z.infer<typeof listOrdersQuerySchema>;
 
+/* ─────────── GET /api/orders/export/excel ─────────── */
+export const ORDER_STATUSES = [
+  'pending',
+  'confirmed',
+  'shipped',
+  'delivered',
+  'cancelled',
+  'returned',
+  'progress',
+  'refunded',
+] as const;
+
+export const exportOrdersQuerySchema = z.object({
+  /* orderId partial search */
+  search: z.string().default(''),
+  /* '' | 'all' => sab (pending chhod ke, list route jaisa) | ya comma-separated:
+     e.g. status=delivered  ya  status=cancelled,refunded,returned */
+  status: z.string().default(''),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  /* payment mode */
+  paymentType: z.enum(['all', 'online', 'offline']).default('all'),
+  /* paid / unpaid(COD pending) */
+  paymentStatus: z.enum(['all', 'paid', 'unpaid']).default('all'),
+  /* row cap — safety */
+  limit: z.coerce.number().int().positive().max(50000).default(20000),
+});
+export type ExportOrdersQueryDTO = z.infer<typeof exportOrdersQuerySchema>;
+
 /* ─────────── POST /api/orders  (create) ─────────── */
 const orderItemSchema = z
   .object({

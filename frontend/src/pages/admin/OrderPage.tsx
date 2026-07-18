@@ -14,6 +14,7 @@ import { axiosInstance } from '@/utils/axios';
 import confetti from 'canvas-confetti';
 import Swal from 'sweetalert2';
 import { getSiteSettings } from '@/lib/getSettings';
+import ExportOrdersModal from '@/components/admin/order/ExportOrdersModal';
 
 
 export default function OrderPage() {
@@ -37,6 +38,7 @@ export default function OrderPage() {
     const startDate = searchParams?.get('startDate') || '';
     const endDate = searchParams?.get('endDate') || '';
     const filterStatus = searchParams?.get('status') || '';
+    const [isExportModal, setIsExportModal] = useState(false);
 
 
     const fetchOrders = useCallback(async () => {
@@ -269,6 +271,13 @@ export default function OrderPage() {
                                     </button>
                                 )
                             }
+
+                            <button
+                                onClick={() => setIsExportModal(true)}
+                                className="mt-4 ml-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-md"
+                            >
+                                Export Excel
+                            </button>
 
                         </div>
                         <div>
@@ -650,8 +659,12 @@ export default function OrderPage() {
 
 
 
+            <ExportOrdersModal
+                isOpen={isExportModal}
+                onClose={() => setIsExportModal(false)}
+                defaults={{ search, status: filterStatus, startDate, endDate }}
+            />
+
         </>
     );
 }
-
-

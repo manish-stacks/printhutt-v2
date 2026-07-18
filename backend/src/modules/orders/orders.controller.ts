@@ -4,9 +4,11 @@ import { asyncHandler } from '@/utils/async-handler';
 import { sendOk } from '@/utils/api-response';
 import { UnauthorizedError } from '@/utils/errors';
 import * as service from './orders.service';
+import * as exportService from './orders.export.service';
 import type {
   BulkDeleteOrdersDTO,
   CreateOrderDTO,
+  ExportOrdersQueryDTO,
   ListOrdersQueryDTO,
   UpdateOrderShippingDTO,
   UpdateOrderStatusDTO,
@@ -63,6 +65,27 @@ export const updateStatus = asyncHandler(async (req: Request, res: Response) => 
     req.body as UpdateOrderStatusDTO
   );
   return sendOk(res, result as Record<string, unknown>);
+});
+
+/* GET /orders/export/excel?status=...&paymentType=...&paymentStatus=...&startDate=...&endDate=...&search=... */
+export const exportOrdersExcel = asyncHandler(async (req: Request, res: Response) => {
+  const q = req.query as unknown as ExportOrdersQueryDTO;
+  const buffer = await exportService.exportOrdersExcel(q);
+
+  const stamp = new Date()
+    .toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // YYYY-MM-DD
+  const statusPart = (q.status || 'all').replace(/,/g, '-');
+
+  res.setHeader(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  );
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="orders-${statusPart}-${stamp}.xlsx"`
+  );
+  res.setHeader('Cache-Control', 'no-store');
+  return res.send(Buffer.from(buffer));
 });
 
 /* GET /orders/bulk-delete/preview?startDate=...&endDate=... */

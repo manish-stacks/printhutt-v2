@@ -5,6 +5,7 @@ import * as controller from './orders.controller';
 import {
   bulkDeleteOrdersSchema,
   createOrderSchema,
+  exportOrdersQuerySchema,
   listOrdersQuerySchema,
   updateOrderShippingSchema,
   updateOrderStatusSchema,
@@ -43,6 +44,15 @@ router.patch(
   requireAuth,
   validate(updateOrderStatusSchema),
   controller.updateStatus
+);
+
+/* NEW: GET /api/orders/export/excel — admin-only filtered Excel export.
+   NOTE: `/:id` routes se PEHLE rakha hai taaki "export" ko id na samjhe. */
+router.get(
+  '/export/excel',
+  ...requireAdmin,
+  validate(exportOrdersQuerySchema, 'query'),
+  controller.exportOrdersExcel
 );
 
 /* Original: GET /api/order/[id]/pending  (pending-nav variant) */

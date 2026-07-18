@@ -2,6 +2,7 @@ import mongoose, { FilterQuery, UpdateQuery } from 'mongoose';
 import Order from '@/db/models/orderModel';
 import Product from '@/db/models/productModel';
 import Review from '@/db/models/reviewModel';
+import User from '@/db/models/userModel';
 import { Address } from '@/db/models/addressModel';
 
 const VALID_REVENUE_STATUS = ['confirmed', 'shipped', 'delivered'] as const;
@@ -128,6 +129,14 @@ export const ordersRepo = {
   deleteById: (id: string) => Order.findByIdAndDelete(id),
 
   isValidObjectId: (id: string): boolean => mongoose.Types.ObjectId.isValid(id),
+
+  /** Export: sab matching orders (paging nahi, user populated) */
+  allForExport: (query: FilterQuery<unknown>, limit: number) =>
+    Order.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .populate({ path: 'userId', model: User, select: 'displayName username email number' })
+      .lean<Array<Record<string, unknown>>>(),
 
   /** Count pending orders in date range (for preview) */
   countPendingInRange: (startDate: Date, endDate: Date) =>

@@ -31,6 +31,30 @@ export async function get_all_orders_of_user(
 
 
 
+// ✅ NEW: Admin — filtered Excel export of orders (returns Blob)
+export interface OrderExportFilters {
+  search?: string;
+  status?: string;                       // '' | 'all' | 'delivered' | 'cancelled,refunded'
+  startDate?: string;
+  endDate?: string;
+  paymentType?: 'all' | 'online' | 'offline';
+  paymentStatus?: 'all' | 'paid' | 'unpaid';
+}
+
+export async function export_orders_excel(filters: OrderExportFilters = {}) {
+  return axiosInstance.get(`/orders/export/excel`, {
+    params: {
+      search: filters.search || '',
+      status: filters.status || 'all',
+      startDate: filters.startDate || undefined,
+      endDate: filters.endDate || undefined,
+      paymentType: filters.paymentType || 'all',
+      paymentStatus: filters.paymentStatus || 'all',
+    },
+    responseType: 'blob',
+  });
+}
+
 export async function get_order_by_id(id: string) {
   return axiosInstance.get(`/orders/${id}`);
 }
