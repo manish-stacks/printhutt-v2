@@ -137,13 +137,13 @@ export default function App() {
                 backgroundImage: 'url("https://s3.ap-south-1.amazonaws.com/printhutt.dev.bucket/others/photo-15_gyd3jd_ffbqvb.avif")',
             }}
         >
-            <div className="min-h-screen bg-black/40 backdrop-blur-sm py-8">
+            <div className="min-h-screen bg-black/40 backdrop-blur-sm py-6 sm:py-8">
                 <div className="container mx-auto px-4">
-                    <h1 className="text-4xl font-script text-white text-center mb-8 max-[567px]:text-lg">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-script text-white text-center mb-6 sm:mb-8 px-2 max-[567px]:text-lg">
                         Create Your Memory Light
                     </h1>
 
-                    <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                    <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto">
                         {/* Preview Section */}
                         <div className="relative">
                             <div id="preview-section" className="relative md:sticky top-0 bg-black rounded-lg p-8 border border-[#fde68a6b]">
@@ -156,7 +156,7 @@ export default function App() {
                         </div>
 
                         {/* Customization Section */}
-                        <div className="bg-white/95 backdrop-blur-sm rounded-lg p-8 shadow-xl">
+                        <div className="bg-white/95 backdrop-blur-sm rounded-lg p-5 sm:p-8 shadow-xl">
                             <div className="space-y-6">
                                 <div className="space-y-4">
                                     <h3 className="text-xl font-semibold text-gray-800">Enter Names</h3>

@@ -107,9 +107,9 @@ export default function App() {
                 backgroundImage: 'url("https://s3.ap-south-1.amazonaws.com/printhutt.dev.bucket/others/photo-1506744038136-46273834b3fb_hq8v7q_xgcbbw.avif")',
             }}
         >
-            <div className="min-h-screen bg-black/40 backdrop-blur-sm py-8">
+            <div className="min-h-screen bg-black/40 backdrop-blur-sm py-6 sm:py-8">
                 <div className="container mx-auto px-4">
-                    <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                    <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto">
                         <div className="relative">
                             <div className="aspect-[650/800] rounded-lg overflow-hidden flex items-center justify-center">
                                 <div className="absolute inset-0 flex items-center justify-center">
@@ -118,7 +118,7 @@ export default function App() {
                                         loop
                                         muted
                                         playsInline
-                                        className="w-[650px] h-auto rounded-lg object-cover"
+                                        className="w-full max-w-[650px] h-auto rounded-lg object-cover"
                                         preload="none"
                                     >
                                         <source src="https://cloudify.printhutt.com/video/WhatsApp Video 2025-03-22 at 6.10.05 PM.mp4" type="video/mp4" />
@@ -128,9 +128,9 @@ export default function App() {
                             </div>
                         </div>
 
-                        <div className="bg-white/95 backdrop-blur-sm rounded-lg p-8 shadow-xl">
+                        <div className="bg-white/95 backdrop-blur-sm rounded-lg p-5 sm:p-8 shadow-xl">
                             <div className="max-w-3xl mx-auto">
-                                <h1 className="text-3xl font-bold text-gray-800 mb-8">Image Upload</h1>
+                                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 sm:mb-8">Image Upload</h1>
 
                                 <div className="bg-white p-6 rounded-lg shadow-md">
                                     {previews.length < 4 && (

@@ -159,11 +159,11 @@ export default function Page() {
         >
             <div className="min-h-screen bg-black/40 py-8">
                 <div className="container mx-auto px-4">
-                    <h1 className="text-4xl font-script text-white text-center mb-8">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-script text-white text-center mb-6 sm:mb-8 px-2">
                         Create Your Memory Light
                     </h1>
 
-                    <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                    <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto">
                         {/* Preview Section */}
                         <div className="relative">
                             {/* <div className="absolute inset-0 bg-gradient-to-b from-amber-100/20 to-amber-500/20 rounded-lg blur-xl"></div> */}
@@ -187,7 +187,7 @@ export default function Page() {
                                                 </div>
                                             )}
                                             <div className="flex-1 w-2/3 text-center items-center justify-center h-full">
-                                                <div className="text-4xl font-script h-[40%] text-amber-200 mb-2 text-shadow">
+                                                <div className="text-2xl sm:text-3xl md:text-4xl font-script h-[40%] text-amber-200 mb-2 text-shadow">
                                                     {/* {names.name1 || 'First Name'} */}
                                                     <canvas ref={canvasRef} className="w-full h-full"></canvas>
                                                 </div>
@@ -213,7 +213,7 @@ export default function Page() {
 
 
                         {/* Customization Section */}
-                        <div className="bg-white/95 rounded-lg p-8 shadow-xl">
+                        <div className="bg-white/95 rounded-lg p-5 sm:p-8 shadow-xl">
                             <div className="space-y-6">
                                 <div>
                                     <h3 className="text-xl font-semibold text-gray-800 mb-4">Upload Your Photo</h3>

@@ -183,11 +183,11 @@ export default function Page() {
     >
       <div className="min-h-screen bg-black/40 py-8">
         <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-script text-white text-center mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-script text-white text-center mb-6 sm:mb-8 px-2">
             Create Your Memory Light
           </h1>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto">
             <div className="relative rounded-lg">
               <div id="preview-section" className="relative rounded-lg p-2 border border-white/10">
                 <div className="img-box relative">
@@ -207,7 +207,7 @@ export default function Page() {
               </div>
             </div>
 
-            <div className="bg-white/95 rounded-lg p-8 shadow-xl">
+            <div className="bg-white/95 rounded-lg p-5 sm:p-8 shadow-xl">
               <div className="space-y-6">
                 <div className="space-y-4">
                   <h3 className="text-xl font-semibold text-gray-800">Enter Name</h3>

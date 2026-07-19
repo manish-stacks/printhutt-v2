@@ -204,7 +204,7 @@ export default function App() {
         backgroundImage: 'url("https://s3.ap-south-1.amazonaws.com/printhutt.dev.bucket/others/photo-1506744038136-46273834b3fb_hq8v7q_xgcbbw.avif")',
       }}
     >
-      <div className="min-h-screen bg-black/40 backdrop-blur-sm py-8">
+      <div className="min-h-screen bg-black/40 backdrop-blur-sm py-6 sm:py-8">
         <div className="container mx-auto px-4">
           <h1 className="lg:text-4xl md:text-3xl text-2xl font-script text-white text-center mb-8">
             Create Your Memory Light
@@ -244,7 +244,7 @@ export default function App() {
             </div>
 
             {/* Customization Section */}
-            <div className="bg-white/95 backdrop-blur-sm rounded-lg p-8 shadow-xl sm:mt-4">
+            <div className="bg-white/95 backdrop-blur-sm rounded-lg p-5 sm:p-8 shadow-xl sm:mt-4">
               <div className="space-y-6">
                 <div>
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Upload Your Photo</h3>
