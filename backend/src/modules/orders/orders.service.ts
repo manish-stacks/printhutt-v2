@@ -25,7 +25,7 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from '@/utils/errors';
-import { deleteImage, uploadImageOrder } from '@/utils/storage';
+import { deleteImage, uploadImageOrder, moveToPermanent, isTempUrl, ORDER_FOLDER } from '@/utils/storage';
 import { validateStockForItems, restoreStockForOrder } from '@/utils/stock';
 import { logger } from '@/config/logger';
 import { authRepo } from '@/modules/auth/auth.repository';
@@ -264,45 +264,61 @@ export async function createOrder(
         };
       }
       const c = item.custom_data;
-      const updatedProductData = {
-        ...c,
-        previewCanvas:
-          (c.previewCanvas as string | undefined) &&
-          (await uploadImageOrder(c.previewCanvas as string, 'customized preview canvas')),
-        previewImage:
-          (c.previewImage as string | undefined) &&
-          (await uploadImageOrder(c.previewImage as string, 'customized image')),
-        previewImageTwo:
-          (c.previewImageTwo as string | undefined) &&
-          (await uploadImageOrder(c.previewImageTwo as string, 'customized image')),
-        previewImageThree:
-          (c.previewImageThree as string | undefined) &&
-          (await uploadImageOrder(c.previewImageThree as string, 'customized image')),
-        previewImageFour:
-          (c.previewImageFour as string | undefined) &&
-          (await uploadImageOrder(c.previewImageFour as string, 'customized image')),
-        // 🆕 Multi-photo products (e.g. 9-photo heart LED frame).
-        // Array of base64 → array of uploaded S3 urls. Already-uploaded urls skip.
-        customImages: Array.isArray(c.customImages)
-          ? await Promise.all(
-              (c.customImages as unknown[]).map(async (img) => {
-                if (typeof img === 'string' && img.startsWith('data:image')) {
-                  const up = await uploadImageOrder(img, 'customized heart frame');
-                  return up?.url || img;
-                }
-                return img; // pehle se url hai
-              })
-            )
-          : c.customImages,
+      /**
+       * Har custom_data image value ko resolve karo:
+       *  - base64 dataURI  → S3 pe upload (legacy / safety-net)
+       *  - temp-uploads/ url → orders/ me permanent move
+       *  - permanent url / kuch aur → as-is
+       * Strings + string-arrays dono handle. Non-image values untouched.
+       */
+      const resolveImageValue = async (val: unknown): Promise<unknown> => {
+        if (typeof val === 'string') {
+          if (val.startsWith('data:image')) {
+            const up = await uploadImageOrder(val, ORDER_FOLDER);
+            return up?.url || val;
+          }
+          if (isTempUrl(val)) return moveToPermanent(val);
+          return val;
+        }
+        if (Array.isArray(val)) {
+          return Promise.all(val.map(resolveImageValue));
+        }
+        return val;
       };
 
+      /* Sirf image-jaisi keys process karo (baaki text/config untouched). */
+      const IMAGE_KEYS = new Set([
+        'previewCanvas',
+        'previewImage',
+        'previewImageTwo',
+        'previewImageThree',
+        'previewImageFour',
+        'previewImages',
+        'customImages',
+        'photo',
+        'image',
+      ]);
+
+      const updatedProductData: Record<string, unknown> = { ...c };
+      for (const key of Object.keys(c)) {
+        const val = (c as Record<string, unknown>)[key];
+        const looksLikeImage =
+          IMAGE_KEYS.has(key) ||
+          (typeof val === 'string' &&
+            (val.startsWith('data:image') || isTempUrl(val)));
+        if (looksLikeImage) {
+          updatedProductData[key] = await resolveImageValue(val);
+        }
+      }
+
       let uploadedProductImage: unknown = item.product_image;
-      if (
-        typeof item.product_image === 'string' &&
-        item.product_image.startsWith('data:image')
-      ) {
-        const up = await uploadImageOrder(item.product_image, 'customized image');
-        uploadedProductImage = up?.url || item.product_image;
+      if (typeof item.product_image === 'string') {
+        if (item.product_image.startsWith('data:image')) {
+          const up = await uploadImageOrder(item.product_image, ORDER_FOLDER);
+          uploadedProductImage = up?.url || item.product_image;
+        } else if (isTempUrl(item.product_image)) {
+          uploadedProductImage = await moveToPermanent(item.product_image);
+        }
       }
 
       return {

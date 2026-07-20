@@ -112,7 +112,7 @@ export const sendOtpByEmail = async (email: string, otp: string) => {
                   <td 
                     align="center"
                     style="
-                      background:linear-gradient(135deg,#2563eb,#4f46e5);
+                      background:#271B54;background:linear-gradient(135deg,#271B54,#4A3591);
                       padding:40px 20px;
                     "
                   >
@@ -135,7 +135,7 @@ export const sendOtpByEmail = async (email: string, otp: string) => {
 
                     <p style="
                       margin:10px 0 0;
-                      color:#dbeafe;
+                      color:#d6ccf0;
                       font-size:15px;
                     ">
                       Premium Personalized Gifts & Neon Signs
@@ -171,7 +171,7 @@ export const sendOtpByEmail = async (email: string, otp: string) => {
 
                       <div style="
                         display:inline-block;
-                        background:linear-gradient(135deg,#2563eb,#4f46e5);
+                        background:#271B54;background:linear-gradient(135deg,#271B54,#4A3591);
                         color:#ffffff;
                         padding:18px 40px;
                         border-radius:14px;
@@ -222,7 +222,7 @@ export const sendOtpByEmail = async (email: string, otp: string) => {
                       <a 
                         href="mailto:printhutt05@gmail.com"
                         style="
-                          color:#2563eb;
+                          color:#271B54;
                           text-decoration:none;
                           font-weight:600;
                         "
@@ -236,7 +236,7 @@ export const sendOtpByEmail = async (email: string, otp: string) => {
                         href="https://www.printhutt.com"
                         style="
                           display:inline-block;
-                          background:#111827;
+                          background:#271B54;
                           color:#ffffff;
                           text-decoration:none;
                           padding:12px 24px;
@@ -512,7 +512,7 @@ Rate this product
 
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; line-height:1.6; color:#333;">
-      <h2 style="color:#22c55e;">🎉 Your Order is Delivered!</h2>
+      <h2 style="color:#271B54;">🎉 Your Order is Delivered!</h2>
 
       <p>Hi <strong>${order.shipping.userName}</strong>,</p>
 
@@ -599,7 +599,7 @@ export async function sendCustomEmail({
       </head>
       <body style="font-family: Arial, sans-serif; background: #f8f8fb; margin: 0; padding: 20px;">
         <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
-          <div style="background: linear-gradient(135deg, #9333ea, #ec4899); padding: 24px; text-align: center;">
+          <div style="background: #271B54; background: linear-gradient(135deg, #271B54, #4A3591); padding: 24px; text-align: center;">
             <h1 style="color: white; margin: 0; font-size: 22px;">PrintHutt</h1>
           </div>
           <div style="padding: 30px; color: #333; line-height: 1.6; font-size: 14px; white-space: pre-wrap;">
@@ -608,7 +608,7 @@ export async function sendCustomEmail({
           <div style="background: #f3f4f6; padding: 16px; text-align: center; font-size: 12px; color: #666;">
             <p style="margin: 0;">
               PrintHutt · 25 Krishna Market, Delhi 110034<br/>
-              <a href="https://printhutt.com" style="color: #9333ea;">printhutt.com</a>
+              <a href="https://printhutt.com" style="color: #271B54;">printhutt.com</a>
             </p>
           </div>
         </div>

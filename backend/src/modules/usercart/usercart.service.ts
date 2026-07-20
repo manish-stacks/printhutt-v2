@@ -263,8 +263,12 @@ function sanitizeCartItem(item: any): any {
     for (const key of Object.keys(cd)) {
       const val = cd[key];
       if (typeof val === 'string' && val.startsWith('data:image/')) {
-        // Base64 image found — strip it
+        // Base64 image found — strip it (interceptor ko URL bana dena tha)
         delete cd[key];
+        stripped = true;
+      } else if (Array.isArray(val) && val.some((v) => typeof v === 'string' && v.startsWith('data:image/'))) {
+        // e.g. customImages: [base64...] — sirf base64 entries strip, url wale rakho
+        cd[key] = val.filter((v) => !(typeof v === 'string' && v.startsWith('data:image/')));
         stripped = true;
       }
     }

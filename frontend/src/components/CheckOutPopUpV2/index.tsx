@@ -246,6 +246,14 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             return;
         }
 
+        // base64 images abhi S3 pe upload nahi huin to flush karo (order URL-safe)
+        try {
+            await useCartStore.getState().flushPendingUploads();
+        } catch (e) {
+            console.error('flushPendingUploads failed', e);
+        }
+        const items = useCartStore.getState().items;
+
         const getPrice = getTotalPrice();
 
         const order = {

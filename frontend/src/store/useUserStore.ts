@@ -31,7 +31,7 @@ interface UserState {
     login: (user: UserDetails) => void;
     logout: () => void;
     getUserDetails: () => UserDetails | null;
-    fetchUserDetails: () => Promise<void>;
+    fetchUserDetails: (silent?: boolean) => Promise<void>;
 }
 
 
@@ -53,8 +53,12 @@ export async function syncCartOnLogin(): Promise<void> {
       })
     );
 
-    // Step 2: Sirf wo local items merge karo jo DB mein nahi hain already
+    // Step 2: Local items merge karo jo DB mein nahi hain.
+    // ⚠️ Custom items (custom_data wale) HAMESHA include karo — inhe productId
+    //    match se skip mat karo, warna same product ka custom item login pe kho jaata.
     const newLocalOnly = persistableLocal.filter((item: any) => {
+      const isCustom = item.custom_data && Object.keys(item.custom_data).length > 0;
+      if (isCustom) return true; // hamesha bhejo
       const key = `${item._id}::${item.selectedVariant?._id ?? ''}::${item.selectedVariant?.size ?? ''}`;
       return !dbProductIds.has(key);
     });
@@ -67,6 +71,8 @@ export async function syncCartOnLogin(): Promise<void> {
         color: item.selectedVariant?.color,
         quantity: item.quantity,
         price: item.price,
+        discountType: item.discountType,
+        discountPrice: item.discountPrice,
         custom_data: item.custom_data,
       }));
       await userCartService.merge(payload);
@@ -105,13 +111,24 @@ export async function syncCartOnLogin(): Promise<void> {
         ? { _id: variantId, size: it.size, color: it.color, price: it.price }
         : null;
 
+      // Custom item ka preview thumbnail custom_data._thumb se wapas lao
+      const cd = it.custom_data;
+      const customThumb =
+        cd && typeof cd === 'object' && typeof cd._thumb === 'string' ? cd._thumb : null;
+      const baseProduct = typeof p === 'object' ? p : { _id: productId };
+
       acc.push({
-        ...(typeof p === 'object' ? p : { _id: productId }),
+        ...baseProduct,
         _id: productId,
         quantity: it.quantity,
         price: it.price,
+        ...(it.discountType ? { discountType: it.discountType } : {}),
+        ...(typeof it.discountPrice === 'number' ? { discountPrice: it.discountPrice } : {}),
         ...(sv ? { selectedVariant: sv } : {}),
-        ...(it.custom_data ? { custom_data: it.custom_data } : {}),
+        ...(cd ? { custom_data: cd } : {}),
+        ...(customThumb
+          ? { thumbnail: { ...(baseProduct as any).thumbnail, url: customThumb } }
+          : {}),
         _dbItemId: String(it._id),
       });
       return acc;
@@ -143,7 +160,7 @@ export const useUserStore = create<UserState>()(
                     console.error(error);
                 }
             },
-            fetchUserDetails: async () => {
+            fetchUserDetails: async (silent = false) => {
                 try {
                     // axiosInstance interceptor unwraps response.data,
                     // so this resolves to the body directly.
@@ -164,7 +181,9 @@ export const useUserStore = create<UserState>()(
                         set({ isLoggedIn: false, userDetails: null });
                     }
                 } catch (error) {
-                    toast.error('Failed to fetch user details')
+                    // Mount-time silent check (guest / expired session) — toast mat dikhao.
+                    if (!silent) toast.error('Failed to fetch user details');
+                    set({ isLoggedIn: false, userDetails: null });
                     console.error("Failed to fetch user details:", error);
                 }
             },

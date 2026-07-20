@@ -76,10 +76,10 @@ export const MESSAGES = {
 <body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 15px;">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08);">
-<tr><td align="center" style="background:linear-gradient(135deg,#9333ea,#ec4899);padding:36px 20px;">
+<tr><td align="center" style="background:#271B54;background:linear-gradient(135deg,#271B54,#4A3591);padding:36px 20px;">
 <img src="https://www.printhutt.com/print-hutt-logo.webp" alt="PrintHutt" width="110" style="margin-bottom:12px;"/>
 <h1 style="margin:0;color:#fff;font-size:26px;">PrintHutt</h1>
-<p style="margin:8px 0 0;color:#fce7f3;font-size:14px;">Premium Personalized Gifts</p>
+<p style="margin:8px 0 0;color:#d6ccf0;font-size:14px;">Premium Personalized Gifts</p>
 </td></tr>
 <tr><td style="padding:40px 35px;">
 <h2 style="margin:0 0 8px;font-size:26px;color:#16a34a;">✅ Order Confirmed!</h2>
@@ -88,15 +88,15 @@ export const MESSAGES = {
 <p style="margin:0 0 8px;font-size:14px;color:#6b7280;">Order ID</p>
 <p style="margin:0 0 16px;font-size:22px;font-weight:700;color:#111827;">#{{orderId}}</p>
 <p style="margin:0 0 8px;font-size:14px;color:#6b7280;">Amount Paid</p>
-<p style="margin:0;font-size:20px;font-weight:700;color:#9333ea;">₹{{totalAmount}}</p>
+<p style="margin:0;font-size:20px;font-weight:700;color:#271B54;">₹{{totalAmount}}</p>
 </div>
 <div style="text-align:center;margin:28px 0;">
-<a href="{{trackLink}}" style="display:inline-block;background:linear-gradient(135deg,#9333ea,#ec4899);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:600;">Track My Order →</a>
+<a href="{{trackLink}}" style="display:inline-block;background:#271B54;background:linear-gradient(135deg,#271B54,#4A3591);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:600;">Track My Order →</a>
 </div>
 <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.7;">Thank you for shopping with PrintHutt! We're preparing your personalized gift with love. 💜</p>
 </td></tr>
 <tr><td style="background:#f3f4f6;padding:20px;text-align:center;border-top:1px solid #e5e7eb;">
-<p style="margin:0;font-size:12px;color:#9ca3af;">© PrintHutt · <a href="https://printhutt.com" style="color:#9333ea;">printhutt.com</a></p>
+<p style="margin:0;font-size:12px;color:#9ca3af;">© PrintHutt · <a href="https://printhutt.com" style="color:#271B54;">printhutt.com</a></p>
 </td></tr>
 </table></td></tr></table></body></html>`,
   },
@@ -107,7 +107,7 @@ export const MESSAGES = {
 <body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 15px;">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08);">
-<tr><td align="center" style="background:linear-gradient(135deg,#9333ea,#ec4899);padding:36px 20px;">
+<tr><td align="center" style="background:#271B54;background:linear-gradient(135deg,#271B54,#4A3591);padding:36px 20px;">
 <img src="https://www.printhutt.com/print-hutt-logo.webp" alt="PrintHutt" width="110" style="margin-bottom:12px;"/>
 <h1 style="margin:0;color:#fff;font-size:26px;">PrintHutt</h1>
 </td></tr>
@@ -115,12 +115,12 @@ export const MESSAGES = {
 <h2 style="margin:0 0 8px;font-size:26px;color:#dc2626;">❌ Payment Failed</h2>
 <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.7;">Hi <b>{{userName}}</b>, your payment for order <b>#{{orderId}}</b> could not be completed. No amount has been deducted.</p>
 <div style="text-align:center;margin:28px 0;">
-<a href="{{cartLink}}" style="display:inline-block;background:linear-gradient(135deg,#9333ea,#ec4899);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:600;">Retry Payment →</a>
+<a href="{{cartLink}}" style="display:inline-block;background:#271B54;background:linear-gradient(135deg,#271B54,#4A3591);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:600;">Retry Payment →</a>
 </div>
-<p style="margin:0;color:#6b7280;font-size:14px;">Need help? <a href="mailto:printhutt05@gmail.com" style="color:#9333ea;">printhutt05@gmail.com</a></p>
+<p style="margin:0;color:#6b7280;font-size:14px;">Need help? <a href="mailto:printhutt05@gmail.com" style="color:#271B54;">printhutt05@gmail.com</a></p>
 </td></tr>
 <tr><td style="background:#f3f4f6;padding:20px;text-align:center;">
-<p style="margin:0;font-size:12px;color:#9ca3af;">© PrintHutt · <a href="https://printhutt.com" style="color:#9333ea;">printhutt.com</a></p>
+<p style="margin:0;font-size:12px;color:#9ca3af;">© PrintHutt · <a href="https://printhutt.com" style="color:#271B54;">printhutt.com</a></p>
 </td></tr>
 </table></td></tr></table></body></html>`,
   },
@@ -141,10 +141,10 @@ export const MESSAGES = {
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08);">
 
 <tr>
-<td align="center" style="background:linear-gradient(135deg,#9333ea,#ec4899);padding:36px 20px;">
+<td align="center" style="background:#271B54;background:linear-gradient(135deg,#271B54,#4A3591);padding:36px 20px;">
 <img src="https://www.printhutt.com/print-hutt-logo.webp" alt="PrintHutt" width="110" style="margin-bottom:12px;"/>
 <h1 style="margin:0;color:#fff;font-size:26px;">PrintHutt</h1>
-<p style="margin:8px 0 0;color:#fce7f3;font-size:14px;">
+<p style="margin:8px 0 0;color:#d6ccf0;font-size:14px;">
 Premium Personalized Gifts
 </p>
 </td>
@@ -153,7 +153,7 @@ Premium Personalized Gifts
 <tr>
 <td style="padding:40px 35px;">
 
-<h2 style="margin:0 0 12px;font-size:28px;color:#d97706;">
+<h2 style="margin:0 0 12px;font-size:28px;color:#271B54;">
 ⏳ Complete Your Order
 </h2>
 
@@ -166,19 +166,19 @@ Complete your order now to avoid missing out.
 
 </p>
 
-<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+<div style="background:#f4f2fb;border:1px solid #ddd4f2;border-radius:12px;padding:20px 24px;margin-bottom:24px;">
 <p style="margin:0 0 8px;font-size:14px;color:#6b7280;">
 Order Amount
 </p>
 
-<p style="margin:0;font-size:24px;font-weight:700;color:#9333ea;">
+<p style="margin:0;font-size:24px;font-weight:700;color:#271B54;">
 ₹{{totalAmount}}
 </p>
 </div>
 
-<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+<div style="background:#f4f2fb;border:1px solid #ddd6fe;border-radius:12px;padding:20px 24px;margin-bottom:24px;">
 
-<h3 style="margin:0 0 10px;color:#9333ea;font-size:18px;">
+<h3 style="margin:0 0 10px;color:#271B54;font-size:18px;">
 🎁 Exclusive Offer for You
 </h3>
 
@@ -191,7 +191,7 @@ Get <span style="color:#16a34a;">₹150 OFF</span> using coupon code:
 </p>
 
 <div style="margin-bottom:12px;">
-<span style="display:inline-block;background:#9333ea;color:#fff;padding:10px 18px;border-radius:8px;font-size:18px;font-weight:700;letter-spacing:1px;">
+<span style="display:inline-block;background:#271B54;color:#fff;padding:10px 18px;border-radius:8px;font-size:18px;font-weight:700;letter-spacing:1px;">
 TRUST50
 </span>
 </div>
@@ -205,7 +205,7 @@ TRUST50
 </div>
 
 <div style="text-align:center;margin:32px 0;">
-<a href="{{cartLink}}" style="display:inline-block;background:linear-gradient(135deg,#9333ea,#ec4899);color:#fff;text-decoration:none;padding:15px 34px;border-radius:10px;font-size:16px;font-weight:600;">
+<a href="{{cartLink}}" style="display:inline-block;background:#271B54;background:linear-gradient(135deg,#271B54,#4A3591);color:#fff;text-decoration:none;padding:15px 34px;border-radius:10px;font-size:16px;font-weight:600;">
 Complete Payment Now →
 </a>
 </div>
@@ -228,7 +228,7 @@ Printed with passion. Delivered with care.
 <td style="background:#f3f4f6;padding:20px;text-align:center;border-top:1px solid #e5e7eb;">
 <p style="margin:0;font-size:12px;color:#9ca3af;">
 © PrintHutt ·
-<a href="https://printhutt.com" style="color:#9333ea;text-decoration:none;">
+<a href="https://printhutt.com" style="color:#271B54;text-decoration:none;">
 printhutt.com
 </a>
 </p>
@@ -251,19 +251,19 @@ printhutt.com
 <body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 15px;">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:18px;overflow:hidden;">
-<tr><td align="center" style="background:linear-gradient(135deg,#9333ea,#ec4899);padding:36px 20px;">
+<tr><td align="center" style="background:#271B54;background:linear-gradient(135deg,#271B54,#4A3591);padding:36px 20px;">
 <img src="https://www.printhutt.com/print-hutt-logo.webp" alt="PrintHutt" width="110" style="margin-bottom:12px;"/>
 <h1 style="margin:0;color:#fff;font-size:26px;">PrintHutt</h1>
 </td></tr>
 <tr><td style="padding:40px 35px;">
-<h2 style="margin:0 0 8px;font-size:26px;color:#9333ea;">💝 Don't Forget Your Wishlist!</h2>
+<h2 style="margin:0 0 8px;font-size:26px;color:#271B54;">💝 Don't Forget Your Wishlist!</h2>
 <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.7;">Hi <b>{{userName}}</b>, you have <b>{{itemCount}} items</b> waiting in your wishlist. They're perfect for gifting!</p>
 <div style="text-align:center;margin:28px 0;">
-<a href="https://printhutt.com/wishlist" style="display:inline-block;background:linear-gradient(135deg,#9333ea,#ec4899);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:600;">View My Wishlist →</a>
+<a href="https://printhutt.com/wishlist" style="display:inline-block;background:#271B54;background:linear-gradient(135deg,#271B54,#4A3591);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:600;">View My Wishlist →</a>
 </div>
 </td></tr>
 <tr><td style="background:#f3f4f6;padding:20px;text-align:center;">
-<p style="margin:0;font-size:12px;color:#9ca3af;">© PrintHutt · <a href="https://printhutt.com" style="color:#9333ea;">printhutt.com</a></p>
+<p style="margin:0;font-size:12px;color:#9ca3af;">© PrintHutt · <a href="https://printhutt.com" style="color:#271B54;">printhutt.com</a></p>
 </td></tr>
 </table></td></tr></table></body></html>`,
   },

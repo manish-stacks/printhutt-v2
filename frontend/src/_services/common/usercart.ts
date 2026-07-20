@@ -7,6 +7,8 @@ export interface DbCartItemPayload {
   color?: string;
   quantity: number;
   price: number;
+  discountType?: string;
+  discountPrice?: number;
   custom_data?: Record<string, unknown>;
 }
 

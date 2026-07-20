@@ -88,7 +88,7 @@ export function getCustomerEmailTemplate({
             <td align="center" style="padding: 40px 0;">
               <table width="100%" cellpadding="0"  style="background-color: #ffffff; max-width: 600px; margin: auto; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
                 <tr>
-                  <td style="padding: 40px 40px 32px; text-align: center; background-color: #000000; border-radius: 8px 8px 0 0;">
+                  <td style="padding: 40px 40px 32px; text-align: center; background-color: #271B54; border-radius: 8px 8px 0 0;">
                     <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Order Confirmation</h1>
                   </td>
                 </tr>
@@ -154,7 +154,7 @@ export function getCustomerEmailTemplate({
                               ${coupon?.isApplied ? `
                               <tr>
                                 <td style="padding: 8px 0; color: #374151;">Discount (${coupon.code})</td>
-                                <td style="padding: 8px 0; text-align: right; color: #22c55e;">
+                                <td style="padding: 8px 0; text-align: right; color: #271B54;">
                                   -${formatCurrency(totalAmount.coupon_discount || 0)}
                                 </td>
                               </tr>
@@ -162,7 +162,7 @@ export function getCustomerEmailTemplate({
 
                             <tr>
                                 <td style="padding: 8px 0; color: #374151;">Extra Discount</td>
-                                <td style="padding: 8px 0; text-align: right; color: #22c55e;">
+                                <td style="padding: 8px 0; text-align: right; color: #271B54;">
                                   -${formatCurrency(totalAmount.totalPrice - totalAmount.discountPrice - (totalAmount.coupon_discount || 0))} </td>
                               </tr>
                             <tr>
@@ -176,7 +176,7 @@ export function getCustomerEmailTemplate({
                             ${paymentType === 'offline' ? `
                               <tr>
                                 <td style="padding: 8px 0; color: #374151; font-weight: 600;">Paid Amount</td>
-                                <td style="padding: 8px 0; text-align: right; color: #22c55e; font-weight: 600;">
+                                <td style="padding: 8px 0; text-align: right; color: #271B54; font-weight: 600;">
                                   -${formatCurrency(payAmt)}
                                 </td>
                               </tr>
@@ -196,7 +196,7 @@ export function getCustomerEmailTemplate({
                       <tr>
                         <td style="padding: 32px 0;">
                           <a href="${process.env.APP_URL}/orders/${orderId}" 
-                             style="display: inline-block; padding: 12px 24px; background-color: #000000; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; text-align: center;">
+                             style="display: inline-block; padding: 12px 24px; background-color: #271B54; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; text-align: center;">
                             View Order Details
                           </a>
                         </td>

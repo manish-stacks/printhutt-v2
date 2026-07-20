@@ -58,9 +58,11 @@ interface UploadResponse {
 }
 
 async function postDataUri(dataUri: string): Promise<string> {
-  const { data } = await axiosInstance.post<UploadResponse>('/upload/custom-image', { dataUri });
-  if (!data?.url) throw new Error('upload returned no url');
-  return data.url;
+  // NOTE: axios response interceptor already `response.data` return karta hai,
+  // isliye ye seedha { success, url, public_id } hai — { data } destructure NAHI.
+  const res = (await axiosInstance.post('/upload/custom-image', { dataUri })) as unknown as UploadResponse;
+  if (!res?.url) throw new Error('upload returned no url');
+  return res.url;
 }
 
 /** File chuni → resize → S3 upload → URL. Yehi pages ko call karni hai on-select. */

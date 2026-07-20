@@ -177,6 +177,14 @@ const Checkout = () => {
   const placeOrder = async () => {
 
     if (!isLoggedIn) return router.push('/login');
+
+    try {
+      await useCartStore.getState().flushPendingUploads();
+    } catch (e) {
+      console.error('flushPendingUploads failed', e);
+    }
+    const items = useCartStore.getState().items;
+
     const getPrice = await getTotalPrice();
 
 

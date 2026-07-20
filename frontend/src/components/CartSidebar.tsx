@@ -4,6 +4,7 @@ import { formatCurrency } from "@/helpers/helpers";
 import { useCartStore } from "@/store/useCartStore";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import {
   RiArrowRightSLine,
@@ -13,6 +14,7 @@ import {
   RiDeleteBin6Line,
   RiShoppingCart2Line,
   RiGift2Line,
+  RiEdit2Line,
 } from "react-icons/ri";
 import { toast } from "react-toastify";
 import CheckOutPopUpV2 from "./CheckOutPopUpV2";
@@ -23,6 +25,7 @@ import { FREE_THRESHOLD } from "@/lib/constants/gift";
 
 const CartSidebar = ({ onClose }: { onClose: () => void }) => {
   const popupRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
   const [totalPrice, setTotalPrice] = useState({
     totalPrice: 0,
     discountPrice: 0,
@@ -258,6 +261,26 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
                         ) : (
                           <span className="text-xs italic text-amber-700">Complimentary</span>
                         )}
+
+                        {!item.isGift && (() => {
+                          const cd = (item as any).custom_data as
+                            | { _editPath?: string; _customId?: string }
+                            | undefined;
+                          if (!cd?._editPath || !cd?._customId) return null;
+                          return (
+                            <button
+                              onClick={() => {
+                                onClose();
+                                router.push(`${cd._editPath}?editId=${cd._customId}`);
+                              }}
+                              className="text-gray-400 hover:text-[#241B4F] transition p-1.5 rounded-lg hover:bg-indigo-50"
+                              aria-label="Edit photos"
+                              title="Edit photos"
+                            >
+                              <RiEdit2Line className="w-4 h-4" />
+                            </button>
+                          );
+                        })()}
 
                         {!item.isGift && (
                           <button

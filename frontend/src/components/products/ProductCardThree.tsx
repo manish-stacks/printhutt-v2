@@ -74,7 +74,7 @@ const ProductCardThree = ({ product }: PopupProps) => {
                                 title={isOutOfStock ? "Out of Stock" : "Add To Cart"}
                                 className="w-[35px] h-[35px] flex items-center justify-center disabled:opacity-50"
                             >
-                                <i className="ri-shopping-bag-4-line" />
+                                <i className="ri-shopping-bag-4-line text-[#777]" />
                             </button>
                         </li>
                     </ul>

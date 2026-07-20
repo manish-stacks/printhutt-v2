@@ -7,6 +7,8 @@ export interface IUserCartItem {
   color?: string;
   quantity: number;
   price: number;             // snapshot at add-time (variant ya product)
+  discountType?: string;     // 'percentage' | 'flat' (snapshot)
+  discountPrice?: number;    // discount value snapshot
   custom_data?: Record<string, unknown>;  // name1, previewCanvas, etc.
 }
 
@@ -25,6 +27,8 @@ const userCartItemSchema = new Schema<IUserCartItem>(
     color: { type: String },
     quantity: { type: Number, required: true, min: 1, default: 1 },
     price: { type: Number, required: true },
+    discountType: { type: String },
+    discountPrice: { type: Number },
     custom_data: { type: Schema.Types.Mixed },
   },
   { _id: true }

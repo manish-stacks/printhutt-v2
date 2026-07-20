@@ -1,16 +1,8 @@
+
 "use client";
 
 /**
  * Heart-shaped LED photo frame — 9 photo upload customizer.
- *
- * Existing customize pattern (snap-book / dice) ka multi-photo version:
- *  - user 9 slots me photo daalta hai
- *  - har photo client-side resize (longest side 1200px, jpeg 0.85) → ~200KB
- *    taaki 9 base64 localStorage cart (5MB cap) me aaram se samaa jaayein
- *  - custom_data.customImages = [9 base64]  → addToCart
- *  - order place hote hi backend (orders.service.ts) inhe S3 pe upload kar deta hai
- *
- * IMPORTANT: neeche PRODUCT_ID me apne heart-frame product ki _id daalo.
  */
 import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
@@ -31,20 +23,23 @@ const SLOTS = 9;
 const MAX_SIDE = 1200; // longest edge px
 const JPEG_QUALITY = 0.85;
 
-/* Heart layout — image jaisa arrangement (approx). Grid 3-col me index map. */
 const SLOT_LABELS = [
     'Top-Left', 'Top-Center', 'Top-Right',
     'Mid-Left', 'Center', 'Mid-Right',
     'Bottom-Left', 'Bottom-Center', 'Bottom-Right',
 ];
 
+const EDIT_PATH = '/customize/frame/heart-led-photo-frame';
+
 export default function HeartFramePage() {
     const [product, setProduct] = useState<Product>();
     const [images, setImages] = useState<(string | null)[]>(Array(SLOTS).fill(null));
     const [isAdding, setIsAdding] = useState(false);
+    const [editId, setEditId] = useState<string | null>(null);
     const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
     const addToCart = useCartStore((s) => s.addToCart);
+    const updateCustomItem = useCartStore((s) => s.updateCustomItem);
     const { openCartSidebarView } = useCartSidebarStore();
 
     useEffect(() => {
@@ -58,7 +53,31 @@ export default function HeartFramePage() {
         })();
     }, []);
 
-    /* file → resized jpeg base64 */
+    /* Edit mode: URL me ?editId=<customId> ho to cart se existing photos preload */
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('editId');
+        if (!id) return;
+        setEditId(id);
+        try {
+            const items = useCartStore.getState().items;
+            const found = items.find(
+                (it) => (it as any).custom_data?._customId === id
+            );
+            const existing = (found as any)?.custom_data?.customImages as unknown[] | undefined;
+            if (Array.isArray(existing)) {
+                const next = Array(SLOTS).fill(null) as (string | null)[];
+                existing.slice(0, SLOTS).forEach((u, i) => {
+                    if (typeof u === 'string') next[i] = u;
+                });
+                setImages(next);
+            }
+        } catch (e) {
+            console.error('preload edit images failed', e);
+        }
+    }, []);
+
     const resizeToDataUrl = (file: File): Promise<string> =>
         new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -85,7 +104,6 @@ export default function HeartFramePage() {
 
     const handleUpload = (i: number) => async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        // input reset — same file dobara chune to bhi onChange fire ho
         e.target.value = '';
         if (!file) return;
         if (!file.type.startsWith('image/')) {
@@ -128,12 +146,28 @@ export default function HeartFramePage() {
         }
         try {
             setIsAdding(true);
+
+            if (editId) {
+                /* Edit mode — existing cart item update */
+                updateCustomItem(
+                    editId,
+                    { customImages: images, photoCount: SLOTS, _editPath: EDIT_PATH },
+                    (images[4] as string) || undefined
+                );
+                openCartSidebarView();
+                toast.success('Cart updated');
+                return;
+            }
+
             const custom_data = {
-                customImages: images,          // 9 base64 → backend uploads on order
+                customImages: images,
                 photoCount: SLOTS,
+                _editPath: EDIT_PATH,
+                _customId: `hf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
             };
             const updatedProduct = {
                 ...product,
+                thumbnail: { ...product.thumbnail, url: (images[4] as string) },
                 custom_data,
             } as unknown as Product;
 
@@ -175,7 +209,6 @@ export default function HeartFramePage() {
                 </p>
 
                 <div className="grid md:grid-cols-2 gap-10 max-w-5xl mx-auto items-start">
-                    {/* ── Upload grid ── */}
                     <div className="bg-white rounded-xl shadow-sm border border-pink-100 p-6">
                         <div className="grid grid-cols-3 gap-3">
                             {images.map((img, i) => (
@@ -229,7 +262,6 @@ export default function HeartFramePage() {
                         )}
                     </div>
 
-                    {/* ── Info + CTA ── */}
                     <div className="bg-white rounded-xl shadow-sm border border-pink-100 p-6 md:sticky md:top-6">
                         {product && (
                             <>
@@ -262,7 +294,11 @@ export default function HeartFramePage() {
                             className="w-full mt-6 bg-pink-500 hover:bg-pink-600 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-md font-medium flex items-center justify-center gap-2"
                         >
                             <RiShoppingBag2Line className="w-5 h-5" />
-                            {isAdding ? 'Adding to Cart...' : allFilled ? 'Add to Cart' : `Upload ${SLOTS - filledCount} more`}
+                            {isAdding
+                                ? (editId ? 'Updating...' : 'Adding to Cart...')
+                                : allFilled
+                                    ? (editId ? 'Update Cart' : 'Add to Cart')
+                                    : `Upload ${SLOTS - filledCount} more`}
                         </button>
                     </div>
                 </div>

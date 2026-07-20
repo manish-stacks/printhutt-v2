@@ -7,6 +7,8 @@ const cartItemSchema = z.object({
   color: z.string().optional(),
   quantity: z.number().int().positive().default(1),
   price: z.number().nonnegative(),
+  discountType: z.string().optional(),
+  discountPrice: z.number().nonnegative().optional(),
   custom_data: z.record(z.unknown()).optional(),
 });
 
