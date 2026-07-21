@@ -343,7 +343,7 @@ export default function OrderDetailsPage() {
                                                     }
                                                     width={80}
                                                     height={80}
-                                                    className="rounded-md object-cover"
+                                                    className="rounded-md object-cover h-16 w-16"
                                                 />
                                                 <div className="flex-1">
                                                     <Link

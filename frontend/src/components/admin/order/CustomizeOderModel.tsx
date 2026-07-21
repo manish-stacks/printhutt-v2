@@ -22,11 +22,11 @@ interface OrderItem {
     fontSize?: string;
     width?: string;
     height?: string;
-    previewCanvas?: { url: string };
-    previewImage?: { url: string };
-    previewImageTwo?: { url: string };
-    previewImageThree?: { url: string };
-    previewImageFour?: { url: string };
+    previewCanvas?: { url: string } | string;
+    previewImage?: { url: string } | string;
+    previewImageTwo?: { url: string } | string;
+    previewImageThree?: { url: string } | string;
+    previewImageFour?: { url: string } | string;
     /* 🆕 multi-photo products (heart LED frame = 9 photos).
        order me url-object[] hote hain; safety ke liye string[] bhi handle. */
     customImages?: Array<{ url?: string } | string>;
@@ -51,19 +51,31 @@ const OrderDetailRow: React.FC<OrderDetailRowProps> = ({ label, value }) => {
 const ImageGallery: React.FC<{
     images: Array<{ url: string | undefined; alt: string }>;
     onImageClick: (url: string) => void;
-}> = ({ images, onImageClick }) => (
+    onDownload: (url: string) => void;
+}> = ({ images, onImageClick, onDownload }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
         {images.map((img, index) => (
             img.url && (
-                <div key={index} className="aspect-w-16 aspect-h-9">
+                <div key={index} className="relative group">
                     <Image
                         onClick={() => onImageClick(img.url!)}
                         alt={img.alt}
                         src={img.url}
                         width={400}
                         height={400}
-                        className="rounded-md object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                        className="rounded-md object-cover cursor-pointer hover:opacity-90 transition-opacity w-full"
                     />
+                    <button
+                        type="button"
+                        onClick={() => onDownload(img.url!)}
+                        className="absolute bottom-2 right-2 flex items-center gap-1 bg-[#271B54] hover:bg-[#4A3591] text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-md"
+                        title="Download image"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 4v12m0 0l-4-4m4 4l4-4" />
+                        </svg>
+                        Download
+                    </button>
                 </div>
             )
         ))}
@@ -101,7 +113,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ imageUrl, onClose, onDownload }
                 <div className="mt-4 flex justify-center">
                     <button
                         onClick={() => onDownload(imageUrl)}
-                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                        className="bg-[#271B54] hover:bg-[#4A3591] text-white px-5 py-2 rounded-md font-medium"
                     >
                         Download Image
                     </button>
@@ -115,31 +127,52 @@ const CustomizeOderModel: React.FC<{ item: OrderItem }> = ({ item }) => {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
     const downloadPreviewImage = async (url: string) => {
+        const fileName = (() => {
+            const base = url.split('?')[0].split('/').pop() || 'photo';
+            return /\.(jpe?g|png|webp|gif)$/i.test(base) ? base : `${base}.jpg`;
+        })();
         try {
-            const response = await fetch(url);
+            // S3 pe CORS enabled ho to seedha blob download
+            const response = await fetch(url, { mode: 'cors' });
+            if (!response.ok) throw new Error('bad response');
             const blob = await response.blob();
             const blobUrl = URL.createObjectURL(blob);
-
             const link = document.createElement('a');
             link.href = blobUrl;
-            link.download = url.split('/').pop() || 'download';
+            link.download = fileName;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-
-            // Release memory
             URL.revokeObjectURL(blobUrl);
         } catch (error) {
-            console.error('Error downloading the file:', error);
+            // CORS/network fail (S3 URLs pe common) → naya tab me kholo taaki
+            // admin right-click → "Save image as" kar sake. Download kabhi block na ho.
+            console.warn('Direct download blocked, opening in new tab:', error);
+            try {
+                const a = document.createElement('a');
+                a.href = url;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } catch {
+                window.open(url, '_blank');
+            }
         }
     };
 
+    // Ab custom_data me image String URL ho sakti hai YA {url} object (purane orders).
+    // Dono handle karo warna image render nahi hoti.
+    const asUrl = (v: unknown): string | undefined =>
+        typeof v === "string" ? v : (v as { url?: string } | undefined)?.url;
+
     const images = [
-        { url: item?.previewCanvas?.url, alt: "Preview Canvas" },
-        { url: item?.previewImage?.url, alt: "Preview Image" },
-        { url: item?.previewImageTwo?.url, alt: "Preview Image Two" },
-        { url: item?.previewImageThree?.url, alt: "Preview Image Three" },
-        { url: item?.previewImageFour?.url, alt: "Preview Image Four" }
+        { url: asUrl(item?.previewCanvas), alt: "Preview Canvas" },
+        { url: asUrl(item?.previewImage), alt: "Preview Image" },
+        { url: asUrl(item?.previewImageTwo), alt: "Preview Image Two" },
+        { url: asUrl(item?.previewImageThree), alt: "Preview Image Three" },
+        { url: asUrl(item?.previewImageFour), alt: "Preview Image Four" }
     ];
 
     /* 🆕 9-photo heart frame — customImages ko gallery format me normalize */
@@ -184,14 +217,14 @@ const CustomizeOderModel: React.FC<{ item: OrderItem }> = ({ item }) => {
                                 />
                             )}
                         </div>
-                        <ImageGallery images={images} onImageClick={setSelectedImage} />
+                        <ImageGallery images={images} onImageClick={setSelectedImage} onDownload={downloadPreviewImage} />
 
                         {heartImages.length > 0 && (
                             <div className="mt-4 border-t pt-4">
                                 <p className="font-semibold mb-2">
                                     Uploaded Photos ({heartImages.filter((h) => h.url).length})
                                 </p>
-                                <ImageGallery images={heartImages} onImageClick={setSelectedImage} />
+                                <ImageGallery images={heartImages} onImageClick={setSelectedImage} onDownload={downloadPreviewImage} />
                             </div>
                         )}
                     </>

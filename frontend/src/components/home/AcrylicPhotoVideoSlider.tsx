@@ -24,9 +24,9 @@ const videos = [
     title: "LED Dice",
   },
   {
-    url: "/category/lamps/couple-lamp",
-    video: "https://cloudify.printhutt.com/video/WhatsApp_Video_2025-03-01_at_11.51.09_AM_kc8lja.mp4",
-    title: "Couple Lamp",
+    url: "/product-details/led-acrylic-heart-frameee",
+    video: "https://cloudify.printhutt.com/video/20260717_161412.mp4",
+    title: "Acrylic Heart",
   },
   {
     url: "/product-details/customized-name-led-lamp",
@@ -43,6 +43,12 @@ const videos = [
     video: "https://cloudify.printhutt.com/video/Puzzles.mp4",
     title: "Photo Puzzles",
   },
+  {
+    url: "/product-details/hanging-lamp",
+    video: "https://cloudify.printhutt.com/video/hanging-lamp.mp4",
+    title: "Hanging Lamp",
+  },
+  
 ];
 
 

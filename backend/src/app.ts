@@ -147,10 +147,17 @@ export function buildApp(): Express {
 
     const isPublic = publicStorefront.some(p => path.startsWith(p) || path.includes(p));
 
-    if (isPublic) {
+    // Logged-in (admin/user) requests — inhe kabhi cache mat karo, warna admin
+    // edit ke baad browser/CDN 5 min purana data deta hai. Auth header ya
+    // refresh cookie ho to private treat karo.
+    const isAuthenticated =
+      !!req.headers.authorization ||
+      !!(req.headers.cookie && /(?:^|;\s*)(access_token|refresh_token|token)=/.test(req.headers.cookie));
+
+    if (isPublic && !isAuthenticated) {
       res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
     } else {
-      // Private: cart, orders, auth, users — never cache
+      // Private / authenticated — never cache
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
