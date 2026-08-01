@@ -189,7 +189,7 @@ const CustomizeOderModel: React.FC<{ item: OrderItem }> = ({ item }) => {
                 {item && (
                     <>
                         <div className="space-y-2">
-                            {Array.from({ length: 4 }, (_, i) => (
+                            {Array.from({ length: 10 }, (_, i) => (
                                 <OrderDetailRow
                                     key={`name${i}`}
                                     label={`Name-${i}`}

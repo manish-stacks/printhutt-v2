@@ -41,7 +41,7 @@ const initialFormData: ProductFormData = {
   availabilityStatus: 'in_stock', minimumOrderQuantity: 1, dimensions: '',
   warrantyInformation: '', shippingInformation: '', returnPolicy: '',
   demoVideo: '', imgAlt: '', status: false, ishome: false, trending: false,
-  isTextBox: false, isImageBox: false, hot: false, sale: false, new: false,
+  isTextBox: false, textBoxCount: 1, isImageBox: false, imageBoxCount: 1, hot: false, sale: false, new: false,
   isCustomize: false, images: [], thumbnail: '', meta_title: '',
   meta_keywords: '', meta_description: '', shippingFee: 0, offers: [],
   isVarientStatus: false, varient: [], customizeLink: '', totalPrice: 0
@@ -548,12 +548,30 @@ export default function EditProduct() {
                   { key: 'isTextBox', label: 'Text Box' },
                   { key: 'isImageBox', label: 'Image Box' },
                 ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center">
-                    <input type="checkbox" checked={formData[key as keyof ProductFormData] as boolean}
-                      onChange={() => handleToggle(key as keyof ProductFormData)} className="sr-only peer" />
-                    <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600" />
-                    <span className="ml-3 text-sm font-medium text-gray-900">{label}</span>
-                  </label>
+                  <div key={key}>
+                    <label className="flex items-center">
+                      <input type="checkbox" checked={formData[key as keyof ProductFormData] as boolean}
+                        onChange={() => handleToggle(key as keyof ProductFormData)} className="sr-only peer" />
+                      <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600" />
+                      <span className="ml-3 text-sm font-medium text-gray-900">{label}</span>
+                    </label>
+                    {key === 'isTextBox' && formData.isTextBox && (
+                      <div className="mt-2 ml-14 flex items-center gap-2">
+                        <span className="text-xs text-gray-500">How many text fields from user?</span>
+                        <input type="number" min={1} max={10} value={formData.textBoxCount ?? 1}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, textBoxCount: Math.min(10, Math.max(1, parseInt(e.target.value, 10) || 1)) }))}
+                          className="w-16 h-8 rounded-md bg-white px-2 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300" />
+                      </div>
+                    )}
+                    {key === 'isImageBox' && formData.isImageBox && (
+                      <div className="mt-2 ml-14 flex items-center gap-2">
+                        <span className="text-xs text-gray-500">How many photos from user?</span>
+                        <input type="number" min={1} max={10} value={formData.imageBoxCount ?? 1}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, imageBoxCount: Math.min(10, Math.max(1, parseInt(e.target.value, 10) || 1)) }))}
+                          className="w-16 h-8 rounded-md bg-white px-2 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300" />
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

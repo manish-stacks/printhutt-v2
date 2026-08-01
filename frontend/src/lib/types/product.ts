@@ -54,7 +54,9 @@ export interface IProduct extends Document {
   tags: string[];
   brand: string;
   isTextBox?: boolean;
+  textBoxCount?: number;
   isImageBox?: boolean;
+  imageBoxCount?: number;
   sku: string;
   weight?: number;
   colors?: string;
@@ -146,7 +148,9 @@ export interface ProductFormData {
   totalPrice?: number | string;
   meta_title?: string;
   isTextBox?: boolean;
+  textBoxCount?: number;
   isImageBox?: boolean;
+  imageBoxCount?: number;
   showPrice?: boolean;
 }
 

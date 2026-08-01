@@ -161,9 +161,21 @@ const productSchema = new Schema<IProduct>(
       type: Boolean,
       default: false,
     },
+    textBoxCount: {
+      type: Number,
+      default: 1,
+      min: 1,
+      max: 10,
+    },
     isImageBox: {
       type: Boolean,
       default: false,
+    },
+    imageBoxCount: {
+      type: Number,
+      default: 1,
+      min: 1,
+      max: 10,
     },
     sale: {
       type: Boolean,

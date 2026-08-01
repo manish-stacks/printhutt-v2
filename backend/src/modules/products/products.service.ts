@@ -411,7 +411,13 @@ export async function updateProduct(
   u.sale = getBool('sale', Boolean(u.sale));
   u.new = getBool('new', Boolean(u.new));
   u.isTextBox = getBool('isTextBox', Boolean(u.isTextBox));
+  u.textBoxCount = getOr('textBoxCount', (u.textBoxCount as number) ?? 1, (v) =>
+    Math.min(10, Math.max(1, parseInt(v, 10) || 1)),
+  );
   u.isImageBox = getBool('isImageBox', Boolean(u.isImageBox));
+  u.imageBoxCount = getOr('imageBoxCount', (u.imageBoxCount as number) ?? 1, (v) =>
+    Math.min(10, Math.max(1, parseInt(v, 10) || 1)),
+  );
   u.isCustomize = getBool('isCustomize', Boolean(u.isCustomize));
   u.customizeLink = getOr('customizeLink', u.customizeLink);
   u.meta = {
@@ -655,7 +661,9 @@ function buildProductData(
     ishome: body.ishome === 'true',
     trending: body.trending === 'true',
     isTextBox: body.isTextBox === 'true',
+    textBoxCount: Math.min(10, Math.max(1, parseInt(body.textBoxCount ?? '1', 10) || 1)),
     isImageBox: body.isImageBox === 'true',
+    imageBoxCount: Math.min(10, Math.max(1, parseInt(body.imageBoxCount ?? '1', 10) || 1)),
     hot: body.hot === 'true',
     sale: body.sale === 'true',
     new: body.new === 'true',

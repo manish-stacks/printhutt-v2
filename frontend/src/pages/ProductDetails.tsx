@@ -38,6 +38,7 @@ interface ProductProps {
     discountPrice?: number; discountType?: string; price?: number;
     meta?: { meta_title?: string; meta_description?: string; meta_keywords?: string };
     customizeLink: string; isCustomize?: boolean; isTextBox?: boolean; isImageBox?: boolean;
+    textBoxCount?: number; imageBoxCount?: number;
     reviews?: {
       userId?: { displayName?: string }; rating?: number; review?: string;
       createdAt?: string; images?: { url: string }[];
@@ -63,10 +64,30 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState<'product' | 'brand'>('product');
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 58, seconds: 28 });
-  const [textBox, setTextBox] = useState('');
-  const [previewImage, setPreviewImage] = useState('');
+  const textBoxCount = Math.min(10, Math.max(1, product?.textBoxCount ?? 1));
+  const imageBoxCount = Math.min(10, Math.max(1, product?.imageBoxCount ?? 1));
+  const [textBoxes, setTextBoxes] = useState<string[]>(() => Array(textBoxCount).fill(''));
+  const [previewImages, setPreviewImages] = useState<string[]>(() => Array(imageBoxCount).fill(''));
+  const [activeUploadIndex, setActiveUploadIndex] = useState(0);
   const [showImagePreview, setShowImagePreview] = useState(false);
+  const [previewModalUrl, setPreviewModalUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Resize local arrays if admin changes the counts after initial mount
+  useEffect(() => {
+    setTextBoxes(prev => {
+      if (prev.length === textBoxCount) return prev;
+      const next = Array(textBoxCount).fill('');
+      prev.forEach((v, i) => { if (i < textBoxCount) next[i] = v; });
+      return next;
+    });
+    setPreviewImages(prev => {
+      if (prev.length === imageBoxCount) return prev;
+      const next = Array(imageBoxCount).fill('');
+      prev.forEach((v, i) => { if (i < imageBoxCount) next[i] = v; });
+      return next;
+    });
+  }, [textBoxCount, imageBoxCount]);
 
   const { openCartSidebarView } = useCartSidebarStore();
   const addToCart = useCartStore(state => state.addToCart);
@@ -179,10 +200,11 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
   //  FIXED — sahi validation
   const handleAddToCart = () => {
     if (!product) return;
+    const hasVariants = Boolean(product?.isVarientStatus && product?.varient && product.varient.length > 0);
     if (
-  (product?.isVarientStatus &&
+  (hasVariants &&
     (selectedVariant?.stock ?? 0) <= 0) ||
-  (!product?.isVarientStatus &&
+  (!hasVariants &&
     (product?.stock ?? 0) <= 0)
 ) {
   toast.error("Product is out of stock");
@@ -191,15 +213,15 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
 
     if (product.isCustomize) return router.push(product.customizeLink);
 
-    //  isTextBox true ho to name required
-    if (product.isTextBox && !textBox.trim()) {
-      toast.error('Please enter your name before adding to cart');
+    //  isTextBox true ho to har naam field required
+    if (product.isTextBox && textBoxes.some(t => !t.trim())) {
+      toast.error('Please fill all the name fields before adding to cart');
       return;
     }
 
-    //  isImageBox true ho to photo required
-    if (product.isImageBox && !previewImage) {
-      toast.error('Please upload your photo before adding to cart');
+    //  isImageBox true ho to har photo required
+    if (product.isImageBox && previewImages.some(img => !img)) {
+      toast.error('Please upload all the photos before adding to cart');
       return;
     }
 
@@ -207,12 +229,15 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
 
     // custom_data build karo
     if (product.isTextBox || product.isImageBox || product.isVarientStatus) {
+      const nameFields = product.isTextBox
+        ? Object.fromEntries(textBoxes.map((t, i) => [`name${i}`, t]))
+        : {};
 
       finalProduct = {
         ...finalProduct,
         custom_data: {
-          ...(product.isTextBox ? { name1: textBox } : {}),
-          ...(product.isImageBox ? { previewCanvas: previewImage } : {}),
+          ...nameFields,
+          ...(product.isImageBox ? { customImages: previewImages } : {}),
           ...(product.isVarientStatus ? { variant: selectedVariant?.size || '' } : {}),
         },
       };
@@ -238,15 +263,23 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => setPreviewImage(reader.result as string);
+      const idx = activeUploadIndex;
+      reader.onloadend = () => {
+        setPreviewImages(prev => {
+          const next = [...prev];
+          next[idx] = reader.result as string;
+          return next;
+        });
+      };
       reader.readAsDataURL(file);
     }
   };
 
+  const hasVariants = Boolean(product?.isVarientStatus && product?.varient && product.varient.length > 0);
   const isOutOfStock =
   !product?.status ||
   (
-    product?.isVarientStatus
+    hasVariants
       ? (selectedVariant?.stock ?? 0) <= 0
       : (product?.stock ?? 0) <= 0
   );
@@ -282,14 +315,14 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
         )}
 
         {/*  Uploaded image preview modal */}
-        {showImagePreview && previewImage && (
+        {showImagePreview && previewModalUrl && (
           <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center" onClick={() => setShowImagePreview(false)}>
             <div className="relative bg-white rounded-xl p-4 max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
               <button onClick={() => setShowImagePreview(false)} className="absolute top-3 right-3 text-gray-500 hover:text-red-500">
                 <BiX className="w-6 h-6" />
               </button>
               <p className="text-sm font-semibold text-gray-700 mb-3">Uploaded Photo Preview</p>
-              <img src={previewImage} alt="preview" className="w-full rounded-lg object-cover max-h-80" />
+              <img src={previewModalUrl} alt="preview" className="w-full rounded-lg object-cover max-h-80" />
             </div>
           </div>
         )}
@@ -440,66 +473,83 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
               </div>
             )}
 
-            {/*  Text Box — with warning */}
+            {/*  Text Box(es) — with warning */}
             {product?.isTextBox && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-900">
-                  Enter Your Name <span className="text-red-500">*</span>
-                </h3>
-                <input
-                  type="text" name="name" placeholder="Enter Your Name"
-                  value={textBox} onChange={e => setTextBox(e.target.value)}
-                  className={`border p-2 rounded-md w-full mt-1 outline-none focus:ring-2 ${!textBox.trim() ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-indigo-300'}`}
-                  maxLength={12}
-                />
-                {!textBox.trim() && (
-                  <p className="text-xs text-red-500 mt-1">⚠ Name is required before adding to cart</p>
-                )}
+              <div className="space-y-3">
+                {textBoxes.map((val, i) => (
+                  <div key={i}>
+                    <h3 className="text-sm font-medium text-gray-900">
+                      {textBoxes.length > 1 ? `Enter Name ${i + 1}` : 'Enter Your Name'} <span className="text-red-500">*</span>
+                    </h3>
+                    <input
+                      type="text" name={`name${i}`} placeholder="Enter Your Name"
+                      value={val}
+                      onChange={e => setTextBoxes(prev => {
+                        const next = [...prev];
+                        next[i] = e.target.value;
+                        return next;
+                      })}
+                      className={`border p-2 rounded-md w-full mt-1 outline-none focus:ring-2 ${!val.trim() ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-indigo-300'}`}
+                      maxLength={12}
+                    />
+                    {!val.trim() && (
+                      <p className="text-xs text-red-500 mt-1">⚠ Name is required before adding to cart</p>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
 
-            {/*  Image Box — upload + view + reset */}
+            {/*  Image Box(es) — upload + view + reset */}
             {product?.isImageBox && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-900 mb-2">
-                  Upload Your Photo <span className="text-red-500">*</span>
-                </h3>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <button type="button" onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 flex items-center gap-2 text-sm shadow-md"
-                  >
-                    <BsUpload className="w-4 h-4" />
-                    {previewImage ? 'Change Photo' : 'Choose Photo'}
-                  </button>
-
-                  {/*  View button — sirf upload ke baad dikhega */}
-                  {previewImage && (
-                    <>
-                      <button type="button" onClick={() => setShowImagePreview(true)}
-                        className="px-4 py-2 bg-blue-50 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-100 flex items-center gap-2 text-sm"
+              <div className="space-y-4">
+                {previewImages.map((img, i) => (
+                  <div key={i}>
+                    <h3 className="text-sm font-medium text-gray-900 mb-2">
+                      {previewImages.length > 1 ? `Upload Photo ${i + 1}` : 'Upload Your Photo'} <span className="text-red-500">*</span>
+                    </h3>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <button type="button" onClick={() => { setActiveUploadIndex(i); fileInputRef.current?.click(); }}
+                        className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 flex items-center gap-2 text-sm shadow-md"
                       >
-                        <BiZoomIn className="w-4 h-4" />
-                        View
+                        <BsUpload className="w-4 h-4" />
+                        {img ? 'Change Photo' : 'Choose Photo'}
                       </button>
-                      <button type="button"
-                        onClick={() => { setPreviewImage(''); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm text-gray-600"
-                      >
-                        <BiRefresh className="w-4 h-4" />
-                        Reset
-                      </button>
-                    </>
-                  )}
-                </div>
 
-                {previewImage ? (
-                  <div className="mt-3 flex items-center gap-2">
-                    <img src={previewImage} alt="uploaded" className="w-14 h-14 rounded-lg object-cover border border-gray-200" />
-                    <p className="text-xs text-green-600 font-medium">✓ Photo uploaded successfully</p>
+                      {/*  View button — sirf upload ke baad dikhega */}
+                      {img && (
+                        <>
+                          <button type="button" onClick={() => { setPreviewModalUrl(img); setShowImagePreview(true); }}
+                            className="px-4 py-2 bg-blue-50 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-100 flex items-center gap-2 text-sm"
+                          >
+                            <BiZoomIn className="w-4 h-4" />
+                            View
+                          </button>
+                          <button type="button"
+                            onClick={() => setPreviewImages(prev => {
+                              const next = [...prev];
+                              next[i] = '';
+                              return next;
+                            })}
+                            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm text-gray-600"
+                          >
+                            <BiRefresh className="w-4 h-4" />
+                            Reset
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {img ? (
+                      <div className="mt-3 flex items-center gap-2">
+                        <img src={img} alt="uploaded" className="w-14 h-14 rounded-lg object-cover border border-gray-200" />
+                        <p className="text-xs text-green-600 font-medium">✓ Photo uploaded successfully</p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-red-500 mt-2">⚠ Photo is required before adding to cart</p>
+                    )}
                   </div>
-                ) : (
-                  <p className="text-xs text-red-500 mt-2">⚠ Photo is required before adding to cart</p>
-                )}
+                ))}
 
                 <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
               </div>
