@@ -143,20 +143,18 @@ export function firePurchaseFromSession(): void {
     (window as any).fbq('track', 'Purchase', {
       value: p.value,
       currency: p.currency || 'INR',
-
       content_type: 'product',
       content_ids: p.content_ids || [],
       contents: p.contents || [],
       num_items: p.num_items || 0,
       order_id: p.orderId || '',
-
       em: p.email,
       ph: p.phone,
       ct: p.city,
       st: p.state,
       zp: p.zip,
       fn: p.name,
-    });
+    }, { eventID: p.orderId || '' });
 
     // Remove only after successful fire
     sessionStorage.removeItem(PENDING_KEY);
