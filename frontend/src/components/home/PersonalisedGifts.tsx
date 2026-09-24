@@ -15,7 +15,7 @@ import {
 
 function PersonalizedGifts() {
 
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

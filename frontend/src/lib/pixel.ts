@@ -136,7 +136,15 @@ export function firePurchaseFromSession(): void {
     const raw = sessionStorage.getItem(PENDING_KEY);
     if (!raw) return;
 
-    if (!fbqReady()) return;
+    // Pixel script afterInteractive load hota hai — ready hone tak retry (max ~10s)
+    if (!fbqReady()) {
+      const tries = Number((window as any).__phPurchaseTries || 0);
+      if (tries < 20) {
+        (window as any).__phPurchaseTries = tries + 1;
+        setTimeout(firePurchaseFromSession, 500);
+      }
+      return;
+    }
 
     const p = JSON.parse(raw);
 
@@ -148,12 +156,6 @@ export function firePurchaseFromSession(): void {
       contents: p.contents || [],
       num_items: p.num_items || 0,
       order_id: p.orderId || '',
-      em: p.email,
-      ph: p.phone,
-      ct: p.city,
-      st: p.state,
-      zp: p.zip,
-      fn: p.name,
     }, { eventID: p.orderId || '' });
 
     // Remove only after successful fire
@@ -161,4 +163,34 @@ export function firePurchaseFromSession(): void {
   } catch {
     /* ignore */
   }
+}
+
+/* ── Funnel events (ads optimization ke liye zaroori) ── */
+function fbqSafe(...args: unknown[]): void {
+  if (typeof window === 'undefined') return;
+  if (fbqReady()) { (window as any).fbq(...args); return; }
+  // pixel abhi load nahi hua → thoda ruk ke ek baar retry
+  setTimeout(() => { if (fbqReady()) (window as any).fbq(...args); }, 2500);
+}
+
+export function trackViewContent(p: { _id?: string; title?: string; price?: number }): void {
+  if (!p?._id) return;
+  fbqSafe('track', 'ViewContent', {
+    content_ids: [p._id], content_name: p.title, content_type: 'product',
+    value: Math.round(Number(p.price) || 0), currency: 'INR',
+  });
+}
+
+export function trackAddToCart(p: { _id?: string; title?: string; price?: number; quantity?: number }): void {
+  if (!p?._id) return;
+  const qty = Number(p.quantity) || 1;
+  fbqSafe('track', 'AddToCart', {
+    content_ids: [p._id], content_name: p.title, content_type: 'product',
+    contents: [{ id: p._id, quantity: qty }],
+    value: Math.round((Number(p.price) || 0) * qty), currency: 'INR',
+  });
+}
+
+export function trackCheckoutStart(value: number, numItems: number): void {
+  fbqSafe('track', 'InitiateCheckout', { value: Math.round(value), currency: 'INR', num_items: numItems });
 }

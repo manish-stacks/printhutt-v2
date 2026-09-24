@@ -1,4 +1,4 @@
-import HeroBanner from "@/pages/admin/HeroBanner";
+import HeroBanner from "@/views/admin/HeroBanner";
 import { Suspense } from "react";
 
 const Page = () => {

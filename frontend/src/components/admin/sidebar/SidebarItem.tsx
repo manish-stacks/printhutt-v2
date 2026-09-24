@@ -27,7 +27,7 @@ export function SidebarItem({
 
   return (
     <Wrapper
-      href={path}
+      href={path as string}
       onClick={path ? undefined : onClick}
       className={`w-full flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors
         ${isActive ? 'bg-gray-700 text-white border-l-4 border-blue-500' : ''}`}

@@ -1,4 +1,5 @@
 "use client";
+import { readCompressed } from '@/utils/read-image';
 import React, { useEffect, useRef, useState } from 'react';
 import { ThicknessOption, CheckoutData } from '@/lib/types';
 import { BUTTON_VALUES_AND_PRICES, DEFAULT_IMAGE_URL } from './constants';
@@ -63,7 +64,7 @@ export default function AcrylicPhoto() {
   const loadImage = async (url: string) => {
     if (!fabricCanvasRef.current) return;
     try {
-      const img = await FabricImage.fromURL(url, { crossOrigin: 'Anonymous' });
+      const img = await FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
       const canvas = fabricCanvasRef.current;
       const canvasWidth = canvas.width || 700;
       const canvasHeight = canvas.height || 450;
@@ -101,7 +102,7 @@ export default function AcrylicPhoto() {
       setImageUrl(result);
       loadImage(result);
     };
-    reader.readAsDataURL(file);
+    readCompressed(reader, file);
   };
 
   const handleSizeChange = (size: string) => {
@@ -178,7 +179,7 @@ export default function AcrylicPhoto() {
           setImageUrl(result);
           loadImage(result);
         };
-        reader.readAsDataURL(file);
+        readCompressed(reader, file);
       }
     }
   };
@@ -237,6 +238,7 @@ export default function AcrylicPhoto() {
   };
 
   const handleAddToCart = async () => {
+    if (!product) { toast.error('Product is still loading, please try again in a moment.'); return; }
     if (imageUrl === DEFAULT_IMAGE_URL) {
       toast.error('Please upload an image');
       return;
@@ -248,6 +250,7 @@ export default function AcrylicPhoto() {
         const custom_data: CheckoutData = {
           previewCanvas,
           previewImage: imageUrl,
+          imageUrl,
           radiusValue: radiusValue,
           shapeName: radiusValue.split('-')[0],
           variant: orientation === 'landscape' ? selectedSize.split('x').reverse().join('x') : selectedSize,

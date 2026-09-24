@@ -72,11 +72,11 @@ export function ProductSidebar({ products, filters, categoriesData, onFilterChan
                     selectedRating={filters.rating}
                     onChange={(rating) => onFilterChange({ rating })}
                 />
-                <TagFilter
+                {/* <TagFilter
                     tags={tags}
                     selectedTags={filters.tags}
                     onChange={(tags) => onFilterChange({ tags })}
-                />
+                /> */}
             </div>
         </>
     )

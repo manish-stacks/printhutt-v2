@@ -91,7 +91,7 @@ export default function EditPage() {
   }
 
   return (
-    <div className="max-w-8xl mx-auto px-4 lg:px-10 py-16">
+    <div className="ph-page">
       {/* Header */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-5 flex justify-between items-start">
         <div>

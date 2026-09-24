@@ -53,14 +53,14 @@ export default function OrderDetailsPage() {
   /* Calculations */
   const subtotal = order.totalAmount.totalPrice;
   const shipping = order.totalAmount.shippingTotal;
-  const couponDiscount = order.coupon.isApplied ? order.totalAmount.coupon_discount : 0;
+  const couponDiscount = order.coupon.isApplied ? (order.totalAmount.coupon_discount ?? 0) : 0;
   // ✅ FIX: coupon discount bhi subtract karna tha (pehle ignore ho raha tha,
   //    shipping dono taraf cancel ho jaata tha aur formula effectively
   //    "subtotal - discountPrice" reh jaata tha — coupon discount ka koi effect nahi padta tha).
   const extraDiscount = subtotal - order.totalAmount.discountPrice - couponDiscount;
   // ✅ FIX: order.totalAmount.discountPrice mein coupon discount ALREADY subtract
   //    hota hai (backend createOrder mein), isliye yahan couponDiscount dobara
-  //    minus karna double-subtraction tha — finalTotal/Due Amount kam dikh rahe the.
+  //    minus karna double-subtraction tha — finalTotal/Due Amount kamSee the.
   const finalTotal = order.totalAmount.discountPrice + shipping;
   const dueAmount = order.paymentType === 'offline' ? finalTotal - order.payAmt : 0;
 
@@ -278,7 +278,7 @@ export default function OrderDetailsPage() {
               <div className="flex flex-wrap items-center gap-2 px-4 sm:px-5 py-3 border-t border-gray-100 bg-gray-50/50 mt-2">
 
                 {order.status === 'shipped' && (() => {
-                  const trackingUrls = {
+                  const trackingUrls: Record<string, string> = {
                     fship: `https://app.fship.in/shipment/tracking?awbno=${order.shipment.trackingId}`,
                     velocity: `https://www.velocityshipping.in/track/${order.shipment.trackingId}`,
                     shiprocket: `/user/order-track/${order?.shipment?.trackingId}`,

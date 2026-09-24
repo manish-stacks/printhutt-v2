@@ -1,6 +1,6 @@
 "use client"
 import { wishlistService } from "@/_services/common/wishlist";
-import Wishlist from "@/pages/Wishlist"
+import Wishlist from "@/views/Wishlist"
 import { useUserStore } from "@/store/useUserStore";
 import { useRouter } from "next/navigation";
 
@@ -13,7 +13,7 @@ const WishlistPage = () => {
   const isLoggedIn = useUserStore((state) => state.isLoggedIn);
 
 
-  const [wishlist, setWishlist] = useState([]);
+  const [wishlist, setWishlist] = useState<any[]>([]);
   
   const getWishlist = async () => {
     const response = await wishlistService.getAll();
@@ -35,7 +35,7 @@ const WishlistPage = () => {
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <Wishlist data={wishlist?.items} deleteWishlist={deleteWishlist} />
+      <Wishlist data={(wishlist as any)?.items} deleteWishlist={deleteWishlist} />
     </Suspense>
   )
 

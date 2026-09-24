@@ -289,7 +289,7 @@ export const sendOtpBySms = async (mobile: string, otp: string) => {
   Your OTP is *${otp}*. 
   Valid for 10 minutes. Do not share it with anyone.`;
 
-  //const wappUrl = `${process.env.WAPP_URL}send?apikey=${process.env.WAPP_KEY}&mobile=${mobile}&msg=${encodeURIComponent(wappMsg)}`;
+  const wappUrl = `${process.env.WAPP_URL}send?apikey=${process.env.WAPP_KEY}&mobile=${mobile}&msg=${encodeURIComponent(wappMsg)}`;
 
   try {
     await Promise.all([

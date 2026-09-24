@@ -3,7 +3,7 @@ import { IOrder } from "@/lib/types/order";
 import axios from "axios";
 
 
-export const create_a_new_order = async (formData: IOrder) => {
+export const create_a_new_order = async (formData: Record<string, unknown>) => {
   return axiosInstance.post(`/orders`, formData)
 }
 

@@ -1,4 +1,4 @@
-import mongoose, { Document, Types } from "mongoose";
+import type { Document, ObjectId } from './_base';
 import { IShippingInformation } from "./shipping";
 import { ImageType } from "../types";
 
@@ -44,8 +44,8 @@ export interface IProduct extends Document {
   slug: string;
   short_description: string;
   description: string;
-  category: mongoose.Types.ObjectId;
-  subcategory?: mongoose.Types.ObjectId;
+  category: ObjectId;
+  subcategory?: ObjectId;
   price: number;
   discountType?: string;
   discountPrice: number;
@@ -66,13 +66,13 @@ export interface IProduct extends Document {
   varient: IVariant[];
   availabilityStatus: "in_stock" | "low_stock" | "out_of_stock";
   minimumOrderQuantity: number;
-  warrantyInformation?: mongoose.Types.ObjectId;
-  shippingInformation?: mongoose.Types.ObjectId & IShippingInformation;
-  returnPolicy?: mongoose.Types.ObjectId;
+  warrantyInformation?: ObjectId;
+  shippingInformation?: ObjectId & IShippingInformation;
+  returnPolicy?: ObjectId;
   meta: IMeta;
   thumbnail?: IMedia;
   images: IMedia[];
-  reviews: mongoose.Types.ObjectId[];
+  reviews: ObjectId[];
   status: boolean;
   ishome: boolean;
   trending: boolean;
@@ -80,7 +80,7 @@ export interface IProduct extends Document {
   sale: boolean;
   new: boolean;
   showPrice: boolean;
-  offers: mongoose.Types.ObjectId[];
+  offers: ObjectId[];
   shippingFee?: number;
   isCustomize: boolean;
   demoVideo?: string;
@@ -106,6 +106,7 @@ export interface ProductVariant {
 }
 
 export interface ProductFormData {
+  videoAsThumbnail?: boolean;
   title: string;
   slug: string;
   description: string;
@@ -228,7 +229,7 @@ export interface ProductUpdateData {
     meta_description?: string;
   };
   shippingFee?: number;
-  offers?: Types.ObjectId[];
+  offers?: ObjectId[];
   isVarientStatus?: boolean;
   varient?: Array<{
     size: string;
@@ -251,47 +252,58 @@ export interface ProductUpdateData {
   }>;
 }
 
-export type Product = {
+export interface ProductVariantLite {
+  _id?: string;
+  size: string;
+  color?: string;
+  price: number;
+  discountPrice?: number;
+  discountType?: string;
+  stock: number;
+  images?: { url: string; public_id?: string }[];
+  thumbnail?: { url: string; public_id?: string };
+  isMainProduct?: boolean;
+}
+
+/** Storefront product (API response shape) — cards, cart, quick view, details */
+export interface Product {
   _id: string;
   title: string;
+  slug: string;
   price: number;
-  category: {
-    id: string;
-    name: string;
-  };
-  rating: number;
-  tags?: string[];
-  thumbnail: {
-    url: string;
-  };
-  varient?: {
-    _id?: string;
-    size: string;
-    color: string;
-    price: number;
-    discountPrice?: number;
-    discountType?: string;
-    stock: number;
-    images?: { url: string }[];
-    thumbnail?: { url: string };
-  };
-  new: boolean;
-  sale: boolean;
-  hot: boolean;
-  trending: boolean;
-  images: [{ url: string }];
   discountType: string;
   discountPrice: number;
   stock: number;
-  slug: string;
-  isVarientStatus: boolean;
-  meta?: {
-    meta_title: string;
-    meta_keywords: string;
-    meta_description: string;
-  };
-  reviews?: number;
+  status?: boolean;
+  rating: number;
+  category?: { _id?: string; id?: string; name: string; slug?: string };
+  subcategory?: { _id?: string; name?: string; slug?: string };
+  tags?: string[];
+  thumbnail: { url: string; public_id?: string };
+  images: { url: string; public_id?: string }[];
+  varient: ProductVariantLite[];
+  selectedVariant?: ProductVariantLite;
+  isVarientStatus?: boolean;
+  new?: boolean;
+  sale?: boolean;
+  hot?: boolean;
+  trending?: boolean;
+  showPrice?: boolean;
+  isCustomize?: boolean;
+  customizeLink?: string;
+  shippingFee?: number;
+  meta?: { meta_title?: string; meta_keywords?: string; meta_description?: string };
+  reviews?: any;
   short_description?: string;
-  quantity?: number;
+  description?: string;
+  imgAlt?: string;
+  brand?: string;
   sku?: string;
-};
+  quantity?: number;
+  /* cart-only */
+  isGift?: boolean;
+  custom_data?: Record<string, any>;
+  _dbItemId?: string;
+  productId?: any; // wishlist populated shape
+  [key: string]: any;
+}

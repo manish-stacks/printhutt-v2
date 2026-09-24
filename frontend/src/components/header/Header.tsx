@@ -40,7 +40,7 @@ export default function Header() {
   // localStorage load hone se pehle 'Login' flash hota tha (Bug #1).
   const accountReady = hasHydrated;
   const showDashboard = accountReady && isLoggedIn;
-  const [categoriesData, setCategoriesData] = useState([]);
+  const [categoriesData, setCategoriesData] = useState<any[]>([]);
   const [wishlistCount, setWishlistCount] = useState(0);
   const { openCartSidebarView } = useCartSidebarStore();
   const [mobileCategoryOpen, setMobileCategoryOpen] = useState(false);

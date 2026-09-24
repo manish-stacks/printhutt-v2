@@ -1,4 +1,4 @@
-import Offer from "@/pages/Offer"
+import Offer from "@/views/Offer"
 
 // export const metadata = {
 //   title: 'offer',

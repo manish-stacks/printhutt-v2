@@ -95,8 +95,8 @@ const HeaderCategoryList = ({ categories }: Props) => {
       setDropdownPos(null);
     };
     const el = scrollRef.current;
-    el?.addEventListener('scroll', onScroll);
-    window.addEventListener('scroll', onScroll);
+    el?.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       el?.removeEventListener('scroll', onScroll);
       window.removeEventListener('scroll', onScroll);
@@ -139,7 +139,7 @@ const HeaderCategoryList = ({ categories }: Props) => {
           {categories.slice(0, 15).map((category, index) => (
             <div
               key={category._id || index}
-              ref={(el) => itemRefs.current.set(category.slug, el)}
+              ref={(el) => { itemRefs.current.set(category.slug, el); }}
               className="flex-shrink-0"
               onMouseEnter={() => openDropdown(category)}
               onMouseLeave={scheduleClose}

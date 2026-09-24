@@ -11,7 +11,7 @@ import {
 } from "react-icons/ri";
 
 function PersonalizedGiftsTwo() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

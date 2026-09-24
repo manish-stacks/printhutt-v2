@@ -13,13 +13,18 @@ const BackToTop = () => {
       const scrollProgress = (scrollTop / (documentHeight - windowHeight)) * 100;
 
       setShowButton(scrollTop > 50); 
-      setProgress(scrollProgress); 
+      setProgress(Math.round(scrollProgress)); 
     };
 
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); 
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => { raf = 0; handleScroll(); });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    handleScroll();
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => { window.removeEventListener('scroll', onScroll); if (raf) cancelAnimationFrame(raf); };
   }, []);
 
  

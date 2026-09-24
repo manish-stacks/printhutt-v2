@@ -1,4 +1,5 @@
 "use client"
+import { readCompressed } from '@/utils/read-image';
 import { get_product_by_id } from '@/_services/admin/product';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { formatCurrency } from '@/helpers/helpers';
@@ -89,7 +90,7 @@ export default function App() {
                 setImagePosition({ x: 0, y: 0 });
                 setImageScale(1.2);
             };
-            reader.readAsDataURL(file);
+            readCompressed(reader, file);
         }
     }, []);
 
@@ -102,7 +103,7 @@ export default function App() {
                 setImagePosition({ x: 0, y: 0 });
                 setImageScale(1.2);
             };
-            reader.readAsDataURL(file);
+            readCompressed(reader, file);
         }
     };
 
@@ -153,6 +154,7 @@ export default function App() {
     }
 
     const handleAddToCart = async () => {
+    if (!product) { toast.error('Product is still loading, please try again in a moment.'); return; }
         if (!previewImage) {
             toast.error('Please upload a preview image.');
             return;

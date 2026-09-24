@@ -1,5 +1,6 @@
 
 "use client";
+import { readCompressed } from '@/utils/read-image';
 
 /**
  * Heart-shaped LED photo frame — 9 photo upload customizer.
@@ -99,7 +100,7 @@ export default function HeartFramePage() {
                 img.onerror = () => reject(new Error('image decode failed'));
                 img.src = reader.result as string;
             };
-            reader.readAsDataURL(file);
+            readCompressed(reader, file);
         });
 
     const handleUpload = (i: number) => async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -136,6 +137,7 @@ export default function HeartFramePage() {
     const allFilled = filledCount === SLOTS;
 
     const handleAddToCart = () => {
+    if (!product) { toast.error('Product is still loading, please try again in a moment.'); return; }
         if (!allFilled) {
             toast.error(`Please upload all ${SLOTS} photos (${filledCount}/${SLOTS} done)`);
             return;
@@ -199,12 +201,12 @@ export default function HeartFramePage() {
     const productPrice = getProductPrice();
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white py-10">
+        <div className="bg-gradient-to-b from-[#1c1640] to-[#15112e] py-8 sm:py-10">
             <div className="container mx-auto px-4">
-                <h1 className="text-3xl md:text-4xl font-semibold text-center text-gray-800 mb-2">
+                <h1 className="text-3xl md:text-4xl font-semibold text-center text-white mb-2">
                     Heart LED Photo Frame
                 </h1>
-                <p className="text-center text-gray-500 mb-8">
+                <p className="text-center text-white/60 mb-8">
                     Upload your 9 favourite photos — {filledCount}/{SLOTS} added
                 </p>
 

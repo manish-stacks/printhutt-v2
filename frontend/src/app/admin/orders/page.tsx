@@ -1,4 +1,4 @@
-import OrderPage from "@/pages/admin/OrderPage";
+import OrderPage from "@/views/admin/OrderPage";
 import { Suspense } from "react";
 
 const Page = () => {

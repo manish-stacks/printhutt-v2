@@ -1,4 +1,4 @@
-import ProductListPage from "@/pages/admin/ProductListPage";
+import ProductListPage from "@/views/admin/ProductListPage";
 import { Suspense } from "react";
 
 const Page = () => {

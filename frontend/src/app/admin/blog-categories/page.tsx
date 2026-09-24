@@ -1,5 +1,5 @@
 
-import BlogCategory from "@/pages/admin/BlogCategory";
+import BlogCategory from "@/views/admin/BlogCategory";
 import { Suspense } from "react";
 
 const Page = () => {

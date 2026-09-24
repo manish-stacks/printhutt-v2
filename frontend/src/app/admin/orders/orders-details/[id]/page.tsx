@@ -139,7 +139,7 @@ export default function OrderDetailsPage() {
         { value: 'refunded', label: 'Refunded' },
     ];
 
-    const handleStatusChange = async (selectedOption) => {
+    const handleStatusChange = async (selectedOption: any) => {
         setOrderStatus(selectedOption.value);
 
         if (selectedOption.value === 'shipped') {
@@ -284,10 +284,10 @@ export default function OrderDetailsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-200 mt-10">
+        <div>
             {/* Sticky Header */}
             <div className="sticky top-0 z-10 bg-white border-b">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div className="mx-auto px-4 sm:px-6 lg:px-8 py-4">
                     <div className="flex justify-between items-center">
                         <div className="flex items-center space-x-4">
                             <h1 className="text-2xl font-bold">Order #{order?.orderId}</h1>
@@ -318,7 +318,7 @@ export default function OrderDetailsPage() {
             </div>
 
             {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="grid grid-cols-3 gap-6">
                     {/* Left Column - Order Items */}
                     <div className="col-span-2 space-y-6">
@@ -359,7 +359,7 @@ export default function OrderDetailsPage() {
                                                             <del>{formatCurrency(item.price * item.quantity)} </del>
                                                         </span>
                                                         <span className="font-sm text-gray-900">
-                                                            {formatCurrency((item.price - (item.price * (item.discountPrice / 100))) * item.quantity)}
+                                                            {formatCurrency((item.price - (item.price * ((item.discountPrice ?? 0) / 100))) * item.quantity)}
                                                         </span>
                                                     </div>
 
@@ -527,7 +527,7 @@ export default function OrderDetailsPage() {
                                                 </label>
                                                 <input
                                                     type="number"
-                                                    value={shipmentDetails[field.key]}
+                                                    value={(shipmentDetails as any)[field.key]}
                                                     onChange={(e) =>
                                                         setShipmentDetails((prev) => ({
                                                             ...prev,
@@ -586,7 +586,7 @@ export default function OrderDetailsPage() {
                                         {formatCurrency(
                                             (order.totalAmount.totalPrice +
                                                 order.totalAmount.shippingTotal) -
-                                            (order.totalAmount.coupon_discount + order.totalAmount.discountPrice)
+                                            ((order.totalAmount.coupon_discount ?? 0) + order.totalAmount.discountPrice)
                                         )}
                                     </span>
                                 </div>
@@ -610,7 +610,7 @@ export default function OrderDetailsPage() {
                                                 {formatCurrency(
                                                     order.totalAmount.discountPrice +
                                                     order.totalAmount.shippingTotal -
-                                                    order.totalAmount.coupon_discount -
+                                                    (order.totalAmount.coupon_discount ?? 0) -
                                                     order.payAmt
                                                 )}
                                             </span>

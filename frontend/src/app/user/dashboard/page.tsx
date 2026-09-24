@@ -1,4 +1,4 @@
-import UserDashboard from "@/pages/user/Dashboard";
+import UserDashboard from "@/views/user/Dashboard";
 
 
 const userDashboard = () => {

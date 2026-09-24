@@ -1,4 +1,4 @@
-import { Document, Types } from 'mongoose';
+import type { Document, ObjectId } from './_base';
 
 export type DiscountType = 'percentage' | 'fixed' | 'free_shipping';
 
@@ -13,8 +13,8 @@ export interface CouponAttributes {
   validUntil: Date;
   usageLimit: number | null;
   usedCount: number;
-  applicableProducts: Types.ObjectId[];
-  applicableCategories: Types.ObjectId[];
+  applicableProducts: ObjectId[];
+  applicableCategories: ObjectId[];
   isActive: boolean;
   isShow: boolean;
   isDefault: boolean;
@@ -26,7 +26,7 @@ export interface CouponMethods {
   isValidForUse(): boolean;
 }
 
-export interface CouponDocument extends CouponAttributes, Document, CouponMethods {}
+export type CouponDocument = CouponAttributes & Document & CouponMethods;
 
 
 

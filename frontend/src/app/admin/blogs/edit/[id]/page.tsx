@@ -1,4 +1,4 @@
-import BlogEdit from "@/pages/admin/blog/BlogEdit"
+import BlogEdit from "@/views/admin/blog/BlogEdit"
 
 const Page = () => {
   return <BlogEdit />

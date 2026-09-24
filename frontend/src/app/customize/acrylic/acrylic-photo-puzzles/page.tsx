@@ -1,4 +1,5 @@
 "use client"
+import { readCompressed } from '@/utils/read-image';
 import { get_product_by_id } from '@/_services/admin/product';
 import React, { useState, useRef, useEffect } from 'react';
 import { BiRefresh, BiUpload } from 'react-icons/bi';
@@ -16,9 +17,9 @@ import { formatCurrency } from '@/helpers/helpers';
 export default function App() {
   const [previewImage, setPreviewImage] = useState('');
   const [selectedLabel, setSelectedLabel] = useState('');
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [product, setProduct] = useState(null);
+  const [product, setProduct] = useState<any>(null);
   const [activeVarient, setActiveVarient] = useState<string>('0');
   const [varientSize, setVarientSize] = useState<string>('default'); // Added missing state
   const { openCartSidebarView } = useCartSidebarStore();
@@ -41,23 +42,23 @@ export default function App() {
     { value: 'rakhsha', label: 'Raksha Bandhan', preview: '🏵️', url: 'https://s3.ap-south-1.amazonaws.com/printhutt.dev.bucket/others/rakshi-png.png' }
   ];
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreviewImage(reader.result);
+        setPreviewImage(String(reader.result || ''));
       };
-      reader.readAsDataURL(file);
+      readCompressed(reader, file);
     }
   };
 
   const onchangeVarient = (id: string) => {
     setActiveVarient(id);
-    const varient = product?.varient.find(item => item._id === id);
+    const varient = product?.varient?.find((item: any) => item._id === id);
     if (varient) {
       // Create a new product object instead of mutating the existing one
-      setProduct(prevProduct => ({
+      setProduct((prevProduct: any) => ({
         ...prevProduct,
         price: varient.price || 0
       }));
@@ -66,6 +67,7 @@ export default function App() {
   }
 
   const handleAddToCart = async () => {
+    if (!product) { toast.error('Product is still loading, please try again in a moment.'); return; }
     if (!previewImage) {
       toast.error('Please upload a preview image.');
       return;
@@ -200,7 +202,7 @@ export default function App() {
                 <div>
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Choose Size</h3>
                   <div className="grid grid-cols-2 gap-3">
-                    {product?.varient?.map((v, index) => (
+                    {product?.varient?.map((v: any, index: number) => (
                       <button
                         key={index}
                         onClick={() => onchangeVarient(v?._id)}

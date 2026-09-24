@@ -1,4 +1,4 @@
-import AdminDashboard from "@/pages/admin/Dashboard"
+import AdminDashboard from "@/views/admin/Dashboard"
 
 export const metadata = {
   title: 'Admin-dashboard',

@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import type { Document, ObjectId } from './_base';
 import { ImageType } from '../types';
 
 export interface ImageData {
@@ -40,4 +40,4 @@ export interface CategoryFormData {
 }
 
 
-export interface CategoryDocument extends CategoryAttributes, Document {}
+export type CategoryDocument = CategoryAttributes & Document;

@@ -1,4 +1,4 @@
-// import Compare from "@/pages/Compare"
+// import Compare from "@/views/Compare"
 import { notFound } from "next/navigation"
 
 

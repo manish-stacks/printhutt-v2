@@ -1,13 +1,6 @@
 import { create } from 'zustand';
 
-type Product = {
-    title: string;
-    image: string;
-    description: string;
-    price: string;
-    oldPrice: string;
-    rating: number;
-};
+import type { Product } from '@/lib/types/product';
 
 type QuickViewState = {
     isOpen: boolean;

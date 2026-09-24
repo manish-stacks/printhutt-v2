@@ -61,7 +61,7 @@ export const createOrderSchema = z.object({
   address: z
     .object({
       name: z.string().min(1),
-      email: z.string().email().optional(),
+      email: z.union([z.string().trim().email(), z.literal("")]).optional(),
       number: z.union([z.string(), z.number()]),
       address: z.string().min(1),
       city: z.string().min(1),

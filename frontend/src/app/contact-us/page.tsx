@@ -1,4 +1,4 @@
-import ContactUs from "@/pages/ContactUs"
+import ContactUs from "@/views/ContactUs"
 
 export const metadata = {
   title: 'Contact Us - Get in Touch with PrintHutt',

@@ -18,6 +18,13 @@ const sameItem = (
   (a.variantId ?? '') === (variantId ?? '') &&
   (a.size ?? '') === (size ?? '');
 
+/* custom_data me sirf meta keys (variant/_customId/_editPath/_thumb) → normal item */
+const META_KEYS = new Set(['variant', '_customId', '_editPath', '_thumb']);
+const isCustom = (cd: unknown): boolean =>
+  !!cd && typeof cd === 'object' && Object.keys(cd as object).some((k) => !META_KEYS.has(k));
+const customIdOf = (cd: unknown): string | undefined =>
+  cd && typeof cd === 'object' ? ((cd as any)._customId as string | undefined) : undefined;
+
 export async function getCart(userId: string): Promise<unknown> {
   const cart = await userCartRepo.findByUserPopulated(userId);
   return { success: true, items: cart?.items ?? [] };
@@ -36,7 +43,7 @@ export async function addItem(userId: string, body: AddItemDTO): Promise<unknown
   );
 
   // Customization wale items hamesha naya entry (kyunki har ek alag)
-  const hasCustom = body.custom_data && Object.keys(body.custom_data).length > 0;
+  const hasCustom = isCustom(body.custom_data);
 
   if (existing && !hasCustom) {
     existing.quantity += body.quantity;
@@ -85,24 +92,21 @@ export async function mergeCart(userId: string, body: MergeDTO): Promise<unknown
   }
 
   for (const incoming of body.items) {
-    // ✅ FIX 1: Gift items kabhi DB mein save mat karo
     if ((incoming as any).isGift) continue;
 
-    const hasCustom =
-      incoming.custom_data && Object.keys(incoming.custom_data).length > 0;
-
-    const existing = cart.items.find((i) =>
-      sameItem(i, incoming.productId, incoming.variantId, incoming.size)
-    );
-
-    if (existing && !hasCustom) {
-      // ✅ FIX 2: Quantity add nahi, MAX lo — avoid double counting
-      // Guest mein 2 tha, DB mein bhi 2 tha → result 2 hona chahiye, 4 nahi
-      existing.quantity = Math.max(existing.quantity, incoming.quantity);
-    } else if (!existing) {
-      cart.items.push(incoming as never);
+    if (isCustom(incoming.custom_data)) {
+      // custom item → _customId se match; already hai to skip, warna add
+      const cid = customIdOf(incoming.custom_data);
+      const dup = cid && cart.items.some((i: any) => customIdOf(i.custom_data) === cid);
+      if (!dup) cart.items.push(incoming as never);
+      continue;
     }
-    // existing + hasCustom = skip (custom items already separate hain)
+
+    const existing = cart.items.find(
+      (i: any) => !isCustom(i.custom_data) && sameItem(i, incoming.productId, incoming.variantId, incoming.size)
+    );
+    if (existing) existing.quantity = Math.max(existing.quantity, incoming.quantity);
+    else cart.items.push(incoming as never);
   }
   await cart.save();
 

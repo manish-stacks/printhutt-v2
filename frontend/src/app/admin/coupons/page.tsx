@@ -1,4 +1,4 @@
-import CouponPage from "@/pages/admin/CouponPage";
+import CouponPage from "@/views/admin/CouponPage";
 import { Suspense } from "react";
 
 const Page = () => {

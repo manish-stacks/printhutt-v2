@@ -1,4 +1,4 @@
-import OfferPage from "@/pages/admin/OfferPage";
+import OfferPage from "@/views/admin/OfferPage";
 import { Suspense } from "react";
 
 const Page = () => {

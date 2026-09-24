@@ -17,7 +17,7 @@ const DayoftheWeek = ({
   title: string;
   catID: string;
 }) => {
-  const [productData, setProductData] = useState([]);
+  const [productData, setProductData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -46,7 +46,7 @@ const DayoftheWeek = ({
   }, [catID]);
 
   return (
-    <section ref={sectionRef} className="relative overflow-hidden bg-[#ffffff] py-14 sm:py-16">
+    <section ref={sectionRef} className="relative overflow-hidden bg-[#ffffff]">
 
       {/* Glow */}
       <div className="absolute top-0 left-0 w-72 h-72 bg-pink-500/10 blur-3xl rounded-full" />

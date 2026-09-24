@@ -12,7 +12,7 @@ import { toast } from "react-toastify";
 const MAX_PER_TYPE = 8;
 
 const PersonalizedGiftPage = () => {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
@@ -116,7 +116,7 @@ const PersonalizedGiftPage = () => {
   };
 
   return (
-    <div className="p-6 py-12">
+    <div className="ph-page">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Personalized Gifts</h2>
 

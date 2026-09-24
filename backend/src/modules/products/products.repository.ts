@@ -13,22 +13,80 @@ import User from '@/db/models/userModel';
  * Product repository — data-access layer.
  * All queries from the original Next.js product routes live here.
  */
+
+/* ─── Seeded shuffle (same seed → same order → pagination stable) ─── */
+const seededShuffle = <T,>(arr: T[], seed: number): T[] => {
+  const a = [...arr];
+  let t = (seed || 1) >>> 0;
+  const rnd = () => {
+    t += 0x6d2b79f5;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+const pageBySeed = async (filter: FilterQuery<unknown>, page: number, limit: number, seed?: number) => {
+  if (seed === undefined) {
+    const [products, total] = await Promise.all([
+      Product.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit)
+        .populate({ path: 'category', model: Category, select: 'name slug' }).lean(),
+      Product.countDocuments(filter),
+    ]);
+    return { products: products as unknown[], total };
+  }
+  const ids = (await Product.find(filter).select('_id').lean<{ _id: unknown }[]>()).map((d) => String(d._id));
+  const pageIds = seededShuffle(ids, seed).slice((page - 1) * limit, page * limit);
+  const docs = await Product.find({ _id: { $in: pageIds } })
+    .populate({ path: 'category', model: Category, select: 'name slug' }).lean();
+  const map = new Map((docs as any[]).map((d) => [String(d._id), d]));
+  return { products: pageIds.map((id) => map.get(id)).filter(Boolean) as unknown[], total: ids.length };
+};
+
 export const productRepo = {
   /* ─── Admin list (paginated + search) ─── */
   adminList: async (
     page: number,
     limit: number,
-    search: string
+    search: string,
+    f: Record<string, any> = {}
   ): Promise<{ products: unknown[]; total: number }> => {
-    const query: FilterQuery<unknown> = search
-      ? { title: { $regex: search, $options: 'i' } }
-      : {};
+    const query: FilterQuery<any> = {};
+    if (search) {
+      const rx = { $regex: search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
+      query.$or = [{ title: rx }, { sku: rx }, { slug: rx }];
+    }
+    if (f.category && mongoose.isValidObjectId(f.category)) query.category = f.category;
+    if (f.status === 'active') query.status = true;
+    if (f.status === 'inactive') query.status = false;
+    if (f.stock === 'out') query.stock = { $lte: 0 };
+    if (f.stock === 'low') query.stock = { $gt: 0, $lte: 10 };
+    if (f.stock === 'in') query.stock = { $gt: 0 };
+    if (f.discount === 'yes') query.discountPrice = { $gt: 0 };
+    if (f.discount === 'no') query.$and = [{ $or: [{ discountPrice: { $lte: 0 } }, { discountPrice: null }] }];
+    if (f.type === 'customize') query.isCustomize = true;
+    if (f.type === 'variant') query.isVarientStatus = true;
+    if (f.type === 'simple') { query.isCustomize = { $ne: true }; query.isVarientStatus = { $ne: true }; }
+    if (f.minPrice != null || f.maxPrice != null) {
+      query.price = {};
+      if (f.minPrice != null) query.price.$gte = f.minPrice;
+      if (f.maxPrice != null) query.price.$lte = f.maxPrice;
+    }
+    const sortMap: Record<string, any> = {
+      newest: { createdAt: -1 }, oldest: { createdAt: 1 }, price_asc: { price: 1 },
+      price_desc: { price: -1 }, stock_asc: { stock: 1 }, title: { title: 1 },
+    };
     const skip = (page - 1) * limit;
     const [products, total] = await Promise.all([
       Product.find(query)
         .populate({ path: 'category', model: Category })
         .populate({ path: 'subcategory', model: SubCategory })
-        .sort({ createdAt: -1 })
+        .sort(sortMap[f.sort] || sortMap.newest)
         .skip(skip)
         .limit(limit),
       Product.countDocuments(query),
@@ -108,41 +166,31 @@ export const productRepo = {
   findByCategorySlug: async (
     categorySlug: string,
     page: number,
-    limit: number
+    limit: number,
+    seed?: number
   ): Promise<{ category: unknown; products: unknown[]; total: number } | null> => {
     const category = await Category.findOne({ slug: categorySlug })
       .select('_id')
       .lean<{ _id: unknown } | null>();
     if (!category) return null;
 
-    const [products, total] = await Promise.all([
-      Product.find({ category: category._id, status: true })
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean(),
-      Product.countDocuments({ category: category._id, status: true }),
-    ]);
+    const { products, total } = await pageBySeed({ category: category._id, status: true }, page, limit, seed);
     return { category, products, total };
   },
 
   findBySubCategorySlug: async (
     subCategorySlug: string,
     page: number,
-    limit: number
+    limit: number,
+    seed?: number
   ): Promise<{ products: unknown[]; total: number, categories: unknown[] } | null> => {
     const sub = await SubCategory.findOne({ slug: subCategorySlug }).lean<{
       _id: unknown;
       parentCategory: unknown;
     } | null>();
     if (!sub) return null;
-    const [products, total, categories] = await Promise.all([
-      Product.find({ subcategory: sub._id, status: true })
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean(),
-      Product.countDocuments({ subcategory: sub._id, status: true }),
+    const [{ products, total }, categories] = await Promise.all([
+      pageBySeed({ subcategory: sub._id, status: true }, page, limit, seed),
       SubCategory.find({ status: true, parentCategory: sub.parentCategory }).lean(),
     ]);
     return { products, total, categories };

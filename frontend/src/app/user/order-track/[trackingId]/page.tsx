@@ -10,7 +10,7 @@ import {
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function OrderTrack() {
-  const { trackingId } = useParams();
+  const { trackingId } = useParams<{ trackingId: string }>()!;
   const [summary, setSummary] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

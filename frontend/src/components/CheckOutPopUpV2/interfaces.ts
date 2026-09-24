@@ -27,7 +27,7 @@ export interface TotalPrice {
     totalPrice: number;
     discountPrice: number;
     shippingTotal: number;
-    coupon_discount?: string | number;
+    coupon_discount?: number;
 }
 
 export interface PhoneVerificationProps {

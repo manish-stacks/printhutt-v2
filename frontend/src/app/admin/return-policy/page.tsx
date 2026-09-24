@@ -1,4 +1,4 @@
-import ReturnPolicyPage from "@/pages/admin/ReturnPolicyPage";
+import ReturnPolicyPage from "@/views/admin/ReturnPolicyPage";
 import { Suspense } from "react";
 
 const Page = () => {

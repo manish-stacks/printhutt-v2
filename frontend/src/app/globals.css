@@ -85,3 +85,173 @@
 
 @font-face { font-display: swap; }
 
+
+/* ── Touch devices / FB-IG in-app browser: hover nahi hota ──
+   Pehle card ke action buttons opacity:0 rehte the → mobile pe invisible par tappable
+   (galat tap pe cart me add) ya dikhte hi nahi the. Ab touch pe hamesha visible. */
+@media (hover: none), (pointer: coarse) {
+  .bb-pro-box .bb-pro-img .bb-pro-actions { opacity: 1 !important; bottom: 8px !important; }
+  .bb-pro-box .bb-pro-img .inner-img img.hover-img { display: none !important; }
+  .ph-touch-show { opacity: 1 !important; transform: none !important; }
+}
+/* in-app browsers me 100vh address bar ke niche chala jaata hai */
+.ph-safe-bottom { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+button, a, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+/* ───────── Customize pages — PrintHutt theme (#241B4F + amber), scoped ───────── */
+/* Stock photo background → brand gradient (neon pages ka <section> preview-bg untouched) */
+.ph-cz-body > div[style*="background-image"] {
+  background-image:
+    radial-gradient(900px 420px at 85% -10%, rgba(251,191,36,.14), transparent 60%),
+    radial-gradient(700px 380px at -10% 30%, rgba(236,0,140,.10), transparent 60%),
+    linear-gradient(180deg, #1c1640 0%, #15112e 100%) !important;
+  min-height: auto;
+}
+.ph-cz-body > div[style*="background-image"] > .min-h-screen { min-height: auto; }
+.ph-cz-body .bg-black\/40.backdrop-blur-sm { background: transparent !important; backdrop-filter: none !important; }
+.ph-customize h1.text-white {
+  font-family: inherit; font-weight: 800; letter-spacing: -.02em; line-height: 1.1;
+  background: linear-gradient(90deg, #fff 0%, #fde68a 60%, #fbbf24 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent !important; text-shadow: none;
+}
+/* Preview panel */
+.ph-customize #preview-section {
+  background: rgba(10, 8, 26, .75) !important; border: 1px solid rgba(251,191,36,.18) !important;
+  border-radius: 22px; box-shadow: 0 30px 70px -20px rgba(0,0,0,.7);
+}
+@media (min-width: 768px) { .ph-customize #preview-section.md\:sticky { top: 160px; } }
+/* Options panel */
+.ph-customize .bg-white\/95 {
+  background: #fff !important; color: #1f1640; border-radius: 22px !important;
+  border-top: 4px solid #fbbf24; box-shadow: 0 30px 70px -25px rgba(0,0,0,.6) !important;
+}
+.ph-customize .bg-white\/95 h2, .ph-customize .bg-white\/95 h3 { color: #241B4F !important; font-weight: 700; }
+.ph-customize .bg-white\/95 .text-amber-500 { color: #b45309 !important; }
+/* Inputs */
+.ph-customize input[type="text"], .ph-customize input[type="number"], .ph-customize input[type="email"],
+.ph-customize textarea, .ph-customize select {
+  border-radius: 12px; border: 1.5px solid #e5e7eb; transition: border-color .2s, box-shadow .2s;
+  font-size: 16px; /* iOS zoom rokta hai */ color: #1f1640; max-width: 100%;
+}
+.ph-customize input[type="text"]:focus, .ph-customize input[type="number"]:focus,
+.ph-customize textarea:focus, .ph-customize select:focus {
+  outline: none; border-color: #241B4F; box-shadow: 0 0 0 4px rgba(36,27,79,.12);
+}
+.ph-customize input[type="range"] { accent-color: #f59e0b; height: 6px; }
+.ph-customize input[type="radio"], .ph-customize input[type="checkbox"] { accent-color: #241B4F; }
+.ph-customize button { transition: transform .15s ease, box-shadow .2s ease, background-color .2s ease, filter .2s; }
+.ph-customize button:not(:disabled):active { transform: scale(.97); }
+.ph-customize button:disabled { opacity: .55; cursor: not-allowed; }
+.ph-customize .rounded-lg { border-radius: 14px; }
+.ph-customize .rounded-md { border-radius: 12px; }
+/* Upload / secondary amber buttons → brand */
+.ph-customize .from-amber-500.to-amber-600 { background-image: linear-gradient(135deg, #241B4F, #3b2a7a) !important; color: #fff !important; }
+/* Primary CTA (Add to cart) */
+.ph-customize .bg-yellow-400 {
+  background-image: linear-gradient(135deg, #fcd34d, #f59e0b); color: #1f1640 !important;
+  box-shadow: 0 12px 28px -10px rgba(245,158,11,.7); font-weight: 700; min-height: 50px;
+}
+.ph-customize .bg-yellow-400:hover { filter: brightness(1.05); }
+.ph-customize img { image-rendering: auto; max-width: 100%; }
+/* Mobile: primary CTA thumb-reach me (sticky bottom) */
+@media (max-width: 767px) {
+  .ph-customize .grid.md\:grid-cols-2 { gap: 16px; }
+  .ph-customize #preview-section { border-radius: 18px; }
+  .ph-customize .space-y-2:has(> .flex > .bg-yellow-400),
+  .ph-customize .ph-sticky-cta {
+    position: sticky; bottom: 0; z-index: 20; margin-left: -1.25rem; margin-right: -1.25rem;
+    padding: 12px 1.25rem max(12px, env(safe-area-inset-bottom));
+    background: rgba(255,255,255,.97); backdrop-filter: blur(8px);
+    border-top: 1px solid #f1f1f1; border-radius: 0 0 20px 20px;
+  }
+}
+
+/* ───────── Global responsive safety ───────── */
+html, body { overflow-x: clip; } /* clip → sticky header nahi tootta (hidden todta hai) */
+img, video, iframe { max-width: 100%; }
+table { max-width: 100%; }
+.ph-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px; } /* iOS auto-zoom band */
+  .container { padding-left: 12px; padding-right: 12px; }
+}
+
+/* ───────── Admin theme — readable, consistent (sab admin pages) ───────── */
+.ph-admin { --ph-bd: #e8eaf0; --ph-muted: #6b7280; --ph-ink: #111827; --ph-pri: #4f46e5; --ph-pri-d: #4338ca;
+  font-size: 14px; line-height: 1.55; font-feature-settings: "tnum"; -webkit-font-smoothing: antialiased; }
+.ph-admin-body { color: #374151; }
+
+/* Page scaffolding (legacy pages ke wrappers) */
+.ph-admin .ph-page { width: 100%; }
+.ph-admin .ph-card { background: #fff; border: 1px solid var(--ph-bd); border-radius: 16px; padding: 16px; }
+@media (min-width: 640px) { .ph-admin .ph-card { padding: 20px; } }
+.ph-admin .ph-page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.ph-admin .ph-head-card { background: transparent; padding: 0; }
+.ph-admin .ph-page-head h2, .ph-admin .ph-page-head h3 { font-size: 24px !important; font-weight: 700; letter-spacing: -.02em; color: var(--ph-ink); line-height: 1.2; }
+.ph-admin .ph-page-head p { color: var(--ph-muted); font-size: 14px; margin-top: 2px; }
+.ph-admin .ph-section { background: #fff; border: 1px solid var(--ph-bd); border-radius: 16px; padding: 20px; color: #374151; }
+.ph-admin .ph-section-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.ph-admin .ph-section-row > * { margin-left: 0 !important; }
+.ph-admin .ph-section > h2, .ph-admin .ph-section > h3, .ph-admin .ph-section > div > h2 {
+  font-size: 15px; font-weight: 700; color: var(--ph-ink); padding-bottom: 12px; border-bottom: 1px solid #f0f1f5; margin-bottom: 4px; }
+.ph-admin .ph-form { margin-top: 0; }
+
+/* Buttons */
+.ph-admin .ph-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 16px;
+  border-radius: 12px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.ph-admin .ph-btn-primary { background: var(--ph-pri); color: #fff !important; box-shadow: 0 1px 2px rgba(79,70,229,.25); }
+.ph-admin .ph-btn-primary:hover { background: var(--ph-pri-d); }
+.ph-admin .ph-btn-ghost { background: #fff; color: #374151 !important; border: 1px solid #e2e5ec; }
+.ph-admin .ph-btn-ghost:hover { background: #f9fafb; }
+.ph-admin .bg-blue-600, .ph-admin .bg-blue-500 { background-color: var(--ph-pri) !important; }
+.ph-admin .hover\:bg-blue-700:hover, .ph-admin .hover\:bg-blue-600:hover { background-color: var(--ph-pri-d) !important; }
+.ph-admin .text-blue-500, .ph-admin .text-blue-600 { color: var(--ph-pri) !important; }
+.ph-admin button { transition: background-color .15s, box-shadow .15s, transform .1s, color .15s; }
+.ph-admin button:not(:disabled):active { transform: scale(.98); }
+.ph-admin button:disabled { opacity: .55; cursor: not-allowed; }
+
+/* Typography normalisation (chhote/grey text readable) */
+.ph-admin-body .text-xs { font-size: 12.5px; }
+.ph-admin-body .text-gray-400 { color: #8a93a3; }
+.ph-admin-body .text-gray-600 { color: #4b5563; }
+.ph-admin-body label { font-size: 13.5px; font-weight: 600; color: #374151; }
+.ph-admin-body .shadow-md, .ph-admin-body .shadow-lg { box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.05) !important; }
+.ph-admin-body .rounded-lg { border-radius: 14px; }
+.ph-admin-body .rounded-md { border-radius: 10px; }
+
+/* Tables — har page pe same */
+.ph-admin table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 14px; color: #374151; }
+.ph-admin table thead th {
+  background: #f7f8fb !important; color: #6b7280; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em;
+  font-weight: 700; padding: 12px 16px; border-bottom: 1px solid #eceef3; white-space: nowrap; text-align: left; }
+.ph-admin table thead tr { background: #f7f8fb !important; border: 0 !important; }
+.ph-admin table tbody td { padding: 12px 16px; border-bottom: 1px solid #f1f2f6; vertical-align: middle; }
+.ph-admin table tbody tr { border: 0 !important; }
+.ph-admin table tbody tr:hover td { background: #fafaff; }
+.ph-admin table tbody tr:last-child td { border-bottom: 0; }
+.ph-admin table img { border-radius: 10px; }
+.ph-admin .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+.ph-admin-body .overflow-x-auto:not(.max-h-\[70vh\]):has(> table) { border: 1px solid var(--ph-bd); border-radius: 14px; background: #fff; box-shadow: none !important; }
+
+/* Inputs */
+.ph-admin input[type="text"], .ph-admin input[type="search"], .ph-admin input[type="number"], .ph-admin input[type="email"],
+.ph-admin input[type="date"], .ph-admin input[type="url"], .ph-admin input[type="password"], .ph-admin input[type="tel"],
+.ph-admin select, .ph-admin textarea {
+  border-radius: 10px; border: 1px solid #dfe2e9; background-color: #fff; color: #111827; font-size: 14px;
+  min-height: 40px; transition: border-color .15s, box-shadow .15s; }
+.ph-admin textarea { min-height: 90px; }
+.ph-admin input::placeholder, .ph-admin textarea::placeholder { color: #9ca3af; }
+.ph-admin input:focus, .ph-admin select:focus, .ph-admin textarea:focus {
+  outline: none !important; border-color: #818cf8 !important; box-shadow: 0 0 0 4px rgba(99,102,241,.12) !important; }
+.ph-admin input[type="checkbox"], .ph-admin input[type="radio"] { accent-color: var(--ph-pri); width: 16px; height: 16px; }
+
+/* Modals readable */
+.ph-admin .fixed.inset-0.bg-black, .ph-admin .fixed.inset-0.bg-gray-600 { backdrop-filter: blur(2px); }
+
+@media (max-width: 640px) {
+  .ph-admin .ph-page-head h2, .ph-admin .ph-page-head h3 { font-size: 20px !important; }
+  .ph-admin .ph-section { padding: 16px; }
+  .ph-admin input, .ph-admin select, .ph-admin textarea { font-size: 16px; } /* iOS zoom */
+  .ph-admin table thead th, .ph-admin table tbody td { padding: 10px 12px; }
+}
+

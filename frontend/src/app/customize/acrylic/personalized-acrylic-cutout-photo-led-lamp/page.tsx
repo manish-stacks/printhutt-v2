@@ -1,4 +1,5 @@
 "use client"
+import { readCompressed } from '@/utils/read-image';
 import React, { useState, useRef, useEffect } from 'react';
 import { BiDownload, BiRefresh, BiUpload } from 'react-icons/bi';
 import { BsUpload } from 'react-icons/bs';
@@ -73,7 +74,7 @@ export default function App() {
       reader.onloadend = () => {
         setPreviewImage(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      readCompressed(reader, file);
     }
   };
   const handleCanvasAction = async () => {
@@ -151,13 +152,14 @@ export default function App() {
 
   const onchangeVarient = (id: string) => {
     setActiveVarient(id)
-    const varient = product?.varient.find(item => item._id === id);
-    product.price = varient?.price || 0
+    const varient = product?.varient?.find(item => item._id === id);
+    if (product) setProduct({ ...product, price: varient?.price || 0 });
     setVarientSize(varient?.size || 'default')
   }
 
 
   const handleAddToCart = async () => {
+    if (!product) { toast.error('Product is still loading, please try again in a moment.'); return; }
 
     if (!previewImage) {
       toast.error('Please upload a preview image.');
@@ -328,7 +330,7 @@ export default function App() {
                         {product?.varient.map((v, index) => (
                           <li
                             key={index}
-                            onClick={() => onchangeVarient(v?._id)}
+                            onClick={() => onchangeVarient(v?._id ?? '')}
                             className={`min-w-[50px] text-center py-1 px-4 border rounded-lg cursor-pointer transition-all duration-300 
                             ${activeVarient === v?._id
                                 ? 'bg-blue-600 text-white border-blue-600 shadow-md'

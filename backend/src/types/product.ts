@@ -84,6 +84,7 @@ export interface IProduct extends Document {
   shippingFee?: number;
   isCustomize: boolean;
   demoVideo?: string;
+  videoAsThumbnail?: boolean;
   imgAlt?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -128,6 +129,7 @@ export interface ProductFormData {
   shippingInformation: string;
   returnPolicy: string;
   demoVideo: string;
+  videoAsThumbnail?: boolean;
   imgAlt: string;
   status: boolean;
   ishome: boolean;
@@ -176,6 +178,7 @@ export interface PageProductFormData {
   shippingInformation: string;
   returnPolicy: string;
   demoVideo: string;
+  videoAsThumbnail?: boolean;
   imgAlt: string;
   status: boolean;
   ishome: boolean;
@@ -215,6 +218,7 @@ export interface ProductUpdateData {
   shippingInformation?: string;
   returnPolicy?: string;
   demoVideo?: string;
+  videoAsThumbnail?: boolean;
   imgAlt?: string;
   status?: boolean;
   ishome?: boolean;

@@ -13,6 +13,8 @@
  * notifications on delivered / refunded transitions.
  */
 import axios from 'axios';
+import ProductModel from '@/db/models/productModel';
+import SiteSetting from '@/db/models/siteSettingModel';
 import mongoose, { FilterQuery } from 'mongoose';
 import {
   fshipToken,
@@ -356,6 +358,18 @@ export async function createOrder(
   //    - mrpTotal        → product ki original price * qty (Subtotal / MRP row ke liye)
   //    - discountedTotal → product-level discount lagne ke baad (coupon lagne se PEHLE)
   //    Coupon discount aur payAmt isी discountedTotal par calculate hota hai.
+  /* ─── 🔐 PRICE VERIFY: client ka price DB se match karo (devtools se ₹1 order block) ───
+   * - Normal item: DB base/variant price se match hona chahiye, warna DB price lagta hai.
+   * - Custom item (neon/size add-ons): client unit >= DB ka sabse sasta unit ho, warna DB.
+   * - Free gift: sirf tab ₹0 jab baaki cart >= FREE_GIFT_THRESHOLD.  */
+  await verifyItemPrices(itemData as any[]);
+  if (body.paymentMethod === 'offline') {
+    const cod = await SiteSetting.findOne({ key: 'codEnabled' }).lean<any>();
+    if (cod && (cod.value === false || cod.value === 'false')) {
+      throw new BadRequestError('Cash on Delivery abhi available nahi hai. Please online pay karein.');
+    }
+  }
+
   let mrpTotal = 0;
   let discountedTotal = 0;
   for (const it of itemData as Array<{
@@ -642,4 +656,84 @@ export async function bulkDeletePendingOrders(
     assetsCleared: publicIds.length,
     message: `${result.deletedCount} pending order(s) deleted successfully`,
   };
+}
+
+/* ───────────── price verification helpers ───────────── */
+/* Free gift config admin Settings → "Free Gift" tab se (giftEnabled/giftProductId/giftThreshold) */
+async function giftConfig(): Promise<{ enabled: boolean; id: string; threshold: number }> {
+  const rows = await SiteSetting.find({ key: { $in: ['giftEnabled', 'giftProductId', 'giftThreshold'] } }).lean<any[]>();
+  const m = new Map(rows.map((r) => [r.key, r.value]));
+  const enabled = m.has('giftEnabled') ? m.get('giftEnabled') === true || m.get('giftEnabled') === 'true' : true;
+  return {
+    enabled,
+    id: String(m.get('giftProductId') || process.env.FREE_GIFT_ID || '67b4756b5e05b7be01d85ea2'),
+    threshold: Number(m.get('giftThreshold') ?? process.env.FREE_GIFT_THRESHOLD ?? 1000),
+  };
+}
+
+type PriceRow = { price: number; discountType?: string; discountPrice?: number; size?: string };
+const unitOf = (r: PriceRow): number => {
+  const price = Number(r.price ?? 0);
+  const d = Number(r.discountPrice ?? 0);
+  if (r.discountType === 'percentage' && d > 0) return Math.max(0, price - (price * d) / 100);
+  if (r.discountType === 'fixed' && d > 0) return Math.max(0, price - d);
+  return Math.max(0, price);
+};
+const isRealCustom = (cd: unknown): boolean =>
+  !!cd && typeof cd === 'object' &&
+  Object.keys(cd as object).some((k) => !['variant', '_customId', '_editPath', '_thumb'].includes(k));
+
+async function verifyItemPrices(items: Array<Record<string, any>>): Promise<void> {
+  const ids = [...new Set(items.map((i) => String(i.productId)).filter((id) => mongoose.isValidObjectId(id)))];
+  const products = await ProductModel.find({ _id: { $in: ids } })
+    .select('price discountType discountPrice varient')
+    .lean<any[]>();
+  const byId = new Map(products.map((p) => [String(p._id), p]));
+
+  const gift = await giftConfig();
+  const giftIdx: number[] = [];
+  items.forEach((it, idx) => {
+    const p = byId.get(String(it.productId));
+    if (!p) return; // unknown product — as-is (legacy/custom)
+    if (String(it.productId) === gift.id && Number(it.price) === 0) { giftIdx.push(idx); return; }
+
+    const rows: PriceRow[] = [
+      { price: p.price, discountType: p.discountType, discountPrice: p.discountPrice },
+      ...((p.varient || []) as any[]).map((v) => {
+        // variant ka apna discount; sirf legacy (field missing) → product discount
+        const own = v.discountType !== undefined && v.discountType !== null;
+        return {
+          price: v.price,
+          discountType: own ? v.discountType : p.discountType,
+          discountPrice: own ? (v.discountPrice ?? 0) : p.discountPrice,
+          size: v.size,
+        };
+      }),
+    ].filter((r) => Number.isFinite(Number(r.price)));
+
+    const clientUnit = unitOf(it as PriceRow);
+    const exact = rows.some((r) => Math.abs(unitOf(r) - clientUnit) < 0.5);
+    if (exact) return;
+
+    if (isRealCustom(it.custom_data)) {
+      const minUnit = Math.min(...rows.map(unitOf));
+      if (clientUnit + 0.5 >= minUnit) return; // add-on pricing allowed, par sasta nahi
+    }
+    const size = (it.custom_data as any)?.variant;
+    const pick = rows.find((r) => size && r.size === size) || rows[0];
+    it.price = Number(pick.price);
+    it.discountType = pick.discountType;
+    it.discountPrice = Number(pick.discountPrice ?? 0);
+  });
+
+  if (giftIdx.length) {
+    const others = items.reduce((t, it, i) => (giftIdx.includes(i) ? t : t + unitOf(it as PriceRow) * Math.max(1, Number(it.quantity ?? 1))), 0);
+    for (const i of giftIdx) {
+      if (gift.enabled && others >= gift.threshold) { items[i].quantity = 1; continue; }
+      const p = byId.get(String(items[i].productId));
+      items[i].price = Number(p?.price ?? 0);
+      items[i].discountType = p?.discountType;
+      items[i].discountPrice = Number(p?.discountPrice ?? 0);
+    }
+  }
 }

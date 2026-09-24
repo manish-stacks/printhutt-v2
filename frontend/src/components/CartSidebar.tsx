@@ -5,7 +5,7 @@ import { useCartStore } from "@/store/useCartStore";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   RiArrowRightSLine,
   RiCloseLine,
@@ -19,31 +19,32 @@ import {
 import { toast } from "react-toastify";
 import CheckOutPopUpV2 from "./CheckOutPopUpV2";
 import GiftCustomizeModal from "./GiftCustomizeModal";
-import { FREE_THRESHOLD } from "@/lib/constants/gift";
+import { useStoreSettings } from "@/store/useSettingsStore";
+import { unitPrice } from "@/lib/pricing";
 
 
 
 const CartSidebar = ({ onClose }: { onClose: () => void }) => {
   const popupRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
-  const [totalPrice, setTotalPrice] = useState({
-    totalPrice: 0,
-    discountPrice: 0,
-    shippingTotal: 0,
-  });
-  const { items, updateQuantity, removeFromCart, getTotalPrice } = useCartStore();
+  const items = useCartStore((s) => s.items);
+  const updateQuantity = useCartStore((s) => s.updateQuantity);
+  const removeFromCart = useCartStore((s) => s.removeFromCart);
+  const getTotalPrice = useCartStore((s) => s.getTotalPrice);
   const [showMailModal, setShowMailModal] = useState(false);
   const [showGiftModal, setShowGiftModal] = useState(false);
+  const closeCheckout = useCallback(() => setShowMailModal(false), []);
+  const cfg = useStoreSettings();
+  const FREE_THRESHOLD = cfg.giftThreshold || 1;
 
-  /* ── Update totals when items change ── */
-  useEffect(() => {
-    setTotalPrice(getTotalPrice());
-  }, [items]);
+  /* ✅ Totals derive — same render me update (pehle effect se 1 render late) */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const totalPrice = useMemo(() => getTotalPrice(), [items]);
 
   /* ── ESC + scroll lock ── */
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !document.querySelector('[data-checkout-modal]')) onClose();
     };
     document.addEventListener("keydown", onEsc);
     document.body.style.overflow = "hidden";
@@ -72,12 +73,8 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
   };
 
   /* ── Item-level discounted price ── */
-  const itemFinalPrice = (item: any) => {
-    if (!item?.price || !item?.discountType || !item?.discountPrice) return item.price;
-    return item.discountType === "percentage"
-      ? item.price - (item.price * item.discountPrice) / 100
-      : item.price - item.discountPrice;
-  };
+  const itemFinalPrice = (item: any) => unitPrice(item?.price, item?.discountType, item?.discountPrice);
+
 
   /* ── Free gift progress ── */
   const progressPercent = Math.min(
@@ -125,7 +122,7 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
         </div>
 
         {/* ─── FREE GIFT PROGRESS ─── */}
-        {items.length > 0 && (
+        {items.length > 0 && cfg.giftEnabled && (
           <div className="px-5 py-3 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100 flex-shrink-0">
             <div className="flex items-center gap-2 mb-1.5">
               <RiGift2Line className="w-4 h-4 text-[#241B4F]" />
@@ -374,11 +371,11 @@ const CartSidebar = ({ onClose }: { onClose: () => void }) => {
 
       {/* Modals */}
       {showMailModal && (
-        <CheckOutPopUpV2 isOpen={showMailModal} onClose={() => setShowMailModal(false)} />
+        <CheckOutPopUpV2 isOpen={showMailModal} onClose={closeCheckout} />
       )}
       {showGiftModal && <GiftCustomizeModal onClose={() => setShowGiftModal(false)} />}
     </>
   );
 };
 
-export default CartSidebar;
+export default React.memo(CartSidebar);

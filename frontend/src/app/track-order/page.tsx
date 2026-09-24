@@ -1,5 +1,5 @@
 
-import TrackOrder from '@/pages/TrackOrder'
+import TrackOrder from '@/views/TrackOrder'
 
 
 // export const metadata = {

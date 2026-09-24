@@ -1,4 +1,5 @@
 'use client'
+import { readCompressed } from '@/utils/read-image';
 import { get_product_by_id } from '@/_services/admin/product';
 import { Product } from '@/lib/types/product';
 import React, { useState, useRef, useEffect } from 'react';
@@ -69,7 +70,7 @@ export default function Page() {
       reader.onloadend = () => {
         setPreviewImage(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      readCompressed(reader, file);
     }
   };
   const handleCanvasAction = async () => {
@@ -131,6 +132,7 @@ export default function Page() {
 
   };
   const handleAddToCart = async () => {
+    if (!product) { toast.error('Product is still loading, please try again in a moment.'); return; }
     if (names.name1 === '' || previewImage === '') {
       toast.error('Please enter the name.');
       return;

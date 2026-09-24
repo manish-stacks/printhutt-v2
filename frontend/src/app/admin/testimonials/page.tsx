@@ -1,4 +1,4 @@
-import Testimonials from "@/pages/admin/Testimonials";
+import Testimonials from "@/views/admin/Testimonials";
 import { Suspense } from "react";
 
 const Page = () => {

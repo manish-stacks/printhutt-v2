@@ -1,7 +1,7 @@
-import mongoose, { Document } from 'mongoose';
+import type { Document, ObjectId } from './_base';
 
 export interface IAddress extends Document {
-  userId: mongoose.Types.ObjectId;
+  userId: ObjectId;
   fullName: string;
   mobileNumber: string;
   email?: string;
@@ -33,4 +33,4 @@ export const addressSchema = z.object({
   // newAddress?: boolean
 });
 
-export type AddressFormData = z.infer<typeof addressSchema>;
+export type AddressFormData = z.infer<typeof addressSchema> & { _id?: string; isDefault?: boolean; email?: string };

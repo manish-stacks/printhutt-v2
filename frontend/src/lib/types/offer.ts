@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import type { Document, ObjectId } from './_base';
 
 export interface IOffer extends Document {
   offerTitle: string;

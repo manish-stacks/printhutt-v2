@@ -28,15 +28,15 @@ const API_URL =
 // to T (the body) instead of `AxiosResponse<T>`. We re-declare the verb
 // signatures so consumers get the right inferred type.
 interface UnwrappedAxios extends Omit<AxiosInstance, 'get' | 'post' | 'put' | 'patch' | 'delete' | 'head' | 'options'> {
-  <T = unknown>(config: AxiosRequestConfig): Promise<T>;
-  <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T>;
-  get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T>;
-  post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
-  put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
-  patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
-  delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T>;
-  head<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T>;
-  options<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T>;
+  <T = any>(config: AxiosRequestConfig): Promise<T>;
+  <T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+  post<T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
+  put<T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
+  patch<T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
+  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+  head<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+  options<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
 }
 
 const _axios = axios.create({
@@ -66,6 +66,19 @@ interface PendingItem {
   reject: (err: unknown) => void;
 }
 let isRefreshing = false;
+
+/* Guest (kabhi login nahi) pe /auth/refresh call hi mat karo → console 401 spam band.
+   Session hint zustand persist (user-store) se aata hai; mount pe /auth/session server-side
+   refresh kar ke isse sync rakhta hai. */
+const hasSessionHint = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const raw = localStorage.getItem('user-store');
+    return !!(raw && JSON.parse(raw)?.state?.isLoggedIn);
+  } catch {
+    return false;
+  }
+};
 let pending: PendingItem[] = [];
 
 const drainQueue = (err: unknown, token: string | null): void => {
@@ -94,9 +107,16 @@ _axios.interceptors.response.use(
       url.includes('/auth/admin-login') ||
       url.includes('/auth/verify-otp') ||
       url.includes('/auth/refresh') ||
+      url.includes('/auth/session') ||
+      url.includes('/auth/logout') ||
       url.includes('/auth/signup');
 
     if (error.response?.status !== 401 || !original || original._retry || isAuthEndpoint) {
+      return Promise.reject(error);
+    }
+
+    // Guest → refresh try karne ka matlab nahi (refresh cookie hai hi nahi)
+    if (!hasSessionHint()) {
       return Promise.reject(error);
     }
 

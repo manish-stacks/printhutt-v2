@@ -163,10 +163,10 @@ const CategoriesAdd = () => {
   return (
     <>
       <form onSubmit={handleSubmit} encType={'multipart/form-data'}>
-        <div className="flex flex-wrap mt-20 mb-52">
+        <div className="ph-form flex flex-wrap -mx-3 mb-10">
 
-          <div className="w-full md:w-12/12 lg:w-12/12 px-4 mb-5">
-            <div className=" bg-white text-black flex justify-between align-middle p-6 rounded-lg shadow-md shadow-black-300">
+          <div className="w-full px-3 mb-5">
+            <div className="ph-page-head ph-head-card">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">Add New Category</h2>
                 <p className="text-gray-600">
@@ -174,14 +174,14 @@ const CategoriesAdd = () => {
                 </p>
               </div>
               <div>
-                <button onClick={router.back} className="bg-blue-500 text-white py-1 px-6 rounded">Back</button>
+                <button type="button" onClick={() => router.back()} className="ph-btn ph-btn-ghost">Back</button>
               </div>
             </div>
           </div>
           {/* left side */}
 
-          <div className="w-full md:w-8/12 lg:w-8/12 px-4 space-y-6">
-            <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+          <div className="w-full lg:w-8/12 px-3 space-y-6">
+            <div className="ph-section space-y-5">
               <div>
                 <label
                   htmlFor="name"
@@ -193,7 +193,7 @@ const CategoriesAdd = () => {
                   className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
                   id="parentCategory"
                   name="parentCategory"
-                  value={formData.parentCategory}
+                  value={formData.parentCategory ?? ''}
                   onChange={handleChange}
                 >
                   <option value="">Select Category</option>
@@ -245,7 +245,7 @@ const CategoriesAdd = () => {
               </div>
             </div>
 
-            <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+            <div className="ph-section space-y-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category Image
@@ -282,7 +282,7 @@ const CategoriesAdd = () => {
               </div>
             </div>
 
-            <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+            <div className="ph-section space-y-5">
               <div>
                 <label
                   htmlFor="description"
@@ -304,8 +304,8 @@ const CategoriesAdd = () => {
           </div>
 
           {/* right side */}
-          <div className="w-full md:w-4/12 lg:w-4/12 px-4 space-y-6">
-            <div className="bg-white text-black p-6 rounded-lg space-x-3 shadow-md shadow-black-300">
+          <div className="w-full lg:w-4/12 px-3 mt-6 lg:mt-0 space-y-6">
+            <div className="ph-section ph-section-row">
               <button
                 type="submit"
                 disabled={isSubmitting || isUploading}
@@ -316,7 +316,7 @@ const CategoriesAdd = () => {
                 )}
                 {isSubmitting ? 'Creating...' : 'Save'}
               </button>
-              <button type="submit" className="bg-blue-500 text-white py-2 px-7 rounded gap-1">
+              <button type="submit" className="ph-btn ph-btn-primary">
 
                 {(isSubmitting || isUploading) && (
                   <RiLoader2Line className="mr-2 h-4 w-4 animate-spin" />
@@ -324,7 +324,7 @@ const CategoriesAdd = () => {
                 {isSubmitting ? 'Creating...' : 'Save & Edit'}
               </button>
             </div>
-            <div className="bg-white text-black p-6 rounded-lg space-x-3 shadow-md shadow-black-300">
+            <div className="ph-section ph-section-row">
               <label className="flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -341,7 +341,7 @@ const CategoriesAdd = () => {
 
 
 
-            <div className="bg-white text-black p-6 rounded-lg space-x-3 shadow-md shadow-black-300">
+            <div className="ph-section ph-section-row">
               <div>
                 <label
                   htmlFor="name"
@@ -361,7 +361,7 @@ const CategoriesAdd = () => {
               </div>
             </div>
 
-            <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+            <div className="ph-section space-y-5">
               <div>
                 <label
                   htmlFor="name"

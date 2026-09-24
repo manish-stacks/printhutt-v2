@@ -1,6 +1,8 @@
 import { multiColors } from '@/app/product/flow-mo-neon-sign/_data/colors';
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
-import Draggable from "react-draggable";
+import DraggableBase from "react-draggable";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Draggable = DraggableBase as any;
 
 
 interface NeonTextProps {
@@ -74,12 +76,12 @@ export const NeonText: React.FC<NeonTextProps> = ({
     `,
   }), [responsiveFontSize, font]);
 
-  const baseStyle: React.CSSProperties = useMemo(() => ({
+  const baseStyle = useMemo<React.CSSProperties>(() => ({
     fontSize: `${responsiveFontSize}px`,
     fontFamily: font,
     fontWeight: 'bold',
     whiteSpace: 'pre-wrap' as const,
-    textAlign: textAlignment as string,
+    textAlign: textAlignment as string as React.CSSProperties["textAlign"],
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',

@@ -1,5 +1,5 @@
 
-import HomeComponent from "@/pages/Home";
+import HomeComponent from "@/views/Home";
 export default function Home() {
 
   return (

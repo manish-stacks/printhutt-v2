@@ -1,5 +1,6 @@
 import React from 'react'
 import Select, { StylesConfig } from 'react-select'
+import type { FilterState } from '@/lib/types'
 
 interface ProductHeaderProps {
     viewMode: "grid" | "list"

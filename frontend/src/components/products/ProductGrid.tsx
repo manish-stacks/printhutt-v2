@@ -21,10 +21,10 @@ export function ProductGrid({ products, viewMode }: ProductGridProps) {
 
     return (
         <>
-            {products.map((product, index) => (
+            {products.map((product) => (
                 <div
-                    key={index}
-                    className={`min-[768px]:w-[33.33%] w-[50%] max-[480px]:w-[50%] px-[12px] mb-[24px] pro-bb-content ${viewMode === 'list' ? 'width-100' : ''}`}
+                    key={product._id}
+                    className={`min-[768px]:w-[33.33%] w-[50%] px-[12px] max-[480px]:px-[6px] mb-[24px] max-[480px]:mb-[12px] pro-bb-content ${viewMode === 'list' ? 'width-100' : ''}`}
                     data-aos="fade-up"
                     data-aos-duration={1000}
                     data-aos-delay={200}

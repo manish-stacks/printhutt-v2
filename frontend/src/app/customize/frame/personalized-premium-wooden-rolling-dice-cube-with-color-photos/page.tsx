@@ -1,4 +1,6 @@
 "use client"
+import { readCompressed } from '@/utils/read-image';
+import { toast } from 'react-toastify';
 import { get_product_by_id } from '@/_services/admin/product';
 import { formatCurrency } from '@/helpers/helpers';
 import { Product } from '@/lib/types/product';
@@ -45,7 +47,7 @@ export default function App() {
                     url: e.target?.result as string
                 }]);
             };
-            reader.readAsDataURL(file);
+            readCompressed(reader, file);
         });
 
         if (fileInputRef.current) {
@@ -54,17 +56,16 @@ export default function App() {
     };
 
     const generateUUID = () => {
-        return (crypto?.randomUUID?.() || ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
-            (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-        ));
+        return crypto?.randomUUID?.() || `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`;
     };
     const removeImage = (id: string) => {
         setPreviews(prev => prev.filter(preview => preview.id !== id));
     };
 
     const handleAddToCart = async () => {
+    if (!product) { toast.error('Product is still loading, please try again in a moment.'); return; }
         if (previews.length < 4) {
-            alert('Please upload at least 4 images before proceeding.');
+            toast.error('Please upload at least 4 images before proceeding.');
             return;
         }
 
@@ -92,7 +93,7 @@ export default function App() {
                 return;
             }
 
-            alert('Images have been added to your cart.');
+            toast.success('Added to cart!');
         } catch (error) {
             console.error("Error while adding to cart:", error);
         } finally {

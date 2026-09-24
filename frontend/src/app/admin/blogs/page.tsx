@@ -1,5 +1,5 @@
 
-import BlogList from "@/pages/admin/blog/BlogList";
+import BlogList from "@/views/admin/blog/BlogList";
 import { Suspense } from "react";
 
 const Page = () => {

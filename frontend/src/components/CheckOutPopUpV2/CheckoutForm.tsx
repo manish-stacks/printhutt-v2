@@ -1,4 +1,5 @@
 import { memo, useEffect, useState } from 'react';
+import { useStoreSettings } from '@/store/useSettingsStore';
 import Image from 'next/image';
 import {
   RiArrowDownSLine,
@@ -83,6 +84,7 @@ function CheckoutFormComponent({
   setPaymentPartner,
 }: CheckoutFormProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const codEnabled = useStoreSettings().codEnabled;
 
   /* address state */
   const [savedAddresses, setSavedAddresses] = useState<AddressFormData[]>([]);
@@ -100,7 +102,7 @@ function CheckoutFormComponent({
         setSavedAddresses(list);
         if (list.length > 0) {
           const def = list.find((a) => a.isDefault) || list[0];
-          setSelectedSavedId(def._id);
+          setSelectedSavedId(def._id ?? null);
           fillAddressFromSaved(def);
         } else {
           setShowNewForm(true);
@@ -115,7 +117,7 @@ function CheckoutFormComponent({
   }, []);
 
   const handleSelectSaved = (addr: AddressFormData) => {
-    setSelectedSavedId(addr._id);
+    setSelectedSavedId(addr._id ?? null);
     setSavedAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a._id === addr._id })));
     fillAddressFromSaved(addr);
   };
@@ -162,7 +164,7 @@ function CheckoutFormComponent({
   const goBack = () => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2) : s));
 
   const grandTotal = totalPrice.discountPrice + totalPrice.shippingTotal;
-
+  
   return (
     <>
       {/* header */}
@@ -174,10 +176,10 @@ function CheckoutFormComponent({
       <Stepper current={step} />
 
       {/* persistent mini-total */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-lg p-3 mb-4 flex items-center justify-between">
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 flex items-center justify-between">
         <div>
           <p className="text-[11px] text-gray-500 leading-none">Total Payable</p>
-          <p className="text-lg font-bold text-gray-900 leading-tight">{formatCurrency(grandTotal)}</p>
+          <p className="text-lg font-semibold text-gray-900 leading-tight mt-0.5">{formatCurrency(grandTotal)}</p>
         </div>
         <button
           onClick={() => setShowSummary(!showSummary)}
@@ -188,7 +190,7 @@ function CheckoutFormComponent({
         </button>
       </div>
 
-      {showSummary && (
+      {showSummary  && (
         <div className="bg-white border rounded-lg p-3 mb-4 text-sm space-y-1.5">
           <Row label={`Subtotal (${items} ${items === 1 ? 'item' : 'items'})`} value={formatCurrency(totalPrice.totalPrice)} />
           <Row
@@ -216,15 +218,17 @@ function CheckoutFormComponent({
         </div>
       )}
 
+      {/* Step body — fixed height, andar scroll hota hai (modal size 3 steps me same rehta hai) */}
+      <div className="h-[360px] overflow-y-auto pr-1 -mr-1">
       {/* ────────────── STEP 1: cart + coupon + payment ────────────── */}
       {step === 1 && (
         <div className="space-y-4 animate-fadeIn">
           <SectionTitle icon={<FiShoppingBag />}>Order Details</SectionTitle>
 
-          <div className="bg-white border rounded-lg p-4">
+          <div className="bg-white border border-gray-200 rounded-lg p-3.5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 bg-orange-100 rounded-full">
-                <FiShoppingBag className="text-orange-600" size={18} />
+              <div className="p-2 bg-gray-50 rounded-full">
+                <FiShoppingBag className="text-gray-500" size={18} />
               </div>
               <div>
                 <p className="font-semibold text-gray-800">{items} {items === 1 ? 'Item' : 'Items'} in cart</p>
@@ -261,15 +265,20 @@ function CheckoutFormComponent({
                   </button>
                 </div>
               )}
+              {error && step === 1 && (
+                <div className="mt-2 bg-red-50 border border-red-200 text-red-600 text-xs px-3 py-2 rounded-md">
+                  {error}
+                </div>
+              )}
             </div>
           </div>
 
           {/* shipping method */}
           <SectionTitle icon={<FiTruck />}>Shipping Method</SectionTitle>
-          <div className="bg-white border rounded-lg p-3 flex items-center justify-between">
+          <div className="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-full">
-                <FiTruck className="text-green-600" size={16} />
+              <div className="p-2 bg-gray-50 rounded-full">
+                <FiTruck className="text-gray-500" size={16} />
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-800">Standard Delivery</p>
@@ -291,14 +300,14 @@ function CheckoutFormComponent({
               subtitle={selectedCoupon ? `${formatCurrency(totalPrice?.coupon_discount)} off` : 'UPI / Card / Wallet'}
               badge={selectedCoupon ? 'Best' : null}
             />
-            <PayMethodCard
+            {codEnabled && <PayMethodCard
               active={paymentMethod === 'offline'}
               onClick={() => setPaymentFunction('offline')}
               title="Cash on Delivery"
               subtitle={`${formatCurrency(
                 (totalPrice.discountPrice + Number(totalPrice?.coupon_discount || 0)) * 0.2
               )} advance`}
-            />
+            />}
           </div>
 
           <SectionTitle>Choose Payment Partner</SectionTitle>
@@ -354,9 +363,9 @@ function CheckoutFormComponent({
                   <div
                     key={addr._id}
                     onClick={() => handleSelectSaved(addr)}
-                    className={`p-3 rounded-lg border-2 cursor-pointer transition-all text-sm
+                    className={`p-3 rounded-lg border cursor-pointer transition-all text-sm
                       ${addr._id === selectedSavedId
-                        ? 'border-blue-500 bg-blue-50'
+                        ? 'border-blue-500 bg-blue-50/60'
                         : 'border-gray-200 hover:border-blue-300'}`}
                   >
                     <div className="flex justify-between items-start">
@@ -536,7 +545,9 @@ function CheckoutFormComponent({
         </div>
       )}
 
-      {error && (
+      </div>
+
+      {error && step !== 1 && (
         <div className="mt-3 bg-red-50 border border-red-200 text-red-600 text-xs px-3 py-2 rounded-md">
           {error}
         </div>
@@ -660,8 +671,8 @@ function PayMethodCard({
   return (
     <div
       onClick={onClick}
-      className={`relative cursor-pointer border-2 rounded-lg p-3 transition-all text-center
-        ${active ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-300'}`}
+      className={`relative cursor-pointer border rounded-lg p-3 transition-all text-center
+        ${active ? 'border-blue-500 bg-blue-50/60' : 'border-gray-200 bg-white hover:border-blue-300'}`}
     >
       {badge && (
         <span className="absolute -top-2 right-0 px-4 py-0.2 bg-emerald-500 text-white text-[9px] font-bold rounded-full">
@@ -688,8 +699,8 @@ function PartnerCard({
   return (
     <div
       onClick={onClick}
-      className={`cursor-pointer border-2 rounded-lg px-3 py-2 flex items-center justify-center transition-all
-        ${active ? 'border-blue-600 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-300'}`}
+      className={`cursor-pointer border rounded-lg px-3 py-2 flex items-center justify-center transition-all
+        ${active ? 'border-blue-500 bg-blue-50/60' : 'border-gray-200 bg-white hover:border-blue-300'}`}
     >
       <input type="radio" checked={active} readOnly className="mr-2" />
       <img src={src} alt={alt} className="h-8" />

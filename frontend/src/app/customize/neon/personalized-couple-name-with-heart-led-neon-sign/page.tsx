@@ -139,6 +139,7 @@ export default function Page() {
 
   };
   const handleAddToCart = async () => {
+    if (!product) { toast.error('Product is still loading, please try again in a moment.'); return; }
     if (names.name1 === '' || names.name2 === '') {
       toast.error('Please enter the name.');
       return;

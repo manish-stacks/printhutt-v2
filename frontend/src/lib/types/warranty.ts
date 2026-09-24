@@ -1,4 +1,4 @@
-import  { Document} from "mongoose";
+import type { Document, ObjectId } from './_base';
 
 export interface IWarrantyInformation extends Document {
   warrantyType: "limited" | "full" | "extended" | "others";

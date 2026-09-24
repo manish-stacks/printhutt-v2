@@ -5,19 +5,27 @@ import { productService } from "@/_services/common/productService";
 import { Product } from "@/lib/types/product";
 import confetti from "canvas-confetti";
 import { toast } from "react-toastify";
-import { FREE_GIFT_ID, FREE_THRESHOLD } from "@/lib/constants/gift";
+import { useStoreSettings } from "@/store/useSettingsStore";
+import { unitPrice } from "@/lib/pricing";
 
 export function useFreeGiftGuard() {
-  const { items, addToCart, removeFromCart, getTotalPrice } = useCartStore();
+  const cfg = useStoreSettings();
+  const FREE_GIFT_ID = cfg.giftProductId;
+  const FREE_THRESHOLD = cfg.giftThreshold;
+  const items = useCartStore((s) => s.items);
+  const addToCart = useCartStore((s) => s.addToCart);
+  const removeFromCart = useCartStore((s) => s.removeFromCart);
   const [giftProduct, setGiftProduct] = useState<Product>();
 
   // ✅ FIX: Track if we already showed the confetti toast this session
   // Prevents double-fire when DB sync replaces items array reference
-  const giftAddedRef = useRef(false);
   const prevThresholdMet = useRef(false);
 
-  /* Fetch gift product once on mount */
+  /* Gift product sirf tab fetch karo jab gift ON ho aur cart me kuch ho */
+  const hasItems = items.length > 0;
   useEffect(() => {
+    if (!cfg.giftEnabled || !hasItems || !FREE_GIFT_ID) return;
+    if (giftProduct && String(giftProduct._id) === String(FREE_GIFT_ID)) return;
     (async () => {
       try {
         const resp: any = await productService.getById(FREE_GIFT_ID);
@@ -26,46 +34,38 @@ export function useFreeGiftGuard() {
         console.error("Gift product fetch failed", e);
       }
     })();
-  }, []);
+  }, [cfg.giftEnabled, hasItems, FREE_GIFT_ID, giftProduct]);
 
-  /* Watch threshold cross → auto add/remove gift */
+  /* Threshold cross → auto add/remove gift (sab admin settings se) */
   useEffect(() => {
-    if (!giftProduct) return;
+    // Gift OFF ya admin ne gift product badla → purane gift items hatao
+    const staleIdx = items.findIndex((i: any) => i.isGift && (!cfg.giftEnabled || String(i._id) !== String(FREE_GIFT_ID)));
+    if (staleIdx >= 0) { removeFromCart(items[staleIdx]._id, staleIdx); return; }
+    if (!cfg.giftEnabled || !giftProduct) return;
 
-    const { discountPrice = 0 } = getTotalPrice();
-    // ✅ FIX: Check only non-gift items for threshold calc
-    const nonGiftItems = items.filter((i) => !(i as any).isGift);
-    const nonGiftTotal = nonGiftItems.reduce((t, i) => {
-      if (i.discountType === 'percentage') {
-        return t + (i.price - (i.price * i.discountPrice) / 100) * i.quantity;
-      }
-      return t + (i.price - i.discountPrice) * i.quantity;
-    }, 0);
+    const nonGiftTotal = items
+      .filter((i: any) => !i.isGift)
+      .reduce((t, i) => t + unitPrice(i.price, i.discountType, i.discountPrice) * i.quantity, 0);
 
     const thresholdMet = nonGiftTotal >= FREE_THRESHOLD;
-    const hasFreeGift = items.some((i) => i._id === FREE_GIFT_ID);
+    const giftIndex = items.findIndex((i: any) => i.isGift && String(i._id) === String(FREE_GIFT_ID));
 
-    if (thresholdMet && !hasFreeGift) {
-      // ✅ FIX: Only show confetti/toast when threshold NEWLY crossed
+    if (thresholdMet && giftIndex < 0) {
       const showCelebration = !prevThresholdMet.current;
       prevThresholdMet.current = true;
-
       addToCart(
         {
           ...giftProduct,
-          thumbnail: {
-            ...giftProduct.thumbnail,
-            url: "https://cdn.shopify.com/app-store/listing_images/08313cab5d04fcc9a59ffc39eefa1521/icon/CPuHmrL0lu8CEAE=.png",
-          },
-          title: "Free Acrylic Photo Keychain With NFC Tag",
+          thumbnail: { ...giftProduct.thumbnail, url: cfg.giftImage || giftProduct.thumbnail?.url },
+          title: cfg.giftTitle || giftProduct.title,
           price: 0,
           discountPrice: 0,
+          discountType: '',
           isGift: true,
           quantity: 1,
         } as any,
         1
       );
-
       if (showCelebration) {
         confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
         toast.success("🎁 Free gift unlocked!");
@@ -74,11 +74,8 @@ export function useFreeGiftGuard() {
 
     if (!thresholdMet) {
       prevThresholdMet.current = false;
-      if (hasFreeGift) {
-        // ✅ FIX: index-based remove — gift item ka exact index find karo
-        const giftIndex = items.findIndex((i) => i._id === FREE_GIFT_ID);
-        if (giftIndex >= 0) removeFromCart(FREE_GIFT_ID, giftIndex);
-      }
+      if (giftIndex >= 0) removeFromCart(String(FREE_GIFT_ID), giftIndex);
     }
-  }, [items, giftProduct]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, giftProduct, cfg.giftEnabled, FREE_GIFT_ID, FREE_THRESHOLD, cfg.giftTitle, cfg.giftImage]);
 }

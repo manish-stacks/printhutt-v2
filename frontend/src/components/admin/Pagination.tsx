@@ -3,7 +3,7 @@ import type { PaginationData } from '@/lib/types';
 import React from 'react';
 
 interface PaginationProps {
-  pagination: PaginationData;
+  pagination: PaginationData | any;
   onPageChange: (page: number) => void;
 }
 
@@ -108,7 +108,7 @@ export function Pagination({ pagination, onPageChange }: PaginationProps) {
                 <span className="flex items-center justify-center w-9 h-9 text-gray-500">...</span>
               ) : (
                 <button
-                  onClick={() => onPageChange(pageNum)}
+                  onClick={() => onPageChange(Number(pageNum))}
                   className={`w-9 h-9 rounded-full text-sm font-medium transition-colors
                       ${pagination.page === pageNum
                       ? 'bg-[#3d4750] text-white'

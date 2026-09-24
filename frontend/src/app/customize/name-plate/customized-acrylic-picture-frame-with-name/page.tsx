@@ -1,4 +1,5 @@
 "use client"
+import { readCompressed } from '@/utils/read-image';
 import React, { useState, useRef, useEffect } from 'react';
 import { BiDownload, BiRefresh, BiUpload } from 'react-icons/bi';
 import { BsUpload } from 'react-icons/bs';
@@ -74,7 +75,7 @@ export default function Page() {
             reader.onloadend = () => {
                 setPreviewImage(reader.result as string);
             };
-            reader.readAsDataURL(file);
+            readCompressed(reader, file);
         }
     };
 
@@ -105,6 +106,7 @@ export default function Page() {
     };
 
     const handleAddToCart = async () => {
+    if (!product) { toast.error('Product is still loading, please try again in a moment.'); return; }
         if (names.name1 === '') {
             toast.error('Please enter a name.');
             return;

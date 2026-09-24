@@ -1,12 +1,12 @@
 import { blogFrontService } from '@/_services/common/blogService';
-import BlogDetails from '@/pages/BlogDetails';
+import BlogDetails from '@/views/BlogDetails';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+    params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 

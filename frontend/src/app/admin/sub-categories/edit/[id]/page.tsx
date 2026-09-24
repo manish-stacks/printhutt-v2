@@ -55,7 +55,7 @@ const CategoriesEdit = () => {
         const fetchCategory = async () => {
             try {
                 setIsLoading(true)
-                const data = await get_sub_category_by_id(id)
+                const data = await get_sub_category_by_id(id!)
                 if (data) {
                     setFormData({
                         parentCategory: data.parentCategory || "",
@@ -175,7 +175,7 @@ const CategoriesEdit = () => {
 
 
         try {
-            const res = await update_sub_category(id, data)
+            const res = await update_sub_category(id!, data)
             if (res.success) {
                 toast.success(res?.message);
                 setTimeout(() => {
@@ -220,10 +220,10 @@ const CategoriesEdit = () => {
     return (
         <>
             <form onSubmit={handleSubmit} encType={'multipart/form-data'}>
-                <div className="flex flex-wrap mt-20 mb-52">
+                <div className="ph-form flex flex-wrap -mx-3 mb-10">
                     {/* top row */}
-                    <div className="w-full md:w-12/12 lg:w-12/12 px-4 mb-5">
-                        <div className=" bg-white text-black flex justify-between align-middle p-6 rounded-lg shadow-md shadow-black-300">
+                    <div className="w-full px-3 mb-5">
+                        <div className="ph-page-head ph-head-card">
                             <div>
                                 <h2 className="text-2xl font-bold text-gray-900">Edit Category</h2>
                                 <p className="text-gray-600">
@@ -231,14 +231,14 @@ const CategoriesEdit = () => {
                                 </p>
                             </div>
                             <div>
-                                <button onClick={router.back} className="bg-blue-500 text-white py-1 px-6 rounded">Back</button>
+                                <button type="button" onClick={() => router.back()} className="ph-btn ph-btn-ghost">Back</button>
                             </div>
                         </div>
                     </div>
                     {/* left side */}
 
-                    <div className="w-full md:w-8/12 lg:w-8/12 px-4 space-y-6">
-                        <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+                    <div className="w-full lg:w-8/12 px-3 space-y-6">
+                        <div className="ph-section space-y-5">
                             <div>
                                 <label
                                     htmlFor="name"
@@ -250,7 +250,7 @@ const CategoriesEdit = () => {
                                     className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
                                     id="name"
                                     name="parentCategory"
-                                    value={formData.parentCategory}
+                                    value={formData.parentCategory ?? ''}
                                     onChange={handleChange}
                                 >
                                     <option value="">Select Category</option>
@@ -302,7 +302,7 @@ const CategoriesEdit = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+                        <div className="ph-section space-y-5">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Category Image
@@ -351,7 +351,7 @@ const CategoriesEdit = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+                        <div className="ph-section space-y-5">
                             <div>
                                 <label
                                     htmlFor="description"
@@ -373,8 +373,8 @@ const CategoriesEdit = () => {
                     </div>
 
                     {/* right side */}
-                    <div className="w-full md:w-4/12 lg:w-4/12 px-4 space-y-6">
-                        <div className="bg-white text-black p-6 rounded-lg space-x-3 shadow-md shadow-black-300">
+                    <div className="w-full lg:w-4/12 px-3 mt-6 lg:mt-0 space-y-6">
+                        <div className="ph-section ph-section-row">
                             <button
                                 type="submit"
                                 disabled={isSubmitting || isUploading}
@@ -385,9 +385,9 @@ const CategoriesEdit = () => {
                                 )}
                                 {isSubmitting ? 'Creating...' : 'Update'}
                             </button>
-                            <Link href={'/admin/categories'} className="bg-blue-500 text-white py-[.7rem] px-7 rounded gap-1">Show all</Link>
+                            <Link href={'/admin/categories'} className="ph-btn ph-btn-primary">Show all</Link>
                         </div>
-                        <div className="bg-white text-black p-6 rounded-lg space-x-3 shadow-md shadow-black-300">
+                        <div className="ph-section ph-section-row">
                             <label className="flex items-center cursor-pointer">
                                 <input
                                     type="checkbox"
@@ -405,7 +405,7 @@ const CategoriesEdit = () => {
 
 
 
-                        <div className="bg-white text-black p-6 rounded-lg space-x-3 shadow-md shadow-black-300">
+                        <div className="ph-section ph-section-row">
                             <div>
                                 <label
                                     htmlFor="name"
@@ -425,7 +425,7 @@ const CategoriesEdit = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+                        <div className="ph-section space-y-5">
                             <div>
                                 <label
                                     htmlFor="name"

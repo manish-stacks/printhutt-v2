@@ -3,7 +3,8 @@ import { ImageData } from "./category";
 
 export interface BlogPost {
   _id: string;
-  category: string;
+  category: any;
+  imageUrl?: any;
   title: string;
   slug: string;
   description: string;
@@ -27,8 +28,9 @@ export interface BlogCategory {
 }
 export interface BlogFormData {
   _id?: string | undefined;
-  category: string;
+  category: any;
   name: string;
+  title?: string;
   slug: string;
   description: string;
   short_description: string;

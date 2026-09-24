@@ -1,12 +1,12 @@
 import { productService } from '@/_services/common/productService';
-import ProductDetails from '@/pages/ProductDetails';
+import ProductDetails from '@/views/ProductDetails';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+    params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 
@@ -39,6 +39,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProductPage({ params }: Props) {
   try {
     const { slug } = await params;
@@ -48,9 +50,17 @@ export default async function ProductPage({ params }: Props) {
     if (!product) {
       return notFound();
     }
-    const catId = String(product.category?.slug || '');
-    const res = await productService.getProductsByCategory(10, catId);
-    const relatedProduct = res?.products || [];
+    // Same category ke random products (har visit pe alag, current product exclude)
+    const catId = String(product.category?._id || product.category || '');
+    let relatedProduct: any[] = [];
+    try {
+      const res: any = await productService.getTopProducts(12, catId || 'all', { random: true, exclude: String(product._id) });
+      relatedProduct = res?.products || [];
+      if (relatedProduct.length < 4) {
+        const more: any = await productService.getTopProducts(12, 'all', { random: true, exclude: String(product._id) });
+        relatedProduct = [...relatedProduct, ...(more?.products || []).filter((p: any) => !relatedProduct.some((r) => r._id === p._id))].slice(0, 12);
+      }
+    } catch { relatedProduct = []; }
     return (
       <ProductDetails
         product={product}

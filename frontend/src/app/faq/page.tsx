@@ -1,4 +1,4 @@
-import FAQ from "@/pages/FAQ"
+import FAQ from "@/views/FAQ"
 
 // export const metadata = {
 //   title: 'faq',

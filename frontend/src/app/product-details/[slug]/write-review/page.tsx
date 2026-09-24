@@ -21,13 +21,13 @@ import { commonApi } from "@/_services/common/common";
 import { useUserStore } from "@/store/useUserStore";
 
 export default function RatingsReviews() {
-    const params = useParams();
+    const params = useParams<Record<string, string>>()!;
     const router = useRouter();
     const isLoggedIn = useUserStore((state) => state.isLoggedIn);
 
     const [loading, setLoading] = useState(true);
     const [product, setProduct] = useState<any>(null);
-    const [orderId, setOrderId] = useState<string>(null);
+    const [orderId, setOrderId] = useState<string | null>(null);
 
     const [hasPurchased, setHasPurchased] = useState(false);
     const [alreadyReviewed, setAlreadyReviewed] = useState(false);
@@ -113,7 +113,7 @@ export default function RatingsReviews() {
             setSubmitError("");
 
             const formData = new FormData();
-            formData.append("orderId", orderId);
+            formData.append("orderId", orderId ?? "");
             formData.append("rating", rating.toString());
             formData.append("review", reviewText);
             formData.append("productId", product._id);

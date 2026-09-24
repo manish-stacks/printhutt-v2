@@ -14,7 +14,7 @@ const Admin = ({ children }: LayoutProps) => {
     return (
         <>
 
-            <div className="min-h-screen bg-gray-100">
+            <div className="ph-admin min-h-screen bg-[#f5f6fa] text-[#1f2433]">
                 <Header isSidebarCollapsed={sidebarCollapsed} onMenuClick={() => setSidebarOpen(true)} />
 
                 <Sidebar

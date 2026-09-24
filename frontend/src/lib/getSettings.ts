@@ -26,13 +26,15 @@ export interface SiteSettings {
   bulkDeleteEnabled?: boolean;
 }
 
-// ✅ FIX: revalidate 60→300 (5 min) — settings baar baar nahi badalte
-//         Cluster mode mein har worker apna fetch cache rakhta hai,
-//         isliye Next.js fetch cache + revalidate dono kaam karte hain
+// Next.js ka apna fetch-cache yahan use nahi kar rahe: backend already Redis me
+// settings cache karta hai aur admin save karte hi turant invalidate kar deta hai.
+// Next ka revalidate (khaaskar PM2 cluster mein, jahan har worker ka cache alag hota
+// hai) admin ke script-update ko turant reflect nahi hone deta — kai refresh lagte the.
+// no-store se hum seedha backend (Redis-backed, fast) se fresh data lete hain.
 export async function getSiteSettings(): Promise<SiteSettings> {
   try {
     const res = await fetch(`${API_URL}/settings`, {
-      next: { revalidate: 300 }, // ✅ 5 min cache — was 60s
+      cache: 'no-store',
     });
     if (!res.ok) return {};
     const json = await res.json();

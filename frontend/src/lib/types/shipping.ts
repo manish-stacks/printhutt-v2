@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import type { Document, ObjectId } from './_base';
 
 export interface IShippingInformation extends Document {
     shippingMethod?: string;

@@ -25,7 +25,7 @@ const TTL_SECS = 300;
 
 /* ──────────────── 1. Admin list ──────────────── */
 export async function adminList(q: AdminListQueryDTO): Promise<unknown> {
-  const { products, total } = await productRepo.adminList(q.page, q.limit, q.search);
+  const { products, total } = await productRepo.adminList(q.page, q.limit, q.search, q);
   return {
     products,
     pagination: {
@@ -151,11 +151,11 @@ export async function storefrontByCategorySlug(
   q: StorefrontCategoryQueryDTO
 ): Promise<unknown> {
   // ✅ FIX: Redis cache add kiya — har page request pe DB hit hota tha
-  const cacheKey = `${CACHE_PREFIX}cat-slug:${q.category}:p${q.page}:l${q.limit}`;
+  const cacheKey = `${CACHE_PREFIX}cat-slug:${q.category}:p${q.page}:l${q.limit}:s${q.seed ?? 'n'}`;
   const cached = await cacheGet<unknown>(cacheKey);
   if (cached) return cached;
 
-  const result = await productRepo.findByCategorySlug(q.category, q.page, q.limit);
+  const result = await productRepo.findByCategorySlug(q.category, q.page, q.limit, q.seed);
   if (!result) throw new NotFoundError('Category not found');
   const payload = {
     success: true,
@@ -177,11 +177,11 @@ export async function storefrontBySubCategorySlug(
   q: StorefrontSubCategoryQueryDTO
 ): Promise<unknown> {
   // ✅ FIX: Redis cache add kiya
-  const cacheKey = `${CACHE_PREFIX}subcat-slug:${q.subCategory}:p${q.page}:l${q.limit}`;
+  const cacheKey = `${CACHE_PREFIX}subcat-slug:${q.subCategory}:p${q.page}:l${q.limit}:s${q.seed ?? 'n'}`;
   const cached = await cacheGet<unknown>(cacheKey);
   if (cached) return cached;
 
-  const result = await productRepo.findBySubCategorySlug(q.subCategory, q.page, q.limit);
+  const result = await productRepo.findBySubCategorySlug(q.subCategory, q.page, q.limit, q.seed);
   if (!result) throw new NotFoundError('Subcategory not found');
   const payload = {
     success: true,
@@ -256,16 +256,25 @@ export async function suggest(q: SuggestQueryDTO): Promise<unknown> {
 /* ──────────────── 10. Storefront: top related ──────────────── */
 export async function topRelated(q: RelatedQueryDTO): Promise<unknown> {
   const limit = q.limit === 'all' || !q.limit ? null : Math.max(parseInt(q.limit, 10), 1);
+  const random = q.random === '1' || q.random === 'true';
 
-  // ✅ FIX: Redis cache — product detail page pe bar bar call hota tha
-  const cacheKey = `${CACHE_PREFIX}top-related:${q.category}:${limit ?? 'all'}`;
-  const cached = await cacheGet<unknown>(cacheKey);
-  if (cached) return cached;
-
-  const products = await productRepo.topRelated(q.category, limit);
-  const payload = { products };
-  await cacheSet(cacheKey, payload, TTL_SECS);
-  return payload;
+  // Random mode: bada pool cache karo, har request pe shuffle → har baar alag products
+  const poolLimit = random && limit !== null ? Math.min(limit * 4, 80) : limit;
+  const cacheKey = `${CACHE_PREFIX}top-related:${q.category}:${poolLimit ?? 'all'}`;
+  let products = (await cacheGet<{ products: any[] }>(cacheKey))?.products;
+  if (!products) {
+    products = (await productRepo.topRelated(q.category, poolLimit)) as any[];
+    await cacheSet(cacheKey, { products }, TTL_SECS);
+  }
+  if (q.exclude) products = products.filter((p: any) => String(p._id) !== q.exclude && p.slug !== q.exclude);
+  if (random) {
+    products = [...products];
+    for (let i = products.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [products[i], products[j]] = [products[j], products[i]];
+    }
+  }
+  return { products: limit !== null ? products.slice(0, limit) : products };
 }
 
 /* ──────────────── 11. Create product (multipart) ──────────────── */
@@ -403,6 +412,7 @@ export async function updateProduct(
   u.shippingInformation = getOr('shippingInformation', u.shippingInformation);
   u.returnPolicy = getOr('returnPolicy', u.returnPolicy);
   u.demoVideo = getOr('demoVideo', u.demoVideo);
+  u.videoAsThumbnail = getBool('videoAsThumbnail', Boolean(u.videoAsThumbnail));
   u.imgAlt = getOr('imgAlt', u.imgAlt);
   u.status = getBool('status', Boolean(u.status));
   u.ishome = getBool('ishome', Boolean(u.ishome));
@@ -656,6 +666,7 @@ function buildProductData(
     shippingInformation: body.shippingInformation ?? '',
     returnPolicy: body.returnPolicy ?? '',
     demoVideo: body.demoVideo ?? '',
+    videoAsThumbnail: String(body.videoAsThumbnail) === 'true',
     imgAlt: body.imgAlt ?? '',
     status: body.status === 'true',
     ishome: body.ishome === 'true',

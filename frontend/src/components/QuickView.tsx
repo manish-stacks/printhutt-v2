@@ -6,24 +6,18 @@ import { useRouter } from 'next/navigation';
 import React from 'react'
 import { toast } from 'react-toastify';
 
+import type { Product } from '@/lib/types/product';
+import { effectivePricing } from '@/lib/pricing';
+
 interface QuickViewProps {
-    product: {
-        title: string;
-        thumbnail: { url: string };
-        short_description: string;
-        slug: string;
-        discountType: string;
-        discountPrice: number;
-        price: number;
-        oldPrice: string;
-        rating: number;
-    };
+    product: Product;
     onClose: () => void;
 }
 
 const QuickView = ({ product, onClose }: QuickViewProps) => {
 
     const [quantity, setQuantity] = React.useState(1);
+    const qvPrice = effectivePricing(product, product.isVarientStatus ? product.varient?.[0] : null);
     const addToCart = useCartStore(state => state.addToCart);
     const router = useRouter();
 
@@ -40,7 +34,7 @@ const QuickView = ({ product, onClose }: QuickViewProps) => {
         }
         if (product?.isCustomize) {
             onClose();
-            return router.push(product?.customizeLink);
+            return router.push(product?.customizeLink || `/product-details/${product.slug}`);
 
         }
         addToCart(product, quantity);
@@ -100,12 +94,10 @@ const QuickView = ({ product, onClose }: QuickViewProps) => {
                                         </div>
                                         <div className="bb-quickview-price pt-[5px] pb-[10px] flex items-center justify-left">
                                             <span className="new-price px-[3px] text-[16px] text-[#686e7d] font-bold">
-                                                {product.discountType === 'percentage'
-                                                    ? formatCurrency(product.price - (product.price * product.discountPrice) / 100)
-                                                    : formatCurrency(product.price - product.discountPrice)}
+                                                {formatCurrency(qvPrice.final)}
                                             </span>
                                             <span className="old-price px-[3px] text-[14px] text-[#686e7d] line-through">
-                                                {product.discountPrice > 0 ? formatCurrency(product.price) : ''}
+                                                {qvPrice.hasDiscount ? formatCurrency(qvPrice.mrp) : ''}
                                             </span>
                                         </div>
 

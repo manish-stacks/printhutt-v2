@@ -5,7 +5,7 @@ import { Product } from "@/lib/types/product";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Autoplay, Pagination } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
-import ProductCardTwo from "./products/ProductCardTwo";
+import ProductCard from "./products/ProductCard";
 import { RiArrowLeftSLine, RiArrowRightSLine, RiArrowRightLine } from "react-icons/ri";
 import Link from "next/link";
 
@@ -14,7 +14,7 @@ import "swiper/css/pagination";
 
 interface Props {
   products: Product[];
-  title: string;
+  title?: string;
   description?: string;
 }
 
@@ -109,7 +109,7 @@ const ProductSlider = ({ products, title, description }: Props) => {
           {products.map((product, i) => (
             <SwiperSlide key={product._id || i} className="h-auto">
               <div className="h-full">
-                <ProductCardTwo product={product} />
+                <ProductCard product={product} variant="dark" />
               </div>
             </SwiperSlide>
           ))}

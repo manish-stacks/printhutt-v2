@@ -1,4 +1,4 @@
-import Warranty from "@/pages/admin/warranty/Warranty";
+import Warranty from "@/views/admin/warranty/Warranty";
 import { Suspense } from "react";
 
 const Page = () => {

@@ -14,24 +14,22 @@ export const generateSlug = (text: string): string => {
         .replace(/[^a-z0-9-]/g, '');
 };
 
-export function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
-        maximumFractionDigits: 0,
-    }).format(Math.round(amount));
+const INR = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+export function formatCurrency(amount?: number | string | null): string {
+    const n = Number(amount);
+    return INR.format(Math.round(Number.isFinite(n) ? n : 0));
 }
 
 export function randomNumber(max: number, min: number): number {
     return Math.floor(Math.random() * (max - min + 1)) + 400;
 }
 
-export function formatDate(date: string | Date): string {
+export function formatDate(date?: string | Date | null): string {
     return new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-    }).format(new Date(date));
+    }).format(new Date(date ?? Date.now()));
 }

@@ -1,5 +1,7 @@
 import React, { useRef } from 'react';
-import Draggable from "react-draggable";
+import DraggableBase from "react-draggable";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Draggable = DraggableBase as any;
 interface NeonTextProps {
   text: string;
   color: string;
@@ -55,7 +57,7 @@ export const NeonText: React.FC<NeonTextProps> = ({ text, color, font, width, he
     justifyContent: 'center',
     lineHeight: '120px',
     padding: '2px 5px',
-    textAlignLast: textAlignment,
+    textAlignLast: textAlignment as React.CSSProperties['textAlignLast'],
   };
 
   const nodeRef = useRef(null);

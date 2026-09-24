@@ -68,7 +68,7 @@ const ProfileSettings = () => {
     }
     return (
         <>
-            <div className="max-w-10xl mx-auto lg:px-10 py-20">
+            <div className="ph-page">
                 <div className="w-full md:w-12/12 lg:w-12/12 mb-5">
                     <div className="bg-white text-black flex justify-between align-middle p-6 rounded-lg shadow-md">
                         <div>
@@ -78,7 +78,7 @@ const ProfileSettings = () => {
                     </div>
                 </div>
 
-                <div className="bg-white px-5 py-10">
+                <div className="ph-card">
                     <form className="space-y-6" method="post" onSubmit={handleSubmit}>
 
                         <div>

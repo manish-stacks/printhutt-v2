@@ -1,5 +1,5 @@
-// import CategoriesAdd from '@/pages/admin/categories/CategoriesAdd'
-import CategoriesAdd from '@/pages/admin/categories/CategoriesAdd'
+// import CategoriesAdd from '@/views/admin/categories/CategoriesAdd'
+import CategoriesAdd from '@/views/admin/categories/CategoriesAdd'
 import React from 'react'
 
 const page = () => {

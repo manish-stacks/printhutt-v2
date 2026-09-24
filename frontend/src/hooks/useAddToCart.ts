@@ -1,5 +1,5 @@
 /**
- * useAddToCart — common hook for ProductCard, ProductCardTwo, ProductCardThree
+ * useAddToCart — common hook for ProductCard
  *
  * ProductDetails.tsx ka same logic extract kiya hai:
  *  - isCustomize → router.push(customizeLink)
@@ -18,33 +18,22 @@ export function useAddToCart() {
   const { openCartSidebarView } = useCartSidebarStore();
   const router = useRouter();
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: Product, variant?: any) => {
     if (!product) return;
 
     // Customize wala product → redirect
     if (product?.isCustomize) {
-      router.push(product?.customizeLink);
+      router.push(product?.customizeLink || `/product-details/${product.slug}`);
       return;
     }
 
-    let finalProduct: any = { ...product };
-
-    // Variant status ON hai — cards pe koi selector nahi hota,
-    // isliye varient[0] auto-pick karo (same as ProductDetails default)
-    const variants: any[] = (product as any).varient ?? [];
-    const firstVariant = variants.length > 0 ? variants[0] : null;
-
-    if (product.isVarientStatus && firstVariant) {
-      finalProduct = {
-        ...finalProduct,
-        price: firstVariant.price ?? product.price,
-        discountType: firstVariant.discountType ?? product.discountType,
-        discountPrice: firstVariant.discountPrice ?? product.discountPrice,
-        selectedVariant: firstVariant,
-        custom_data: {
-          variant: firstVariant.size || '',
-        },
-      };
+    // Card pe variant selector nahi — first variant auto-pick; pricing store me normalize hoti hai
+    const finalProduct: any = { ...product };
+    // Card pe chuna gaya variant → warna first variant auto-pick
+    const pick = variant || (product as any).varient?.[0];
+    if (product.isVarientStatus && pick) {
+      finalProduct.selectedVariant = pick;
+      finalProduct.custom_data = { variant: pick.size || '' };
     }
 
     addToCart(finalProduct, 1);

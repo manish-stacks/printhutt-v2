@@ -1,4 +1,4 @@
-import CategoriesEdit from "@/pages/admin/categories/CategoriesEdit"
+import CategoriesEdit from "@/views/admin/categories/CategoriesEdit"
 
 const Page = () => {
   return <CategoriesEdit />

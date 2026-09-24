@@ -15,44 +15,38 @@ import {
 } from "react-icons/fa";
 
 import BackToTop from "./BackToTop";
+import { useStoreSettings } from "@/store/useSettingsStore";
 import Image from "next/image";
-import QuickView from "./QuickView";
+import dynamic from "next/dynamic";
+const QuickView = dynamic(() => import("./QuickView"), { ssr: false });
 import useQuickStore from "@/store/useQuickStore";
-import CartSidebar from "./CartSidebar";
+const CartSidebar = dynamic(() => import("./CartSidebar"), { ssr: false });
 import useCartSidebarStore from "@/store/useCartSidebarStore";
 import { RiShoppingBag3Line, RiShoppingCart2Line } from "react-icons/ri";
 
 
+/* Sirf ye chhota component re-render hota hai (pehle poora Footer + CartSidebar har 15s) */
+function VisitorCount() {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    const u = () => setV(Math.floor(Math.random() * 10000) + 1);
+    u();
+    const t = setInterval(u, 15000);
+    return () => clearInterval(t);
+  }, []);
+  return <strong className="text-green-700">{v.toLocaleString()}</strong>;
+}
+const handleQuickViewClose = () => useQuickStore.setState({ isOpen: false });
+const toggleCartSidebarClose = () => useCartSidebarStore.setState({ isOpen: false });
+
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const showVisitors = useStoreSettings().showVisitorCounter;
   const isQuickViewOpen = useQuickStore(state => state.isOpen);
   const isCartOpen = useCartSidebarStore(state => state.isOpen);
   const product = useQuickStore(state => state.product);
-  const [visitors, setVisitors] = useState(0);
-
-  useEffect(() => {
-    // const res = await fetch("/visitors");
-    const updateVisitors = () => {
-      const randomVisitors = Math.floor(Math.random() * 10000) + 1;
-      setVisitors(randomVisitors);
-    };
-
-    // initial run
-    updateVisitors();
-
-    // run every 15 sec
-    const interval = setInterval(updateVisitors, 15000);
-
-    return () => clearInterval(interval);
-  }, []);
 
 
-  const handleQuickViewClose = () => {
-    useQuickStore.setState({ isOpen: false });
-  };
-  const toggleCartSidebarClose = () => {
-    useCartSidebarStore.setState({ isOpen: false });
-  };
 
   return (
     <>
@@ -367,15 +361,15 @@ const Footer = () => {
                               printhutt05@gmail.com
                             </a>
                           </li>
-                          <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-100 rounded-full">
+                          {showVisitors && <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-100 rounded-full">
                             <span className="relative flex h-2 w-2">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
                             </span>
                             <span className="text-xs text-gray-600">
-                              <strong className="text-green-700">{visitors.toLocaleString()}</strong> people viewing now
+                              <VisitorCount /> people viewing now
                             </span>
-                          </div>
+                          </div>}
                         </ul>
 
                       </div>
@@ -484,7 +478,7 @@ const Footer = () => {
       </div>
 
 
-      {isQuickViewOpen && (
+      {isQuickViewOpen && product && (
         <QuickView
           product={product}
           onClose={handleQuickViewClose}

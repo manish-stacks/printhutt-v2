@@ -46,3 +46,11 @@ export const removeProductImage = async (productId: string, imageToRemove: objec
 export const copy_product = async (id: string) => {
   return axiosInstance.post(`/products/${id}/copy`);
 };
+/** Admin list with filters (search, category, status, stock, discount, type, price, sort) */
+export const get_admin_products = async (params: Record<string, string | number | undefined>) => {
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== '' && v !== 'all') qs.set(k, String(v));
+  });
+  return axiosInstance.get(`/products?${qs.toString()}`);
+};

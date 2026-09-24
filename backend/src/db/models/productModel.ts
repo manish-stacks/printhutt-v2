@@ -213,6 +213,11 @@ const productSchema = new Schema<IProduct>(
     demoVideo: {
       type: String,
     },
+    // demoVideo (YouTube) ko card/listing thumbnail ki jagah dikhana hai?
+    videoAsThumbnail: {
+      type: Boolean,
+      default: false,
+    },
     imgAlt: {
       type: String,
     },

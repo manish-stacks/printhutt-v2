@@ -1,4 +1,4 @@
-import SubCategoryList from "@/pages/admin/categories/SubCategoryList";
+import SubCategoryList from "@/views/admin/categories/SubCategoryList";
 import { Suspense } from "react";
 
 const Page = () => {

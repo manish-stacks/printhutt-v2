@@ -1,13 +1,13 @@
 
 import { categoryService } from '@/_services/common/categoryService';
-import Category from '@/pages/Category';
+import Category from '@/views/Category';
 import { Metadata } from 'next';
 import React from 'react'
 
 interface Props {
-    params: {
+    params: Promise<{
         slug: string;
-    };
+    }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

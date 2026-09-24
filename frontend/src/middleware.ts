@@ -40,7 +40,9 @@ export async function middleware(request: NextRequest) {
 
     // No tokens at all → redirect to login
     if (!payload && !hasRefreshSession) {
-        return NextResponse.redirect(new URL('/login', request.url));
+        const url = new URL(path.startsWith('/admin') ? '/admin/login' : '/login', request.url);
+        if (path.startsWith('/user')) url.searchParams.set('redirect', path);
+        return NextResponse.redirect(url);
     }
 
     // ✅ FIX: Access token expire, refresh valid — let client handle refresh

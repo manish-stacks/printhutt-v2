@@ -25,7 +25,7 @@ export default function AdminPagesList() {
   }, []);
 
   return (
-    <div className="max-w-8xl mx-auto px-4 lg:px-10 py-16">
+    <div className="ph-page">
       <div className="bg-white p-6 rounded-lg shadow-md mb-5">
         <h2 className="text-2xl font-bold text-gray-900">Static Pages</h2>
         <p className="text-gray-600">Edit content for legal & info pages</p>

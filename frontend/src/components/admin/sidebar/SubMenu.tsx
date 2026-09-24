@@ -13,6 +13,7 @@ interface SubMenuProps {
   items: SubMenuItem[];
   isCollapsed: boolean;
   activeItem: string;
+  onItemClick?: (path: string) => void;
 }
 
 export function SubMenu({

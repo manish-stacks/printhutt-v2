@@ -5,12 +5,15 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { axiosInstance, setAccessToken } from "@/utils/axios";
 import { userCartService } from '@/_services/common/usercart';
-import { useCartStore } from '@/store/useCartStore';
+import { useCartStore, cartItemKey, hasInlineBase64 } from '@/store/useCartStore';
 
 interface UserDetails {
     id: string;
     username: string;
     email: string;
+    number?: string;
+    isVerified?: boolean;
+    name?: string;
 }
 
 interface MeResponse {
@@ -20,6 +23,8 @@ interface MeResponse {
         id?: string;
         username: string;
         email: string;
+        number?: string;
+        isVerified?: boolean;
     };
 }
 
@@ -35,109 +40,70 @@ interface UserState {
 }
 
 
-// Login ke baad cart merge — ye function login success pe call karo
-export async function syncCartOnLogin(): Promise<void> {
-  try {
-    const localItems = useCartStore.getState().items;
-    const persistableLocal = localItems.filter((item: any) => !item.isGift);
+// Login ke baad cart merge — single-flight (double call pe duplicate nahi banega)
+let syncing: Promise<void> | null = null;
 
-    // Step 1: Pehle DB ka current cart fetch karo
-    const existingRes: any = await userCartService.get();
-    const existingDbItems: any[] = existingRes?.items ?? [];
+const toPayload = (item: any) => ({
+  productId: item._id,
+  variantId: item.selectedVariant?._id,
+  size: item.selectedVariant?.size,
+  color: item.selectedVariant?.color,
+  quantity: item.quantity,
+  price: item.price,
+  discountType: item.discountType,
+  discountPrice: item.discountPrice,
+  custom_data: item.custom_data,
+});
 
-    // DB mein already kya hai uska set banao (productId string se)
-    const dbProductIds = new Set(
-      existingDbItems.map((it: any) => {
-        const p = it.productId;
-        return `${p?._id ?? p}::${it.variantId ?? ''}::${it.size ?? ''}`;
-      })
-    );
+const dbToStore = (it: any) => {
+  const p = it.productId;
+  if (!p) return null;
+  const productId = String(p?._id ?? p);
+  const cd = it.custom_data;
+  const customThumb = cd && typeof cd === 'object' && typeof cd._thumb === 'string' ? cd._thumb : null;
+  const baseProduct = typeof p === 'object' ? p : { _id: productId };
+  return {
+    ...baseProduct,
+    _id: productId,
+    quantity: it.quantity,
+    price: it.price,
+    ...(it.discountType ? { discountType: it.discountType } : {}),
+    ...(typeof it.discountPrice === 'number' ? { discountPrice: it.discountPrice } : {}),
+    ...(it.variantId ? { selectedVariant: { _id: String(it.variantId), size: it.size, color: it.color, price: it.price } } : {}),
+    ...(cd ? { custom_data: cd } : {}),
+    ...(customThumb ? { thumbnail: { ...(baseProduct as any).thumbnail, url: customThumb } } : {}),
+    _dbItemId: String(it._id),
+  };
+};
 
-    // Step 2: Local items merge karo jo DB mein nahi hain.
-    // ⚠️ Custom items (custom_data wale) HAMESHA include karo — inhe productId
-    //    match se skip mat karo, warna same product ka custom item login pe kho jaata.
-    const newLocalOnly = persistableLocal.filter((item: any) => {
-      const isCustom = item.custom_data && Object.keys(item.custom_data).length > 0;
-      if (isCustom) return true; // hamesha bhejo
-      const key = `${item._id}::${item.selectedVariant?._id ?? ''}::${item.selectedVariant?.size ?? ''}`;
-      return !dbProductIds.has(key);
-    });
+export function syncCartOnLogin(): Promise<void> {
+  if (syncing) return syncing;
+  syncing = (async () => {
+    try {
+      const local = useCartStore.getState().items.filter(
+        (item: any) => !item.isGift && !hasInlineBase64(item)
+      );
+      const existingRes: any = await userCartService.get();
+      const dbStoreItems = (existingRes?.items ?? []).map(dbToStore).filter(Boolean);
+      const dbKeys = new Set(dbStoreItems.map((i: any) => cartItemKey(i)));
 
-    if (newLocalOnly.length > 0) {
-      const payload = newLocalOnly.map((item: any) => ({
-        productId: item._id,
-        variantId: item.selectedVariant?._id,
-        size: item.selectedVariant?.size,
-        color: item.selectedVariant?.color,
-        quantity: item.quantity,
-        price: item.price,
-        discountType: item.discountType,
-        discountPrice: item.discountPrice,
-        custom_data: item.custom_data,
-      }));
-      await userCartService.merge(payload);
-    }
+      // sirf wahi local items bhejo jo DB me already nahi (custom → _customId se match)
+      const localOnly = local.filter((item: any) => !dbKeys.has(cartItemKey(item)));
 
-    // Step 3: Fresh cart fetch karo (merge ke baad)
-    const res: any = newLocalOnly.length > 0
-      ? await userCartService.get()
-      : existingRes;
-    const dbItems: any[] = res?.items ?? [];
-
-    // Step 4: DB items → store format mein convert karo + dedup
-    const seen = new Set<string>();
-    const storeItems = dbItems.reduce((acc: any[], it: any) => {
-      const p = it.productId;
-      if (!p) return acc;
-
-      // ✅ FIX: String convert karo — ObjectId aur string dono handle
-      const productId = String(p?._id ?? p);
-      const variantId = String(it.variantId ?? '');
-      const size = String(it.size ?? '');
-      const key = `${productId}::${variantId}::${size}`;
-
-      if (seen.has(key)) {
-        // Duplicate — quantity merge karo
-        const existing = acc.find((a: any) => {
-          const aKey = `${String(a._id)}::${String(a.selectedVariant?._id ?? '')}::${String(a.selectedVariant?.size ?? '')}`;
-          return aKey === key;
-        });
-        if (existing) existing.quantity = Math.max(existing.quantity, it.quantity);
-        return acc;
+      let finalItems = dbStoreItems;
+      if (localOnly.length > 0) {
+        await userCartService.merge(localOnly.map(toPayload));
+        const res: any = await userCartService.get();
+        finalItems = (res?.items ?? []).map(dbToStore).filter(Boolean);
       }
-      seen.add(key);
-
-      const sv = it.variantId
-        ? { _id: variantId, size: it.size, color: it.color, price: it.price }
-        : null;
-
-      // Custom item ka preview thumbnail custom_data._thumb se wapas lao
-      const cd = it.custom_data;
-      const customThumb =
-        cd && typeof cd === 'object' && typeof cd._thumb === 'string' ? cd._thumb : null;
-      const baseProduct = typeof p === 'object' ? p : { _id: productId };
-
-      acc.push({
-        ...baseProduct,
-        _id: productId,
-        quantity: it.quantity,
-        price: it.price,
-        ...(it.discountType ? { discountType: it.discountType } : {}),
-        ...(typeof it.discountPrice === 'number' ? { discountPrice: it.discountPrice } : {}),
-        ...(sv ? { selectedVariant: sv } : {}),
-        ...(cd ? { custom_data: cd } : {}),
-        ...(customThumb
-          ? { thumbnail: { ...(baseProduct as any).thumbnail, url: customThumb } }
-          : {}),
-        _dbItemId: String(it._id),
-      });
-      return acc;
-    }, []);
-
-    useCartStore.getState().syncFromDb(storeItems);
-  } catch (e) {
-    console.error('❌ Cart sync on login failed', e);
-  }
+      useCartStore.getState().syncFromDb(finalItems as any);
+    } catch (e) {
+      console.error('Cart sync on login failed', e);
+    } finally {
+      syncing = null;
+    }
+  })();
+  return syncing;
 }
 
 export const useUserStore = create<UserState>()(
@@ -151,21 +117,22 @@ export const useUserStore = create<UserState>()(
                 set({ isLoggedIn: true, userDetails: user });
             },
             logout: async () => {
+                // Network fail ho tab bhi local session clear — warna user "stuck logged-in" rehta tha
                 try {
                     await axiosInstance.get("/auth/logout");
+                } catch (error) {
+                    console.warn("Logout request failed, clearing local session", error);
+                } finally {
                     setAccessToken(null);
                     set({ isLoggedIn: false, userDetails: null });
-                } catch (error) {
-                    toast.error("Error logging out");
-                    console.error(error);
                 }
             },
             fetchUserDetails: async (silent = false) => {
                 try {
-                    // axiosInstance interceptor unwraps response.data,
-                    // so this resolves to the body directly.
-                    const data = await axiosInstance.post('/auth/me') as unknown as MeResponse;
-                    // console.log("Fetched user details:", data); // DEBUG
+                    // /auth/session kabhi 401 nahi deta: access valid → user,
+                    // access expire → server-side refresh rotate, guest → {success:false}
+                    const data = await axiosInstance.get('/auth/session') as unknown as MeResponse & { accessToken?: string };
+                    if (data?.accessToken) setAccessToken(data.accessToken);
                     if (data?.success && data?.user) {
                         set({
                             isLoggedIn: true,
@@ -178,13 +145,14 @@ export const useUserStore = create<UserState>()(
                             },
                         });
                     } else {
+                        setAccessToken(null);
                         set({ isLoggedIn: false, userDetails: null });
+                        if (!silent) toast.error('Session expired, please login again');
                     }
                 } catch (error) {
-                    // Mount-time silent check (guest / expired session) — toast mat dikhao.
+                    // Network/server error pe existing session mat udao (offline flicker se logout nahi)
                     if (!silent) toast.error('Failed to fetch user details');
-                    set({ isLoggedIn: false, userDetails: null });
-                    console.error("Failed to fetch user details:", error);
+                    else console.warn('Session check failed:', (error as Error)?.message);
                 }
             },
             getUserDetails: () => {
@@ -209,5 +177,10 @@ if (typeof window !== 'undefined') {
     window.addEventListener('auth:expired', () => {
         setAccessToken(null);
         useUserStore.setState({ isLoggedIn: false, userDetails: null });
+        // Protected page pe the → login pe bhejo (redirect back ke saath)
+        const path = window.location.pathname;
+        if (path.startsWith('/user')) {
+            window.location.href = `/login?redirect=${encodeURIComponent(path)}`;
+        }
     });
 }

@@ -58,7 +58,7 @@ export default function UserDetailPage() {
   const { user, addresses, orders, payments, reviews, wishlist, cart } = data;
 
   return (
-    <div className="max-w-8xl mx-auto px-4 lg:px-10 py-16">
+    <div className="ph-page">
       {/* Header */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-5">
         <h2 className="text-2xl font-bold text-gray-900">{user.username || 'Unnamed User'}</h2>

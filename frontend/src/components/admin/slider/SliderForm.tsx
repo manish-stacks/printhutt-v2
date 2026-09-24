@@ -143,7 +143,7 @@ export function SliderForm({
                   </label>
                   <Select
                     name="isActive"
-                    value={options.find(option => option.value === formData.isActive)}
+                    value={options.find(option => option.value === String(formData.isActive))}
                     options={options}
                     onChange={(selectedOption) => {
                       onChange({
@@ -151,7 +151,7 @@ export function SliderForm({
                           name: 'isActive',
                           value: selectedOption?.value || ''
                         }
-                      } );
+                      } as any );
                     }}
                     className="basic-single"
                     classNamePrefix="select"

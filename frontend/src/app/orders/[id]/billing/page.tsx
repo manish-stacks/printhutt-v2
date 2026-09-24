@@ -55,7 +55,7 @@ const SELLER = {
 };
 
 export default function InvoicePage() {
-  const params = useParams();
+  const params = useParams<Record<string, string>>()!;
   const [order, setOrder] = useState<IOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const { toPDF, targetRef } = usePDF({

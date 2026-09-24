@@ -4,6 +4,8 @@ import { Product } from '@/lib/types/product';
 import { axiosInstance } from '@/utils/axios';
 import { userCartService, type DbCartItemPayload } from '@/_services/common/usercart';
 import { useUserStore } from '@/store/useUserStore';
+import { trackAddToCart } from '@/lib/pixel';
+import { effectivePricing, findVariant, unitPrice } from '@/lib/pricing';
 import { resolveCustomDataImages, resolveThumbnailUrl, isDataImage } from '@/_services/common/uploadCustom';
 
 /* analytics ping (guest + login dono) */
@@ -124,23 +126,26 @@ const toDbPayload = (item: CartItem): DbCartItemPayload => {
   };
 };
 
-/**
- * Unique key for a cart item — product + variant + size combo.
- * Custom items (isGift=false, has custom_data) are always unique per entry.
- */
-const cartItemKey = (item: { _id: string; selectedVariant?: { _id?: string; size?: string }; custom_data?: unknown; isGift?: boolean }): string => {
-  const sv = item.selectedVariant;
-  return `${item._id}::${sv?._id ?? ''}::${sv?.size ?? ''}`;
+/* custom_data me sirf ye meta keys hon to item "custom" nahi maana jaata
+   (variant auto-pick wale cards pe custom_data = { variant } hota hai). */
+const META_KEYS = new Set(['variant', '_customId', '_editPath', '_thumb']);
+
+export const isCustomItem = (item: any): boolean => {
+  const cd = item?.custom_data;
+  if (!cd || typeof cd !== 'object') return false;
+  return Object.keys(cd).some((k) => !META_KEYS.has(k));
 };
 
-const isSameCartItem = (
-  a: CartItem,
-  b: { _id: string; selectedVariant?: { _id?: string; size?: string }; custom_data?: unknown }
-): boolean => {
-  // Custom-data items are always separate entries
-  if ((a as any).custom_data && Object.keys((a as any).custom_data).length > 0) return false;
-  if ((b as any).custom_data && Object.keys((b as any).custom_data).length > 0) return false;
-  return cartItemKey(a as any) === cartItemKey(b as any);
+/** Unique key — custom item ka apna _customId, baaki product+variant+size. */
+export const cartItemKey = (item: any): string => {
+  if (isCustomItem(item) && item.custom_data?._customId) return `custom::${item.custom_data._customId}`;
+  const sv = item?.selectedVariant;
+  return `${String(item?._id)}::${String(sv?._id ?? '')}::${String(sv?.size ?? '')}`;
+};
+
+const isSameCartItem = (a: any, b: any): boolean => {
+  if (isCustomItem(a) || isCustomItem(b)) return false;
+  return cartItemKey(a) === cartItemKey(b);
 };
 
 /* debounced full-sync to DB (sirf logged-in) */
@@ -149,7 +154,8 @@ const scheduleDbSync = (items: CartItem[]) => {
   if (!isUserLoggedIn()) return;
   if (syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(() => {
-    const persistableItems = items.filter((item) => !(item as any).isGift);
+    // gift + abhi upload ho rahe (base64) items DB me nahi jaate
+    const persistableItems = items.filter((item) => !(item as any).isGift && !hasInlineBase64(item));
 
     const payload = persistableItems.map(toDbPayload);
     userCartService.sync(payload).catch((e) => console.error('DB cart sync failed', e));
@@ -157,7 +163,7 @@ const scheduleDbSync = (items: CartItem[]) => {
 };
 
 /* Kya is product me koi base64 image chhupa hai (custom_data ya thumbnail)? */
-const hasInlineBase64 = (product: Product): boolean => {
+export const hasInlineBase64 = (product: Product): boolean => {
   const cd = (product as any).custom_data as Record<string, unknown> | undefined;
   if (isDataImage((product as any).thumbnail?.url)) return true;
   if (!cd) return false;
@@ -195,64 +201,76 @@ export const useCartStore = create<CartState>()(
       items: [],
 
       addToCart: (product, quantity) => {
-        /* Custom item (custom_data hai) ko edit-support metadata do — GENERIC,
-           kisi customize page ko change karne ki zarurat nahi:
-             _customId  → unique id (edit/update ke liye)
-             _editPath  → jis customize page pe user abhi hai (edit pe wahi khulega)
-           Ye sab customize products pe "Edit" button auto-enable kar deta hai. */
-        const cd0 = (product as any).custom_data as Record<string, unknown> | undefined;
-        if (cd0 && Object.keys(cd0).length > 0 && !cd0._customId) {
-          const path =
-            typeof window !== 'undefined' ? window.location.pathname : '';
-          (product as any).custom_data = {
-            ...cd0,
-            _customId: `c_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-            ...(path ? { _editPath: path } : {}),
+        const next: any = { ...product };
+        /* ✅ Variant ka apna discount (admin set) — har page se consistent */
+        if (!next.isGift) {
+          const v = findVariant(next);
+          if (v) {
+            const pr = effectivePricing(next, v);
+            next.price = pr.mrp;
+            next.discountType = pr.discountType;
+            next.discountPrice = pr.discountPrice;
+            next.selectedVariant = { _id: v._id, size: v.size, color: v.color, price: v.price };
+          }
+        }
+        const cd0 = next.custom_data as Record<string, unknown> | undefined;
+        const needsId = isCustomItem(next) || hasInlineBase64(next);
+
+        /* Custom item → edit-support meta (_customId / _editPath / _thumb) */
+        if (needsId) {
+          const path = typeof window !== 'undefined' ? window.location.pathname : '';
+          next.custom_data = {
+            ...(cd0 || {}),
+            _customId: (cd0 as any)?._customId || `c_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            ...(path && !(cd0 as any)?._editPath ? { _editPath: path } : {}),
           };
         }
+        const customId: string | undefined = next.custom_data?._customId;
 
-        /* insert logic — sirf URL-safe product store karo */
-        const insert = (safeProduct: Product) => {
-          /* Custom item ka preview thumbnail custom_data._thumb me rakho taaki
-             login/reload ke baad DB se aane par bhi custom preview dikhe (warna
-             product ka default thumbnail lagta tha). */
-          const scd = (safeProduct as any).custom_data as Record<string, unknown> | undefined;
-          const thumbUrl = (safeProduct as any).thumbnail?.url;
-          if (scd && Object.keys(scd).length > 0 && typeof thumbUrl === 'string' && !scd._thumb) {
-            (safeProduct as any).custom_data = { ...scd, _thumb: thumbUrl };
+        const withThumb = (p: any) => {
+          const scd = p.custom_data;
+          const thumbUrl = p.thumbnail?.url;
+          if (isCustomItem(p) && typeof thumbUrl === 'string' && !isDataImage(thumbUrl)) {
+            p.custom_data = { ...scd, _thumb: thumbUrl };
           }
-          set((state) => {
-            const existingItem = state.items.find((item) => isSameCartItem(item, safeProduct as any));
-            let newItems: CartItem[];
-            if (existingItem) {
-              newItems = state.items.map((item) =>
-                isSameCartItem(item, safeProduct as any)
-                  ? { ...item, quantity: item.quantity + quantity }
-                  : item
-              );
-            } else {
-              if (!(safeProduct as any).isGift) {
-                add_product(safeProduct._id).catch(() => { });
-              }
-              newItems = [...state.items, { ...safeProduct, quantity } as CartItem];
-            }
-            scheduleDbSync(newItems);
-            return { items: newItems };
-          });
+          return p;
         };
 
-        /* base64 hai? pehle S3 upload karke URL banao, tab insert.
-           Warna base64 localStorage (5MB) bhar deta hai + DB payload bloat.
-           Signature void hi rehta hai — pages ko change karne ki zarurat nahi. */
-        if (hasInlineBase64(product)) {
-          stripBase64ToUrls(product)
-            .then(insert)
-            .catch((e) => {
-              console.error('cart image upload failed, storing inline as fallback', e);
-              insert(product); // fallback — chunked storage handle karega, order pe upload
-            });
-        } else {
-          insert(product);
+        /* ✅ Turant (optimistic) insert — UI live update, upload ka wait nahi */
+        set((state) => {
+          const existing = state.items.find((item) => isSameCartItem(item, next));
+          let newItems: CartItem[];
+          if (existing) {
+            newItems = state.items.map((item) =>
+              isSameCartItem(item, next) ? { ...item, quantity: item.quantity + quantity } : item
+            );
+          } else {
+            if (!next.isGift) add_product(next._id).catch(() => { });
+            if (!next.isGift) {
+              const unit = unitPrice(next.price, next.discountType, next.discountPrice);
+              trackAddToCart({ _id: next._id, title: next.title, price: unit, quantity });
+            }
+            newItems = [...state.items, { ...withThumb(next), quantity } as CartItem];
+          }
+          scheduleDbSync(newItems);
+          return { items: newItems };
+        });
+
+        /* base64 → S3 background me; complete hone par wahi item replace */
+        if (hasInlineBase64(next) && customId) {
+          stripBase64ToUrls(next)
+            .then((clean: any) => {
+              set((state) => {
+                const newItems = state.items.map((it: any) =>
+                  it.custom_data?._customId === customId
+                    ? ({ ...withThumb({ ...clean, custom_data: { ...clean.custom_data, _customId: customId } }), quantity: it.quantity } as CartItem)
+                    : it
+                );
+                scheduleDbSync(newItems);
+                return { items: newItems };
+              });
+            })
+            .catch((e) => console.error('cart image upload failed (checkout pe retry hoga)', e));
         }
       },
 
@@ -315,32 +333,20 @@ export const useCartStore = create<CartState>()(
         set({ items: [] });
       },
 
-      // DB se aaye items ko store me set — dedup karo same _id+variant combo
-      syncFromDb: (items) => {
-        const seen = new Set<string>();
-        const deduped = items.reduce((acc: CartItem[], item) => {
-          // Custom data items kabhi dedup mat karo (har ek unique hai)
-          if ((item as any).custom_data && Object.keys((item as any).custom_data).length > 0) {
-            acc.push(item);
-            return acc;
-          }
-          // Gift items bhi skip
-          if ((item as any).isGift) {
-            acc.push(item);
-            return acc;
-          }
-          const key = cartItemKey(item as any);
-          if (seen.has(key)) {
-            // Duplicate mila — existing ki quantity mein add karo
-            const existing = acc.find((a) => cartItemKey(a as any) === key);
-            if (existing) existing.quantity += item.quantity;
-            return acc;
-          }
-          seen.add(key);
-          acc.push(item);
-          return acc;
-        }, []);
-        set({ items: deduped });
+      // DB se aaye items → store. Dedup + local-only (gift / pending upload) items preserve.
+      syncFromDb: (dbItems) => {
+        const map = new Map<string, CartItem>();
+        for (const it of dbItems) {
+          const key = cartItemKey(it);
+          const ex = map.get(key);
+          if (ex) ex.quantity = Math.max(ex.quantity, it.quantity);
+          else map.set(key, { ...it });
+        }
+        for (const local of get().items) {
+          const keep = (local as any).isGift || hasInlineBase64(local);
+          if (keep && !map.has(cartItemKey(local))) map.set(cartItemKey(local), local);
+        }
+        set({ items: Array.from(map.values()) });
       },
 
       /**
@@ -409,14 +415,10 @@ export const useCartStore = create<CartState>()(
 
       getTotalPrice: () => {
         const items = get().items;
-        const totalPrice = items.reduce((t, i) => t + i.price * i.quantity, 0);
-        const discountPrice = items.reduce((t, i) => {
-          if (i.discountType === 'percentage') {
-            return t + (i.price - (i.price * i.discountPrice) / 100) * i.quantity;
-          }
-          return t + (i.price - i.discountPrice) * i.quantity;
-        }, 0);
-        const shippingTotal = items.reduce((t, i) => t + (i?.shippingFee || 0), 0);
+        const totalPrice = items.reduce((t, i) => t + (Number(i.price) || 0) * i.quantity, 0);
+        const discountPrice = items.reduce((t, i) => t + unitPrice(i.price, i.discountType, i.discountPrice) * i.quantity, 0);
+        // Site policy: shipping free — server bhi 0 leta hai (display = charge)
+        const shippingTotal = 0;
         return { totalPrice, discountPrice, shippingTotal };
       },
     }),

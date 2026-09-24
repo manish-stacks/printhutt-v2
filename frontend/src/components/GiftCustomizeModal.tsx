@@ -13,8 +13,8 @@ import {
 import { useCartStore } from "@/store/useCartStore";
 import { toast } from "react-toastify";
 import { compressImage } from "@/utils/image-compress";
+import { useStoreSettings } from "@/store/useSettingsStore";
 
-const FREE_GIFT_ID = "67b4756b5e05b7be01d85ea2";
 const MAX_SIZE_MB = 10;
 
 export default function GiftCustomizeModal({ onClose }: { onClose: () => void }) {
@@ -26,7 +26,8 @@ export default function GiftCustomizeModal({ onClose }: { onClose: () => void })
   const [isDragging, setIsDragging] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const { updateItem } = useCartStore();
+  const updateItem = useCartStore((s) => s.updateItem);
+  const FREE_GIFT_ID = useStoreSettings().giftProductId;
 
   /* ── ESC + body scroll lock ── */
   useEffect(() => {

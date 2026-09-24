@@ -31,7 +31,7 @@ const UserSidebar = ({ activemenu }: Props) => {
   const logoutStore = useUserStore((state) => state.logout);
 
   /* Initials for avatar */
-  const fullName: string = userData?.name || userData?.username || 'Guest User';
+  const fullName: string = (userData as any)?.name || userData?.username || 'Guest User';
   const initials = fullName
     .split(' ')
     .map((p: string) => p[0])

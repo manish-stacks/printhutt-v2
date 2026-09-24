@@ -70,7 +70,7 @@ const Address = () => {
   };
 
   const onEdit = (a: AddressFormData) => {
-    setEditingId(a._id);
+    setEditingId(a._id ?? null);
     setFormData(a);
     setView('form');
   };
@@ -205,7 +205,7 @@ const Address = () => {
                           <RiEdit2Line /> Edit
                         </button>
                         <button
-                          onClick={() => handleDelete(address._id)}
+                          onClick={() => handleDelete(address._id ?? '')}
                           className="flex-1 flex items-center justify-center gap-1 text-sm text-red-500 hover:bg-red-50 py-2 rounded-lg font-medium transition"
                         >
                           <RiDeleteBin6Line /> Delete

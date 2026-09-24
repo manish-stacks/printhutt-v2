@@ -1,10 +1,10 @@
-import Products from '@/pages/Products'
+import Products from '@/views/Products'
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 
 
 export const metadata: Metadata = {
-  title: 'Product',
+  title: 'Products | Neon Lights| LED Lights | Neon Signs| LED Signs',
   description: 'Products-Page',
   keywords: ['Products', 'neon Products', 'led lights', 'neon lights'],
   openGraph: {

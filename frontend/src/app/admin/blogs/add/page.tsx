@@ -1,4 +1,4 @@
-import BlogAdd from '@/pages/admin/blog/BlogAdd'
+import BlogAdd from '@/views/admin/blog/BlogAdd'
 import React from 'react'
 
 const page = () => {

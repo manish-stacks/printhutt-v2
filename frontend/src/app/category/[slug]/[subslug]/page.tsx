@@ -1,13 +1,14 @@
 
 import { categoryService } from '@/_services/common/categoryService';
-import SubCategory from '@/pages/SubCategory';
+import SubCategory from '@/views/SubCategory';
 import { Metadata } from 'next';
 import React from 'react'
 
 interface Props {
-    params: {
+    params: Promise<{
+        slug: string;
         subslug: string;
-    };
+    }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -33,9 +34,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 }
 export default async function SubCategoryPage({ params }: Props) {
-    const { subslug } = await params;
+    const { slug, subslug } = await params;
     return (
-        <SubCategory subslug={subslug} /> 
+        <SubCategory slug={slug} subslug={subslug} />
     )
 }
 

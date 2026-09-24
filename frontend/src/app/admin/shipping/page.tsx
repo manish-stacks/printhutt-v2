@@ -1,5 +1,5 @@
 
-import ShippingPage from "@/pages/admin/ShippingPage";
+import ShippingPage from "@/views/admin/ShippingPage";
 import { Suspense } from "react";
 
 const Page = () => {

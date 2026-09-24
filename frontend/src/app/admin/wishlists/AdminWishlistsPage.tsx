@@ -45,8 +45,8 @@ export default function AdminWishlistsPage() {
     const searchParams = useSearchParams();
 
     // 🔑 Initial state from URL
-    const [search, setSearch] = useState(searchParams.get('search') || '');
-    const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
+    const [search, setSearch] = useState(searchParams?.get('search') || '');
+    const [page, setPage] = useState(Number(searchParams?.get('page')) || 1);
 
     const [rows, setRows] = useState<WishlistRow[]>([]);
     const [loading, setLoading] = useState(true);
@@ -64,7 +64,7 @@ export default function AdminWishlistsPage() {
         if (search) params.set('search', search);
 
         const qs = params.toString();
-        const newUrl = qs ? `${pathname}?${qs}` : pathname;
+        const newUrl = qs ? `${pathname}?${qs}` : (pathname ?? "");
         router.replace(newUrl, { scroll: false });
     }, [page, search]);
 
@@ -115,7 +115,7 @@ export default function AdminWishlistsPage() {
     const totalPages = Math.ceil(total / limit);
 
     return (
-        <div className="p-4 pt-14">
+        <div className="ph-page">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>

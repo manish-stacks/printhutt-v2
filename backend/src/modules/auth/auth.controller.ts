@@ -3,13 +3,15 @@ import { asyncHandler } from '@/utils/async-handler';
 import { sendCreated, sendOk } from '@/utils/api-response';
 import {
   clearAuthCookies,
+  ACCESS_COOKIE,
+  LEGACY_COOKIE,
   REFRESH_COOKIE,
   setAccessCookie,
   setLegacyCookie,
   setRefreshCookie,
 } from '@/utils/cookies';
 import { UnauthorizedError } from '@/utils/errors';
-import { verifyRefreshToken } from '@/utils/jwt';
+import { verifyAccessToken, verifyLegacyToken, verifyRefreshToken } from '@/utils/jwt';
 import * as authService from './auth.service';
 import type {
   AdminLoginDTO,
@@ -123,4 +125,40 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
   const { token } = req.body as VerifyEmailDTO;
   await authService.verifyEmail(token);
   return sendOk(res, { message: 'Email verified successfully' });
+});
+
+
+/* GET /api/auth/session — guest-safe session probe (kabhi 401 nahi deta).
+ * Access valid → user; access expire + refresh valid → rotate + user; warna {success:false}.
+ * Frontend ka mount-time check isi se hota hai → guest pe console 401 spam band. */
+export const session = asyncHandler(async (req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const cookies = (req.cookies as Record<string, string | undefined>) ?? {};
+  let userId: string | null = null;
+  let accessToken: string | undefined;
+
+  const tryVerify = (fn: () => { id: string }) => { try { return fn().id; } catch { return null; } };
+  if (cookies[ACCESS_COOKIE]) userId = tryVerify(() => verifyAccessToken(cookies[ACCESS_COOKIE]!));
+  if (!userId && cookies[LEGACY_COOKIE]) userId = tryVerify(() => verifyLegacyToken(cookies[LEGACY_COOKIE]!));
+
+  if (!userId && cookies[REFRESH_COOKIE]) {
+    try {
+      const tokens = await authService.refresh(cookies[REFRESH_COOKIE]!);
+      setAccessCookie(res, tokens.accessToken);
+      setRefreshCookie(res, tokens.refreshToken);
+      setLegacyCookie(res, tokens.legacyToken);
+      accessToken = tokens.accessToken;
+      userId = verifyRefreshToken(tokens.refreshToken).id;
+    } catch {
+      clearAuthCookies(res); // revoked/expired refresh → stale cookies saaf
+    }
+  }
+
+  if (!userId) return res.status(200).json({ success: false, user: null });
+  try {
+    const user = await authService.getMe(userId);
+    return res.status(200).json({ success: true, user, ...(accessToken ? { accessToken } : {}) });
+  } catch {
+    return res.status(200).json({ success: false, user: null });
+  }
 });

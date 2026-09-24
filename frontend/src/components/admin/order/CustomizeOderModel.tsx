@@ -193,7 +193,7 @@ const CustomizeOderModel: React.FC<{ item: OrderItem }> = ({ item }) => {
                                 <OrderDetailRow
                                     key={`name${i}`}
                                     label={`Name-${i}`}
-                                    value={item[`name${i}` as keyof OrderItem]}
+                                    value={item[`name${i}` as keyof OrderItem] as any}
                                 />
                             ))}
                             <OrderDetailRow label="Selected Design" value={item.selectedDesign} />

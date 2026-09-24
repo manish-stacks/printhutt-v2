@@ -1,4 +1,5 @@
 "use client"
+import VideoField from '@/components/admin/product/VideoField';
 import { get_parent_categories } from '@/_services/admin/category';
 import { get_all_offer } from '@/_services/admin/offer';
 import { get_product_by_id, update_a_product } from '@/_services/admin/product';
@@ -87,7 +88,7 @@ export default function EditProduct() {
           get_all_return(),
           get_parent_categories(),
           get_all_offer(),
-          get_product_by_id(id),
+          get_product_by_id(id!),
         ]);
         // console.log('shipping:', shippingData);
         setWarranties(warrantyData.data);
@@ -108,7 +109,7 @@ export default function EditProduct() {
             ? Math.round(productData.price - productData.discountPrice)
             : Math.round(productData.price);
 
-        setFormData({
+        setFormData({ ...({} as any),
           ...productData,
           category: categoryId,
           subcategory: subcategoryId,
@@ -304,13 +305,13 @@ export default function EditProduct() {
   return (
     <>
       <form onSubmit={handleSubmit} encType="multipart/form-data">
-        <div className="flex flex-wrap mt-20 mb-52">
+        <div className="ph-form flex flex-wrap -mx-3 mb-10">
 
           {/* Header */}
           <div className="w-full px-4 mb-5">
-            <div className="bg-white text-black flex justify-between align-middle p-6 rounded-lg shadow-md shadow-black-300">
+            <div className="ph-page-head ph-head-card">
               <h3 className="text-lg font-bold">Update Product</h3>
-              <button type="button" onClick={() => router.back()} className="bg-blue-500 text-white py-1 px-7 rounded">Back</button>
+              <button type="button" onClick={() => router.back()} className="ph-btn ph-btn-ghost">Back</button>
             </div>
           </div>
 
@@ -336,9 +337,9 @@ export default function EditProduct() {
           )}
 
           {/* Left Side */}
-          <div className="w-full md:w-8/12 lg:w-8/12 px-4 space-y-6">
+          <div className="w-full lg:w-8/12 px-3 space-y-6">
 
-            <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+            <div className="ph-section space-y-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Product Name *</label>
                 <input className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 mt-1"
@@ -351,7 +352,7 @@ export default function EditProduct() {
               </div>
             </div>
 
-            <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+            <div className="ph-section space-y-5">
               <label className="block text-sm font-medium text-gray-700">Thumbnail *</label>
               <p className="text-xs text-gray-600">Image Size Should Be 800 x 800.</p>
               <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
@@ -375,24 +376,24 @@ export default function EditProduct() {
               </div>
             </div>
 
-            <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+            <div className="ph-section space-y-5">
               <label className="block text-sm font-medium text-gray-700">Gallery Images *</label>
               <p className="text-xs text-gray-600">Image Size Should Be 800 x 800.</p>
               <ImageUpload images={formData.images} onImagesChange={handleImagesChange} productId={id} />
             </div>
 
-            <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+            <div className="ph-section space-y-5">
               <label className="block text-sm font-medium text-gray-700">Short Description *</label>
               <textarea className="flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 mt-1"
                 name="short_description" rows={5} value={formData.short_description} onChange={handleInputChange} placeholder="Enter short description" />
             </div>
 
-            <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+            <div className="ph-section space-y-5">
               <label className="block text-sm font-medium text-gray-700">Description *</label>
               <QuillEditor value={formData.description} onChange={handleEditorChange} />
             </div>
 
-            <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+            <div className="ph-section space-y-5">
               <label className="block text-sm font-medium text-gray-900">Product Data *</label>
               <div className='flex justify-between gap-3'>
                 <div className="w-4/12 mt-4">
@@ -482,15 +483,18 @@ export default function EditProduct() {
                   <input className="block w-full h-10 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                     type="text" name="weight" value={formData.weight || ''} onChange={handleInputChange} placeholder='weight' />
                 </div>
-                <div className="w-8/12 mt-4">
-                  <label className="block font-medium text-gray-700">Preview Video</label>
-                  <input className="block w-full h-10 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                    type="text" name="demoVideo" value={formData.demoVideo || ''} onChange={handleInputChange} placeholder='Preview Video URL' />
-                </div>
+                <div className="w-full mt-4">
+                    <VideoField
+                      value={formData.demoVideo}
+                      asThumb={(formData as any).videoAsThumbnail}
+                      onChange={(v) => setFormData((prev: any) => ({ ...prev, demoVideo: v }))}
+                      onToggleThumb={(v) => setFormData((prev: any) => ({ ...prev, videoAsThumbnail: v }))}
+                    />
+                  </div>
               </div>
             </div>
 
-            <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+            <div className="ph-section space-y-5">
               <label className="block text-sm font-medium text-gray-900">Product Policy</label>
               <div className='flex justify-between gap-3'>
                 <div className="w-4/12 mt-4">
@@ -522,9 +526,9 @@ export default function EditProduct() {
           </div>
 
           {/* Right Side */}
-          <div className="w-full md:w-4/12 lg:w-4/12 px-4 space-y-6">
+          <div className="w-full lg:w-4/12 px-3 mt-6 lg:mt-0 space-y-6">
 
-            <div className="bg-white text-black p-6 rounded-lg space-x-3 shadow-md shadow-black-300">
+            <div className="ph-section ph-section-row">
               <button type="submit" disabled={isSubmitting} className="bg-green-500 text-white py-2 px-7 rounded gap-1">
                 <span className='flex'>
                   {isSubmitting && <RiLoader2Line className="mr-2 h-4 w-4 animate-spin" />}
@@ -590,7 +594,7 @@ export default function EditProduct() {
               <VariantSection formData={formData} setFormData={setFormData} />
             )}
 
-            <div className="bg-white text-black p-6 rounded-lg space-x-3 shadow-md shadow-black-300">
+            <div className="ph-section ph-section-row">
               <label className="block font-medium text-gray-700 ml-3">Offers On</label>
               <Select options={options} isMulti value={selectedOffers} onChange={handleSelectChangeOffer} />
               <label className="block font-medium text-gray-700 ml-3 mt-3">Shipping Fee</label>
@@ -599,7 +603,7 @@ export default function EditProduct() {
                 placeholder='Shipping Fee' />
             </div>
 
-            <div className="bg-white text-black p-6 rounded-lg space-x-3 shadow-md shadow-black-300">
+            <div className="ph-section ph-section-row">
               <label className="block font-medium text-gray-700 ml-3">Select Category</label>
               <select id="category" name="category" value={formData.category || ''} onChange={handleCategoryChange}
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
@@ -619,7 +623,7 @@ export default function EditProduct() {
               </select>
             </div>
 
-            <div className="bg-white text-black p-6 rounded-lg space-y-5 shadow-md shadow-black-300">
+            <div className="ph-section space-y-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Meta Title</label>
                 <input className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 mt-1"

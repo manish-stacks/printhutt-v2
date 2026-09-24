@@ -1,4 +1,4 @@
-import UserOrdersPage from "@/pages/user/UserOrdersPage";
+import UserOrdersPage from "@/views/user/UserOrdersPage";
 import { Suspense } from "react";
 
 const Page = () => {

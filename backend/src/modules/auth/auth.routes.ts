@@ -20,6 +20,7 @@ router.post('/admin-login', authLimiter, validate(adminLoginSchema), controller.
 router.post('/signup', authLimiter, validate(signupSchema), controller.signup);
 router.post('/verifyemail', authLimiter, validate(verifyEmailSchema), controller.verifyEmail);
 router.post('/refresh', controller.refresh);
+router.get('/session', controller.session);
 router.get('/logout', controller.logout);
 
 /* ─── Authenticated ─────────────────────────────────────────── */

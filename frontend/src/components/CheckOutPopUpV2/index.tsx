@@ -1,231 +1,243 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { BiX } from 'react-icons/bi';
 import { syncCartOnLogin, useUserStore } from '@/store/useUserStore';
 import { useCartStore } from '@/store/useCartStore';
 import { CheckoutForm } from './CheckoutForm';
-import { setPendingPurchase } from '@/lib/pixel';
+import { setPendingPurchase, trackCheckoutStart } from '@/lib/pixel';
+import { unitPrice } from '@/lib/pricing';
 import { ModalProps, TotalPrice, CouponItem } from './interfaces';
 import { PhoneVerification } from './PhoneVerification';
-import { axiosInstance } from '@/utils/axios';
+import { axiosInstance, setAccessToken } from '@/utils/axios';
 import { toast } from 'react-toastify';
 import { commonApi } from '@/_services/common/common';
 import confetti from 'canvas-confetti';
-import { formatCurrency } from '@/helpers/helpers';
 import { checkCouponByCode } from '@/_services/admin/coupon';
 import { create_a_new_order, initiate_Payment, confirm_free_order } from '@/_services/common/order';
 
+const OTP_WAIT = 30;
+
 const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
+    /* ── store (live) ── */
+    const items = useCartStore((s) => s.items);
+    const isLoggedIn = useUserStore((s) => s.isLoggedIn);
+    const fetchUserDetails = useUserStore((s) => s.fetchUserDetails);
+
+    /* ── OTP state ── */
     const [phoneNumber, setPhoneNumber] = useState('');
     const [otp, setOtp] = useState('');
     const [isOtpSent, setIsOtpSent] = useState(false);
-    const [error, setError] = useState('');
-    const [showSummary, setShowSummary] = useState(false);
-    const [totalPrice, setTotalPrice] = useState<TotalPrice>({
-        totalPrice: 0,
-        discountPrice: 0,
-        shippingTotal: 0
-    });
-    const { items, getTotalItems, getTotalPrice } = useCartStore();
-    const isLoggedIn = useUserStore((state) => state.isLoggedIn);
+    const [timer, setTimer] = useState(OTP_WAIT);
+    const [loading, setLoading] = useState(false);
     const phoneInputRef = useRef<HTMLInputElement>(null);
     const otpInputRef = useRef<HTMLInputElement>(null);
-    const [selectedCoupon, setSelectedCoupon] = useState<CouponItem | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [timer, setTimer] = useState(30);
-    const [isResendEnabled, setIsResendEnabled] = useState(false);
+    const isResendEnabled = timer <= 0;
     const emailOrMobile = phoneNumber;
-    const fetchUserDetails = useUserStore((state) => state.fetchUserDetails);
-    const [paymentMethod, setPaymentMethod] = useState<'online' | 'offline'>('online');
-    const [originalPrice, setOriginalPrice] = useState(0);
-    const [availableCoupons, setAvailableCoupons] = useState([]);
-    const [coupon_mark, setCoupon_mark] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [paymentPartner, setPaymentPartner] = useState<'phonepe' | 'razorpay'>('phonepe');
 
-    const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value.replace(/\D/g, '');
-        setPhoneNumber(value);
+    /* ── checkout state ── */
+    const [error, setError] = useState('');
+    const [showSummary, setShowSummary] = useState(false);
+    const [selectedCoupon, setSelectedCoupon] = useState<CouponItem | null>(null);
+    const [couponDiscount, setCouponDiscount] = useState(0);
+    const [coupon_mark, setCoupon_mark] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState<'online' | 'offline'>('online');
+    // COD pe coupon suspend (state rehta hai), Online pe wapas active — koi re-fetch nahi
+    const activeCoupon = paymentMethod === 'online' ? selectedCoupon : null;
+    const activeDiscount = paymentMethod === 'online' ? couponDiscount : 0;
+    const userRemovedRef = useRef(false); // user ne khud coupon Remove kiya
+    const [paymentPartner, setPaymentPartner] = useState<'phonepe' | 'razorpay'>('phonepe');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectAddress, setSelectAddress] = useState({
+        address: '', city: '', state: '', postCode: '', addressType: 'home', name: '', email: '', number: '',
+    });
+
+    /* ✅ Totals items se DERIVE — add/remove pe turant update (no effect lag) */
+    const base = useMemo(() => {
+        const totalPrice = items.reduce((t, i) => t + i.price * i.quantity, 0);
+        const discountPrice = items.reduce((t, i) => t + unitPrice(i.price, i.discountType, i.discountPrice) * i.quantity, 0);
+        const shippingTotal = 0; // server policy: free shipping
+        return { totalPrice, discountPrice, shippingTotal };
+    }, [items]);
+    const originalPrice = base.discountPrice;
+
+    const totalPrice: TotalPrice = useMemo(() => ({
+        ...base,
+        discountPrice: Math.max(0, base.discountPrice - activeDiscount),
+        coupon_discount: activeDiscount,
+    }), [base, activeDiscount]);
+
+    /* ── coupon (server validated) ── */
+    const applyCouponDiscount = useCallback(async (coupon: CouponItem, silent = false) => {
+        try {
+            const res: any = await checkCouponByCode(coupon.code, cartSubtotal());
+            if (!res?.valid || !res?.coupon) {
+                if (!silent) setError(res?.message || 'Invalid coupon code');
+                return false;
+            }
+            if (!silent) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, zIndex: 10000 });
+            setCouponDiscount(Number(res.discount || 0));
+            setSelectedCoupon(res.coupon as CouponItem);
+            setError('');
+            return true;
+        } catch (e: any) {
+            // server ne throw kiya (bad/expired code) — raw axios error ke bajaye clean message
+            if (!silent) setError(e?.response?.data?.message || 'Invalid coupon code');
+            return false;
+        }
+    }, []);
+
+    const handleRemoveCoupon = useCallback(() => {
+        userRemovedRef.current = true;
+        setCouponDiscount(0);
+        setSelectedCoupon(null);
+        setCoupon_mark('');
         setError('');
     }, []);
 
-    const [selectAddress, setSelectAddress] = useState({
-        address: '',
-        city: '',
-        state: '',
-        postCode: '',
-        addressType: 'home',
-        name: '',
-        email: '',
-        number: ''
-    });
-
+    // DEFAULT COUPON (FLAT100) — jab bhi Online selected ho aur koi coupon na ho → auto-apply.
+    // COD → Online switch pe bhi chalega. User ne khud Remove kiya ho to tab tak nahi jab tak woh
+    // dobara Online select na kare. Har eligible baar fresh fetch — koi ref-cache nahi, taaki
+    // cache stale rehne se auto-apply miss na ho.
     useEffect(() => {
-        const price = getTotalPrice();
-        setOriginalPrice(price.discountPrice);
-        if (!selectedCoupon) {
-            setTotalPrice(price);
-        }
-    }, [items, getTotalPrice]);
-
-    useEffect(() => {
-        const fetchCoupons = async () => {
+        if (!isOpen || !isLoggedIn || originalPrice <= 0) return;
+        if (paymentMethod !== 'online' || selectedCoupon || userRemovedRef.current) return;
+        let cancelled = false;
+        (async () => {
             try {
-                const data = await commonApi.getCouponsCode();
-                setAvailableCoupons(data?.coupons || []);
-
-                // ✅ Bug #5: sirf admin-flagged isDefault coupon auto-apply hoga (best/last nahi).
-                //    Validation + discount server se aata hai (silent — na lage to error toast nahi).
-                if (data.coupons?.length > 0 && paymentMethod === 'online') {
-                    const defaultCoupon = data.coupons.find((coupon: any) => coupon.isDefault === true);
-                    if (defaultCoupon) {
-                        applyCouponDiscount(defaultCoupon as CouponItem, true);
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to fetch coupons:", error);
+                const data: any = await commonApi.getCouponsCode();
+                const def = data?.coupons?.find((c: any) => c.isDefault === true) || null;
+                if (def && !cancelled) await applyCouponDiscount(def, true);
+            } catch (e) {
+                console.error('Failed to fetch coupons:', e);
             }
-        };
-        if (selectedCoupon) return;
-        if (originalPrice <= 0) return; // price ready hone tak ruko
-        fetchCoupons();
-    }, [originalPrice, paymentMethod]);
+        })();
+        return () => { cancelled = true; };
+    }, [isOpen, isLoggedIn, originalPrice, paymentMethod, selectedCoupon, applyCouponDiscount]);
 
-    const handleMarkChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    // cart change → applied coupon re-validate (debounced), warna remove
+    const lastValidated = useRef(0);
+    useEffect(() => {
+        if (!selectedCoupon) { lastValidated.current = originalPrice; return; }
+        if (lastValidated.current === originalPrice) return;
+        const t = setTimeout(async () => {
+            lastValidated.current = originalPrice;
+            const ok = await applyCouponDiscount(selectedCoupon, true);
+            if (!ok) { handleRemoveCoupon(); toast.info('Coupon removed — cart changed'); }
+        }, 400);
+        return () => clearTimeout(t);
+    }, [originalPrice, selectedCoupon, applyCouponDiscount, handleRemoveCoupon]);
+
+    const handleMarkChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setCoupon_mark(e.target.value);
-    };
+    }, []);
 
     const handle_apply_code = async () => {
         if (paymentMethod === 'offline') { setError('COD Not Applied for Coupons'); return; }
         if (!coupon_mark.trim()) { setError('Please enter a coupon code'); return; }
-        if (selectedCoupon?.code === coupon_mark) { setError('This coupon has already been applied'); return; }
-        // ✅ Bug #4 + #7: server-side validate endpoint (admin list nahi). Display = server discount.
+        if (selectedCoupon?.code === coupon_mark.trim()) { setError('This coupon has already been applied'); return; }
         await applyCouponDiscount({ code: coupon_mark.trim() } as CouponItem);
     };
 
-    const handle_select = (coupon: CouponItem) => {
-        if (selectedCoupon?.code === coupon.code) { setError('This coupon has already been applied'); return; }
-        applyCouponDiscount(coupon);
-    };
-
-    // ✅ Sabhi coupon paths (manual / list / auto-default) ISI se jaate hain — discount
-    //    server se aata hai, isliye checkout par jo dikhta hai WAHI charge hota hai.
-    //    `silent` = auto-apply ke liye (default coupon na lage to error toast na ho).
-    const applyCouponDiscount = useCallback(async (coupon: CouponItem, silent = false) => {
-        try {
-            const res: any = await checkCouponByCode(coupon.code, originalPrice);
-            if (!res?.valid || !res?.coupon) {
-                if (!silent) setError(res?.message || 'Coupon could not be applied');
-                return;
-            }
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, zIndex: 10000 });
-            setTotalPrice(prev => ({
-                ...prev,
-                discountPrice: Math.max(0, originalPrice - Number(res.discount || 0)),
-                coupon_discount: Number(res.discount || 0),
-            }));
-            setSelectedCoupon(res.coupon as CouponItem);
+    const setPaymentFunction = useCallback((value: string) => {
+        const next = value as 'online' | 'offline';
+        setPaymentMethod(next);
+        if (next === 'online') {
+            userRemovedRef.current = false; // Online chuna → default coupon auto-apply allowed
             setError('');
-        } catch (e: any) {
-            console.error(e);
-            if (!silent) setError(e?.message || 'Failed to apply coupon. Please try again.');
-        }
-    }, [originalPrice]);
-
-    const setPaymentFunction = (value: string) => {
-        setPaymentMethod(value as 'online' | 'offline');
-        if (value === 'offline') {
+        } else {
+            // COD — coupons applicable nahi. Clear karo, warna selectedCoupon truthy rehne se
+            // default-coupon auto-apply effect Online pe wapas aane par bhi skip ho jaata tha.
             if (selectedCoupon) setError('COD Not Applied for Coupons');
             setSelectedCoupon(null);
-            setTotalPrice(prev => ({ ...prev, coupon_discount: 0, discountPrice: originalPrice }));
+            setCouponDiscount(0);
+            setCoupon_mark('');
         }
-    };
+    }, [selectedCoupon]);
 
-    const handleOtpChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        setOtp(e.target.value.replace(/\D/g, ''));
+    /* ── OTP ── */
+    const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10));
         setError('');
     }, []);
 
-    const handleRemoveCoupon = useCallback(() => {
-        setTotalPrice(prev => ({ ...prev, discountPrice: originalPrice, coupon_discount: 0 }));
-        setSelectedCoupon(null);
-        setCoupon_mark('');
+    const handleOtpChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
         setError('');
-    }, [originalPrice]);
+    }, []);
 
-    const handleSendOtp = useCallback(async () => {
-        if (!phoneNumber || phoneNumber.length !== 10) {
+    const sendOtp = useCallback(async () => {
+        if (!/^[6-9]\d{9}$/.test(phoneNumber)) {
             setError('Please enter a valid 10-digit phone number');
             return;
         }
         try {
             setLoading(true);
-            const data = await axiosInstance.post('/auth/login', { emailOrMobile });
-            setTimer(30);
-            setIsResendEnabled(false);
-            if (data) { toast.success(`OTP sent to ${emailOrMobile}`); setIsOtpSent(true); }
-            else setError('Failed to send OTP');
-        } catch { setError('Failed to send OTP. Please try again later.'); }
-        finally { setLoading(false); }
+            setOtp('');
+            setError('');
+            const data = await axiosInstance.post('/auth/login', { emailOrMobile: phoneNumber });
+            if (!data) { setError('Failed to send OTP'); return; }
+            toast.success(`OTP sent to ${phoneNumber}`);
+            setIsOtpSent(true);
+            setTimer(OTP_WAIT);
+            setTimeout(() => otpInputRef.current?.focus(), 50);
+        } catch {
+            setError('Failed to send OTP. Please try again later.');
+        } finally {
+            setLoading(false);
+        }
     }, [phoneNumber]);
 
+    const verifyingRef = useRef(false);
     const handleVerifyOtp = useCallback(async () => {
-        if (!otp || otp.length !== 6) { setError('Please enter a valid 6-digit OTP'); return; }
+        if (otp.length !== 6) { setError('Please enter a valid 6-digit OTP'); return; }
+        if (verifyingRef.current) return; // double submit (Enter + click) guard
+        verifyingRef.current = true;
         try {
             setLoading(true);
             const data: any = await axiosInstance.post('/auth/verify-otp', { otp, emailOrMobile });
-            // ✅ FIX: Access token in-memory set karo — axios interceptor ke liye
-            // Cookie httpOnly set hoti hai backend se automatically
-            // But in-memory token bhi set karo taaki immediate requests auth ho sakein
-            if (data?.accessToken) {
-                const { setAccessToken } = await import('@/utils/axios');
-                setAccessToken(data.accessToken);
-            }
+            if (data?.accessToken) setAccessToken(data.accessToken);
             toast.success(data?.message || 'OTP verified successfully');
-            // ✅ fetchUserDetails + cart sync — NO reload needed
-            await fetchUserDetails();
-            await syncCartOnLogin();
-            onClose();
-            
-        } catch { setError('Invalid OTP or OTP expired'); }
-        finally { setLoading(false); }
-    }, [otp, emailOrMobile, fetchUserDetails, onClose]);
+            // ✅ modal band NAHI hota — isLoggedIn true hote hi yahi pe address step aa jaata hai
+            await fetchUserDetails(true);
+            syncCartOnLogin(); // background — UI block nahi
+            setIsOtpSent(false);
+            setOtp('');
+        } catch {
+            setError('Invalid OTP or OTP expired');
+        } finally {
+            setLoading(false);
+            verifyingRef.current = false;
+        }
+    }, [otp, emailOrMobile, fetchUserDetails]);
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') isOtpSent ? handleVerifyOtp() : handleSendOtp();
-    }, [isOtpSent, handleSendOtp, handleVerifyOtp]);
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        if (isOtpSent) handleVerifyOtp(); else sendOtp();
+    }, [isOtpSent, handleVerifyOtp, sendOtp]);
 
-    const handleResendOtp = useCallback(async () => {
-        try {
-            setOtp(''); setError(''); setLoading(true);
-            const data = await axiosInstance.post('/auth/login', { emailOrMobile });
-            setTimer(30); setIsResendEnabled(false);
-            if (data) { toast.success(`OTP sent to ${emailOrMobile}`); setIsOtpSent(true); }
-            else setError('Failed to send OTP');
-        } catch { setError('Failed to send OTP. Please try again later.'); }
-        finally { setLoading(false); }
-    }, [emailOrMobile]);
-
+    // OTP 6 digit hote hi auto-verify
     useEffect(() => {
-        if (timer === 0) { setIsResendEnabled(true); return; }
-        const interval = setInterval(() => setTimer(prev => prev - 1), 1000);
-        return () => clearInterval(interval);
-    }, [timer]);
+        if (isOpen && isOtpSent && otp.length === 6) handleVerifyOtp();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [otp]);
 
+    // ✅ Timer sirf tab chale jab OTP bheja gaya ho (pehle har second pura modal re-render hota tha)
+    useEffect(() => {
+        if (!isOpen || !isOtpSent || timer <= 0) return;
+        const t = setTimeout(() => setTimer((p) => p - 1), 1000);
+        return () => clearTimeout(t);
+    }, [isOpen, isOtpSent, timer]);
+
+    /* ── address ── */
     const setAddressHandler = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        let newValue = value;
-        if (name === "postCode" || name === "number") newValue = value.replace(/\D/g, "");
-        setSelectAddress(prev => ({ ...prev, [name]: newValue }));
+        const v = name === 'postCode' || name === 'number' ? value.replace(/\D/g, '') : value;
+        setSelectAddress((prev) => ({ ...prev, [name]: v }));
     }, []);
 
     const fillAddressFromSaved = useCallback((addr: {
-        fullName?: string;
-        mobileNumber?: string;
-        email?: string;
-        addressLine?: string;
-        city?: string;
-        state?: string;
-        postCode?: string;
+        fullName?: string; mobileNumber?: string; email?: string; addressLine?: string;
+        city?: string; state?: string; postCode?: string;
     }) => {
         setSelectAddress({
             name: addr.fullName || '',
@@ -238,6 +250,21 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             addressType: 'home',
         });
     }, []);
+
+    const checkoutTracked = useRef(false);
+    useEffect(() => {
+        if (!isOpen) { checkoutTracked.current = false; return; }
+        if (checkoutTracked.current || items.length === 0) return;
+        checkoutTracked.current = true;
+        trackCheckoutStart(base.discountPrice + base.shippingTotal, items.length);
+    }, [isOpen, items.length, base]);
+
+    /* ── reset on close ── */
+    useEffect(() => {
+        if (isOpen) return;
+        setPhoneNumber(''); setOtp(''); setIsOtpSent(false); setTimer(OTP_WAIT); setError('');
+        userRemovedRef.current = false;
+    }, [isOpen]);
 
     const placeOrder = async () => {
         const phone = selectAddress?.number || "";
@@ -254,7 +281,7 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         }
         const items = useCartStore.getState().items;
 
-        const getPrice = getTotalPrice();
+        const getPrice = useCartStore.getState().getTotalPrice();
 
         const order = {
             items: items.map(item => ({
@@ -263,13 +290,13 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                 slug: item.slug,
                 quantity: item.quantity,
                 sku: item.sku,
-                product_image: item.thumbnail.url,
-                custom_data: item.custom_data || null,
+                product_image: item.thumbnail?.url,
+                custom_data: (item as any).custom_data || null,
                 price: item.price,
                 discountType: item.discountType,
                 discountPrice: item.discountPrice,
             })),
-            getTotalItems: getTotalItems(),
+            getTotalItems: useCartStore.getState().getTotalItems(),
             totalPrice: {
                 discountPrice: Math.round(totalPrice.discountPrice),
                 shippingTotal: Math.round(totalPrice.shippingTotal),
@@ -277,11 +304,11 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                 coupon_discount: Math.round(Number(totalPrice?.coupon_discount) || 0),
             },
             coupon: {
-                id: selectedCoupon?._id || null,
-                code: selectedCoupon?.code || '',
-                discountAmount: Math.round(Number(selectedCoupon?.discountValue) || 0),
-                discountType: selectedCoupon?.discountType || "",
-                isApplied: selectedCoupon?.isActive || false,
+                id: activeCoupon?._id || null,
+                code: activeCoupon?.code || '',
+                discountAmount: Math.round(Number(activeCoupon?.discountValue) || 0),
+                discountType: activeCoupon?.discountType || "",
+                isApplied: activeCoupon?.isActive || false,
             },
             paymentMethod,
             address: selectAddress,
@@ -404,6 +431,7 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     };
 
     const loadRazorpay = () => new Promise(resolve => {
+        if ((window as any).Razorpay) return resolve(true);
         const script = document.createElement("script");
         script.src = "https://checkout.razorpay.com/v1/checkout.js";
         script.onload = () => resolve(true);
@@ -432,24 +460,16 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         razorpay.open();
     };
 
-    useEffect(() => {
-        if (!isOpen) {
-            setPhoneNumber('');
-            setOtp('');
-            setIsOtpSent(false);
-            setError('');
-        }
-    }, [isOpen]);
-
     if (!isOpen) return null;
 
     return (
         <div
+            data-checkout-modal
             className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-[9999] p-2 sm:p-4"
             onClick={onClose}
         >
             <div
-                className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden"
+                className="relative w-full max-w-lg bg-white rounded-2xl shadow-xl flex flex-col max-h-[95vh] overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* close btn */}
@@ -471,9 +491,9 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                             handlePhoneChange={handlePhoneChange}
                             handleOtpChange={handleOtpChange}
                             handleKeyDown={handleKeyDown}
-                            handleSendOtp={handleSendOtp}
+                            handleSendOtp={sendOtp}
                             handleVerifyOtp={handleVerifyOtp}
-                            handleResendOtp={handleResendOtp}
+                            handleResendOtp={sendOtp}
                             phoneInputRef={phoneInputRef}
                             otpInputRef={otpInputRef}
                             loading={loading}
@@ -487,7 +507,7 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                             setShowSummary={setShowSummary}
                             items={items.length}
                             totalPrice={totalPrice}
-                            selectedCoupon={selectedCoupon}
+                            selectedCoupon={activeCoupon}
                             coupon_mark={coupon_mark}
                             handle_apply_code={handle_apply_code}
                             handleMarkChange={handleMarkChange}
@@ -508,5 +528,11 @@ const CheckOutPopUpV2: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         </div>
     );
 };
+
+
+/* coupon validate ke liye hamesha latest cart value (stale closure se bachne ko) */
+function cartSubtotal(): number {
+    return useCartStore.getState().getTotalPrice().discountPrice;
+}
 
 export default React.memo(CheckOutPopUpV2);

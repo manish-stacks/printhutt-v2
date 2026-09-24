@@ -1,10 +1,10 @@
-import mongoose, { Document } from "mongoose";
+import type { Document, ObjectId } from './_base';
 
 export interface IOrder extends Document {
     orderId: string;
     custom_data: object;
     items: {
-        productId: mongoose.Types.ObjectId;
+        productId: ObjectId;
         slug: string;
         name: string;
         quantity: number;
@@ -14,11 +14,13 @@ export interface IOrder extends Document {
         isCustomized?: boolean;
         discountType?: string;
         discountPrice?: number;
+        custom_data?: Record<string, any> | null;
     }[];
     totalAmount: {
         discountPrice: number;
         shippingTotal: number;
         totalPrice: number;
+        coupon_discount?: number;
     };
     payAmt: number;
     paymentType: string;
@@ -29,8 +31,8 @@ export interface IOrder extends Document {
         paidAt?: Date;
         paymentPartner?: string;
     };
-    offerId: mongoose.Types.ObjectId;
-    userId: mongoose.Types.ObjectId;
+    offerId: ObjectId;
+    userId: ObjectId;
     shipping: {
         userName: string;
         addressLine: string;

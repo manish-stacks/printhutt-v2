@@ -1,4 +1,5 @@
 "use client"
+import { readCompressed } from '@/utils/read-image';
 import React, { useState, useRef, useEffect } from 'react';
 import { BiRefresh, BiUpload } from 'react-icons/bi';
 import { BsUpload } from 'react-icons/bs';
@@ -38,13 +39,14 @@ export default function App() {
       reader.onloadend = () => {
         setPreviewImage(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      readCompressed(reader, file);
     }
   };
 
 
 
   const handleAddToCart = async () => {
+    if (!product) { toast.error('Product is still loading, please try again in a moment.'); return; }
 
     if (!previewImage) {
       toast.error('Please upload a preview image.');
@@ -172,7 +174,7 @@ export default function App() {
                   <div className="flex gap-2" >
                     <button
                       onClick={() => handleAddToCart()}
-                      // disabled={isAddingToCart}
+                      disabled={isAddingToCart || !product}
                       className="flex-1 bg-yellow-400 text-slate-700 py-3 px-6 max-[567px]:px-1 rounded-md font-medium hover:bg-yellow-500 flex items-center justify-center gap-2">
                       <RiShoppingBag2Line className="w-5 h-5" /> {isAddingToCart ? 'Adding to Cart...' : 'Add to Cart'}
                     </button>

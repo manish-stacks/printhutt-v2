@@ -13,7 +13,7 @@ import confetti from "canvas-confetti";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function OrderConfirmationPage() {
-  const params = useParams();
+  const params = useParams<Record<string, string>>()!;
   // const router = useRouter();
   const [order, setOrder] = useState<IOrder | null>(null);
   const [loading, setLoading] = useState(true);

@@ -7,22 +7,22 @@ import { usePathname } from 'next/navigation';
 const SearchBar = () => {
     const pathname = usePathname();
     const [searchInput, setSearchInput] = useState('');
-    const [suggestions, setSuggestions] = useState([]);
+    const [suggestions, setSuggestions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
         setSuggestions([]);
     }, [pathname]);
-    const debounce = (func, delay) => {
-        let timer;
-        return (...args) => {
+    const debounce = (func: (...a: any[]) => void, delay: number) => {
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        return (...args: any[]) => {
             clearTimeout(timer);
             timer = setTimeout(() => func(...args), delay);
         };
     };
 
-    const fetchSuggestions = async (query) => {
+    const fetchSuggestions = async (query: string) => {
         if (!query) {
             setSuggestions([]);
             return;
@@ -41,13 +41,13 @@ const SearchBar = () => {
 
     const debouncedFetchSuggestions = debounce(fetchSuggestions, 300);
 
-    const handleInputChange = (e) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSearchInput(value);
         debouncedFetchSuggestions(value);
     };
 
-    const handleSuggestionClick = (suggestion) => {
+    const handleSuggestionClick = (suggestion: any) => {
         //console.log('Selected suggestion:', suggestion);
         setSearchInput(suggestion);
         setSuggestions([]);
@@ -55,7 +55,7 @@ const SearchBar = () => {
 
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
         setSuggestions([]);
