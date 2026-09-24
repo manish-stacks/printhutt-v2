@@ -363,6 +363,13 @@ export async function createOrder(
    * - Custom item (neon/size add-ons): client unit >= DB ka sabse sasta unit ho, warna DB.
    * - Free gift: sirf tab ₹0 jab baaki cart >= FREE_GIFT_THRESHOLD.  */
   await verifyItemPrices(itemData as any[]);
+  // 🛡️ Normalize: product/gift me discountType/sku missing ya '' ho sakta hai → Mongoose validation fail hota tha
+  for (const it of itemData as Array<Record<string, any>>) {
+    if (it.discountType !== 'percentage' && it.discountType !== 'fixed') it.discountType = 'fixed';
+    it.discountPrice = Number(it.discountPrice) || 0;
+    it.sku = it.sku ?? '';
+    it.slug = it.slug || String(it.productId);
+  }
   if (body.paymentMethod === 'offline') {
     const cod = await SiteSetting.findOne({ key: 'codEnabled' }).lean<any>();
     if (cod && (cod.value === false || cod.value === 'false')) {

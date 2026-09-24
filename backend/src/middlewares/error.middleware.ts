@@ -43,9 +43,10 @@ export function errorHandler(
 
   // ── Mongoose validation / cast ─────────────────
   if (err instanceof mongoose.Error.ValidationError) {
+    const first = Object.entries(err.errors)[0];
     res.status(422).json({
       success: false,
-      message: 'Mongoose validation failed',
+      message: first ? `Validation failed: ${first[0]} — ${first[1].message}` : 'Mongoose validation failed',
       code: 'VALIDATION_ERROR',
       details: Object.fromEntries(
         Object.entries(err.errors).map(([k, v]) => [k, v.message])
