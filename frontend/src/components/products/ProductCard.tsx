@@ -36,14 +36,18 @@ const ProductCard = ({ product }: ProductCardProps) => {
         [product]
     );
     const [vIdx, setVIdx] = useState(0);
+    const [picked, setPicked] = useState(false); // user ne khud variant chuna?
     const selected = variants[vIdx] || null;
 
     const pr = effectivePricing(product, selected);
     const isOutOfStock = !product?.status || (selected ? Number(selected.stock ?? product.stock) <= 0 : product?.stock <= 0);
     const ytId = cardVideoId(product);
-    const vThumb = selected?.thumbnail?.url || selected?.images?.[0]?.url;
-    const mainSrc = vThumb || (ytId ? youtubeThumb(ytId) : product?.thumbnail?.url) || '/placeholder.jpg';
-    const hoverSrc = !vThumb ? product?.images?.[0]?.url : undefined;
+    // Default: product ka Thumbnail. Hover: product Gallery ki 1st image.
+    // Variant tabhi dikhega jab user card pe variant click kare.
+    const vImgs: string[] = picked && selected ? [selected.thumbnail?.url, ...(selected.images || []).map((i: any) => i?.url)].filter(Boolean) : [];
+    const vThumb = vImgs[0];
+    const mainSrc = vThumb || product?.thumbnail?.url || (ytId ? youtubeThumb(ytId) : '') || '/placeholder.jpg';
+    const hoverSrc = vThumb ? vImgs[1] : (product?.images?.[0]?.url || undefined);
     const href = `/product-details/${product.slug}`;
     const rating = Math.round(Number(product?.rating) || 5);
 
@@ -73,9 +77,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
                     <Link href={href} className="block relative h-full" aria-label={product.title}>
                         <Image className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" src={mainSrc} alt={product.title} width={600} height={600} loading="lazy" sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 25vw" />
                         {hoverSrc && (
-                            <Image className="hidden sm:block absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-all duration-700" src={hoverSrc} alt="" width={600} height={600} loading="lazy" sizes="25vw" />
+                            <Image className="absolute inset-0 hidden [@media(hover:hover)]:block w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-all duration-700" src={hoverSrc} alt="" width={600} height={600} loading="lazy" sizes="25vw" />
                         )}
-                        {ytId && !vThumb && (
+                        {ytId && !vThumb && !product?.thumbnail?.url && (
                             <span className="absolute inset-0 flex items-center justify-center">
                                 <span className="w-11 h-11 rounded-full bg-black/60 flex items-center justify-center text-white"><RiPlayFill size={22} /></span>
                             </span>
@@ -126,7 +130,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
                                     <button
                                         key={v?._id || i}
                                         type="button"
-                                        onClick={() => setVIdx(i)}
+                                        onClick={() => { setVIdx(i); setPicked(true); }}
                                         title={vLabel(v, i)}
                                         className={`max-w-[100px] truncate px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-medium border transition-all
                                             ${i === vIdx ? 'bg-amber-400 text-black border-amber-400' : 'bg-white/5 text-white/70 border-white/15 hover:border-amber-400/60'}`}

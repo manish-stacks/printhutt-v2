@@ -1,10 +1,14 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay } from "swiper/modules";
-import { RiInstagramLine } from "react-icons/ri";
+import type { Swiper as SwiperType } from "swiper";
+import { RiArrowLeftSLine, RiArrowRightSLine, RiVolumeMuteLine, RiVolumeUpLine } from "react-icons/ri";
+import { productService } from "@/_services/common/productService";
+import { effectivePricing } from "@/lib/pricing";
+import { formatCurrency } from "@/helpers/helpers";
 import "swiper/css";
 
 const videos = [
@@ -51,175 +55,148 @@ const videos = [
   
 ];
 
+type Info = { title?: string; thumb?: string; final?: number; mrp?: number; off?: boolean };
 
-const LazyVideoCard = ({ video, title, url }: { video: string; title: string; url: string }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+const slugOf = (url: string) => url.split("/").pop() || "";
 
+/* Reel card: video (tap = sound on/off) + neeche white product strip (thumb, title, price) */
+const ReelCard = ({ video, title, url, info }: { video: string; title: string; url: string; info?: Info }) => {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const vidRef = useRef<HTMLVideoElement>(null);
+  const [near, setNear] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [muted, setMuted] = useState(true);
+
+  // Sirf viewport ke paas load, aur screen se bahar jaate hi pause (battery + data bachta hai)
   useEffect(() => {
-    const el = containerRef.current;
+    const el = boxRef.current;
     if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect(); 
-        }
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) setNear(true);
+        const v = vidRef.current;
+        if (!v) return;
+        if (e.isIntersecting) v.play().catch(() => {});
+        else v.pause();
       },
-      {
-        rootMargin: "200px", 
-        threshold: 0,
-      }
+      { rootMargin: "150px", threshold: 0.25 }
     );
-
-    observer.observe(el);
-    return () => observer.disconnect();
+    io.observe(el);
+    return () => io.disconnect();
   }, []);
 
- 
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v || !isVisible) return;
-
-    const onCanPlay = () => {
-      setIsLoaded(true);
-      v.play().catch(() => {}); 
-    };
-
-    v.addEventListener("canplaythrough", onCanPlay);
-    return () => v.removeEventListener("canplaythrough", onCanPlay);
-  }, [isVisible]);
-
   return (
-    <Link href={url} className="group block">
-      <div className="relative overflow-hidden rounded-[12px] border border-white/10 bg-[#13132a] hover:border-amber-400/40 transition-all duration-500 shadow-xl hover:shadow-amber-400/10 hover:-translate-y-2">
-        <div ref={containerRef} className="relative aspect-[0.9/1.5] overflow-hidden bg-[#13132a]">
-
-          {!isLoaded && (
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-white/[0.02] animate-pulse flex items-center justify-center">
-              <div className="w-12 h-12 rounded-full border-2 border-white/10 border-t-amber-400 animate-spin" />
-            </div>
-          )}
-
-         
-          {isVisible && (
-            <video
-              ref={videoRef}
-              className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${isLoaded ? "opacity-100" : "opacity-0"}`}
-              loop
-              muted
-              playsInline
-            >
-              <source src={video} type="video/mp4" />
-            </video>
-          )}
-
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d1a] via-transparent to-transparent" />
-
-          {/* Bottom label */}
-          <div className="absolute bottom-0 left-0 right-0 p-4">
-            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white font-semibold text-sm">{title}</p>
-                  <p className="text-white/40 text-xs mt-1">Watch Product Reel</p>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-pink-500/10 border border-pink-500/20 flex items-center justify-center">
-                  <RiInstagramLine size={18} className="text-pink-400" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
+    <div className="group relative overflow-hidden rounded-xl bg-neutral-900 shadow-[0_6px_20px_-8px_rgba(0,0,0,.35)]">
+      <div ref={boxRef} className="relative aspect-[9/16] w-full bg-neutral-800">
+        {!ready && <div className="absolute inset-0 animate-pulse bg-neutral-800" />}
+        {near && (
+          <video
+            ref={vidRef}
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${ready ? "opacity-100" : "opacity-0"}`}
+            loop muted={muted} playsInline autoPlay preload="metadata"
+            onLoadedData={() => setReady(true)}
+          >
+            <source src={video} type="video/mp4" />
+          </video>
+        )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/55 to-transparent" />
+        <button
+          type="button"
+          aria-label={muted ? "Unmute" : "Mute"}
+          onClick={() => setMuted((m) => !m)}
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur hover:bg-black/70"
+        >
+          {muted ? <RiVolumeMuteLine size={16} /> : <RiVolumeUpLine size={16} />}
+        </button>
       </div>
-    </Link>
+
+      {/* Product strip */}
+      <Link
+        href={url}
+        className="absolute inset-x-2 bottom-2 flex items-center gap-3 rounded-lg bg-white p-2 shadow-lg transition hover:shadow-xl"
+      >
+        <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-neutral-100">
+          {info?.thumb && <Image src={info.thumb} alt={info.title || title} fill sizes="56px" className="object-cover" />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13px] font-medium leading-tight text-neutral-800">{info?.title || title}</span>
+          {info?.final ? (
+            <span className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-[15px] font-bold text-neutral-900">{formatCurrency(info.final)}</span>
+              {info.off && <span className="text-xs text-neutral-400 line-through">{formatCurrency(info.mrp || 0)}</span>}
+            </span>
+          ) : (
+            <span className="mt-1 block text-xs font-semibold text-amber-600">Shop now →</span>
+          )}
+        </span>
+      </Link>
+    </div>
   );
 };
 
-// ─── Main section ─────────────────────────────────────────────────────────────
 const InstagramStyleVideoGrid = () => {
-  const [isClient, setIsClient] = useState(false);
+  const [infos, setInfos] = useState<Record<string, Info>>({});
+  const swiperRef = useRef<SwiperType | null>(null);
+  const [edge, setEdge] = useState({ start: true, end: false });
 
+  // Product ka real thumbnail + price (fail ho to sirf title dikhega)
   useEffect(() => {
-    setIsClient(true);
+    let alive = true;
+    Promise.all(
+      videos.map(async (v) => {
+        try {
+          const r: any = await productService.getBySlug(slugOf(v.url));
+          const p = r?.product || r;
+          if (!p?._id) return null;
+          const pr = effectivePricing(p, null);
+          return [v.url, { title: p.title, thumb: p.thumbnail?.url, final: pr.final, mrp: pr.mrp, off: pr.hasDiscount }] as const;
+        } catch {
+          return null;
+        }
+      })
+    ).then((rows) => {
+      if (!alive) return;
+      setInfos(Object.fromEntries(rows.filter(Boolean) as [string, Info][]));
+    });
+    return () => { alive = false; };
   }, []);
 
-  if (!isClient) {
-    return (
-      <section className="bg-[#0d0d1a] py-14">
-        <div className="max-w-[1320px] mx-auto px-4 sm:px-6">
-          <div className="mb-10 text-center">
-            <div className="w-44 h-8 bg-white/10 rounded-full mx-auto animate-pulse mb-4" />
-            <div className="w-72 h-12 bg-white/10 rounded-xl mx-auto animate-pulse" />
-          </div>
-          <div className="flex gap-4 overflow-hidden">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="aspect-[3/4] min-w-[240px] rounded-3xl bg-white/5 animate-pulse" />
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
+  const arrow = "absolute top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-800 shadow-md ring-1 ring-black/5 transition hover:bg-neutral-100 disabled:opacity-0 md:flex";
 
   return (
-    <section className="relative overflow-hidden bg-[#0d0d1a] py-14 sm:py-16">
+    <section className="bg-white py-10 sm:py-14">
+      <div className="mx-auto max-w-[1320px] px-4 sm:px-6">
+        <h2 className="mb-6 text-center text-2xl font-extrabold uppercase tracking-wide text-neutral-900 sm:mb-9 sm:text-3xl">
+          Watch and Shop
+        </h2>
 
-      {/* Glow */}
-      <div className="absolute top-0 left-0 w-72 h-72 bg-pink-500/10 blur-3xl rounded-full" />
-      <div className="absolute bottom-0 right-0 w-72 h-72 bg-amber-400/10 blur-3xl rounded-full" />
+        <div className="relative">
+          <button aria-label="Previous" disabled={edge.start} onClick={() => swiperRef.current?.slidePrev()} className={`${arrow} -left-4`}>
+            <RiArrowLeftSLine size={22} />
+          </button>
+          <button aria-label="Next" disabled={edge.end} onClick={() => swiperRef.current?.slideNext()} className={`${arrow} -right-4`}>
+            <RiArrowRightSLine size={22} />
+          </button>
 
-      <div className="relative max-w-[1320px] mx-auto px-4 sm:px-6">
-
-      
-        <div className="text-center mb-10 sm:mb-14">
-          <span className="inline-flex items-center gap-2 bg-pink-500/10 border border-pink-500/20 text-pink-300 text-[11px] uppercase tracking-[0.2em] font-bold px-4 py-2 rounded-full mb-4">
-            <RiInstagramLine size={14} />
-            Trending Reels
-          </span>
-          <h2
-            className="text-3xl sm:text-5xl text-white font-bold leading-tight"
-            style={{ fontFamily: "'Cormorant Garamond', serif" }}
+          <Swiper
+            onSwiper={(s) => (swiperRef.current = s)}
+            onSlideChange={(s) => setEdge({ start: s.isBeginning, end: s.isEnd })}
+            spaceBetween={14}
+            slidesPerView={1.6}
+            breakpoints={{
+              480: { slidesPerView: 2.3 },
+              768: { slidesPerView: 3.3 },
+              1024: { slidesPerView: 4.3, spaceBetween: 18 },
+              1280: { slidesPerView: 5, spaceBetween: 18 },
+            }}
           >
-            Watch Our Products Glow
-          </h2>
-          <p className="text-white/60 text-sm sm:text-base max-w-2xl mx-auto mt-4 leading-relaxed">
-            Explore real customer videos, premium neon signs,
-            personalized gifts and glowing memories crafted with love.
-          </p>
+            {videos.map((v) => (
+              <SwiperSlide key={v.url}>
+                <ReelCard video={v.video} title={v.title} url={v.url} info={infos[v.url]} />
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </div>
-
-        
-        <Swiper
-          modules={[Autoplay]}
-          spaceBetween={18}
-          slidesPerView={1.3}
-          autoplay={{
-            delay: 2800,
-            disableOnInteraction: false,
-            pauseOnMouseEnter: true,
-          }}
-          loop
-          speed={700}
-          breakpoints={{
-            480: { slidesPerView: 2.2 },
-            768: { slidesPerView: 3.2 },
-            1024: { slidesPerView: 4.2 },
-            1280: { slidesPerView: 5 },
-          }}
-        >
-          {videos.map((v, index) => (
-            <SwiperSlide key={index}>
-              <LazyVideoCard video={v.video} title={v.title} url={v.url} />
-            </SwiperSlide>
-          ))}
-        </Swiper>
-
       </div>
     </section>
   );

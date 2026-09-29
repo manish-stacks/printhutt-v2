@@ -15,6 +15,7 @@ interface Option {
 }
 
 const options: Option[] = [
+    { value: 'random', label: 'Recommended' },
     { value: 'newest', label: 'Newest' },
     { value: 'featured', label: 'Featured' },
     { value: 'price-asc', label: 'Price: Low to High' },

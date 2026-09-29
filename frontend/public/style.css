@@ -461,9 +461,9 @@ body {
   color: #686e7d;
   line-height: 26px;
   letter-spacing: 0.02rem;
-  overflow-x: hidden;
-  overflow-y: scroll;
+  overflow-x: clip; /* hidden => body scroll container ban ke position:sticky tod deta tha */
 }
+html { scrollbar-gutter: stable; }
 
 ::-moz-selection {
   color: #6c7fd8;

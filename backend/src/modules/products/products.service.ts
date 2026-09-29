@@ -106,6 +106,12 @@ export async function storefrontList(q: StorefrontListQueryDTO): Promise<unknown
     filter.tags = { $in: tags };
   }
 
+  // CATEGORY — DB level filter (pehle pagination ke baad filter hota tha => galat count/khali page)
+  const categoryNames = q.categories?.split(',').filter(Boolean) ?? [];
+  if (categoryNames.length > 0) {
+    filter.category = { $in: await productRepo.categoryIdsByNames(categoryNames) };
+  }
+
   // SORT
   const sortMap: Record<string, Record<string, 1 | -1>> = {
     'featured':   { ishome: -1, createdAt: -1 },
@@ -120,20 +126,15 @@ export async function storefrontList(q: StorefrontListQueryDTO): Promise<unknown
   const perPage = 12;
   const skip = (q.page - 1) * perPage;
 
+  // RANDOM — seed ke saath stable shuffle, taaki ek hi type ke products na aayein
+  const isRandom = q.sort === 'random';
   const [products, total] = await Promise.all([
-    productRepo.storefrontFiltered(filter, sortQuery, skip, perPage),
+    isRandom
+      ? productRepo.storefrontShuffled(filter, q.seed ?? 1, skip, perPage)
+      : productRepo.storefrontFiltered(filter, sortQuery, skip, perPage),
     productRepo.countFiltered(filter),
   ]);
-
-  // CATEGORY filter by name — done post-populate since category is a ref
-  // Only apply if categories param is set (rare case)
-  const categoryNames = q.categories?.split(',').filter(Boolean) ?? [];
-  type AnyProduct = Record<string, unknown> & { category?: { name?: string } };
-  const finalProducts = categoryNames.length > 0
-    ? (products as AnyProduct[]).filter((p) =>
-        p.category?.name ? categoryNames.includes(p.category.name) : false
-      )
-    : products;
+  const finalProducts = products;
 
   const totalPages = Math.ceil(total / perPage);
   const payload = {

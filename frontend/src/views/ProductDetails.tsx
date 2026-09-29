@@ -335,7 +335,7 @@ export default function ProductDetails({ product, relatedProduct }: ProductProps
 
         <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Left: Images */}
-          <div className="md:sticky md:top-8 space-y-4 h-fit">
+          <div className="md:sticky md:top-[150px] self-start space-y-4">
             <div
               className={`aspect-square bg-white rounded-lg overflow-hidden relative shadow-lg ${!isMobile ? 'cursor-zoom-in' : ''}`}
               onMouseMove={handleMouseMove}

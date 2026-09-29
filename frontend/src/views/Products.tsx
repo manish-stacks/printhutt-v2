@@ -25,9 +25,11 @@ function Products() {
     priceRange: [0, 10000],
     rating: null,
     tags: [],
-    sort: 'newest',
+    sort: 'random',
     type:'all'
   })
+  // Har visit pe naya seed (page change pe same rehta hai => pagination stable)
+  const [seed] = useState(() => Math.floor(Math.random() * 1_000_000_000))
 
   const searchParams = useSearchParams();
   const page = searchParams?.get('page') || '1';
@@ -46,7 +48,8 @@ function Products() {
         maxPrice: String(filters.priceRange[1]),
         ...(filters.rating && { rating: String(filters.rating) }),
         tags: filters.tags.join(','),
-        sort: filters.sort
+        sort: filters.sort,
+        ...(filters.sort === 'random' && { seed: String(seed) })
       });
       const data = await productService.getAll(queryParams);
       const categories = await categoryService.getAll('all');

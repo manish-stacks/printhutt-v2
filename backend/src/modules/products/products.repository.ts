@@ -289,6 +289,21 @@ export const productRepo = {
       .limit(limit)
       .lean(),
 
+  /* Random (seeded) listing — same seed => same order, pagination stable */
+  storefrontShuffled: async (filter: FilterQuery<unknown>, seed: number, skip: number, limit: number) => {
+    const ids = (await Product.find(filter).select('_id').lean<{ _id: unknown }[]>()).map((d) => String(d._id));
+    const pageIds = seededShuffle(ids, seed).slice(skip, skip + limit);
+    const docs = await Product.find({ _id: { $in: pageIds } })
+      .populate({ path: 'category', model: Category, select: 'name slug' })
+      .populate({ path: 'subcategory', model: SubCategory, select: 'name slug' })
+      .lean();
+    const map = new Map((docs as any[]).map((d) => [String(d._id), d]));
+    return pageIds.map((id) => map.get(id)).filter(Boolean) as unknown[];
+  },
+
+  categoryIdsByNames: async (names: string[]) =>
+    (await Category.find({ name: { $in: names } }).select('_id').lean<{ _id: unknown }[]>()).map((c) => c._id),
+
   countFiltered: (filter: FilterQuery<unknown>) =>
     Product.countDocuments(filter),
   updateById: (id: string, patch: UpdateQuery<unknown>) =>

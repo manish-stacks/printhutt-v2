@@ -26,6 +26,7 @@ export const storefrontListQuerySchema = z.object({
   rating: z.coerce.number().int().min(0).max(5).default(0),
   tags: z.string().optional(),
   sort: z.string().default('newest'),
+  seed: z.coerce.number().int().nonnegative().optional(), // sort=random ke liye stable shuffle
 });
 export type StorefrontListQueryDTO = z.infer<typeof storefrontListQuerySchema>;
 
