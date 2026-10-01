@@ -32,53 +32,41 @@ const ProductSlider = ({ products, title, description }: Props) => {
       <div className="container mx-auto px-4 relative z-10">
 
         {/* ─── HEADER ─── */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5 mb-8 sm:mb-10">
-
-          {/* Title block */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-2">
-              <span className="h-0.5 w-8 sm:w-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" />
-              <Link
-                href={categorySlug ? `/category/${categorySlug}` : '#'}
-                className="text-xs sm:text-sm lg:text-2xl uppercase tracking-[0.25em] font-semibold text-[#3C2A6D] hover:text-[#3C2A6D] transition"
-              >
-                {title}
-              </Link>
-            </div>
-
-            <p className="text-gray-500 text-sm sm:text-base max-w-xl leading-relaxed">
+        <div className="flex items-end justify-between gap-4 mb-6 sm:mb-9">
+          <div className="min-w-0">
+            <span className="inline-flex items-center gap-2 mb-2 rounded-full bg-[#3C2A6D]/8 bg-purple-50 px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#3C2A6D]">
+              <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" />
+              Handpicked for you
+            </span>
+            <h2
+              className="text-2xl sm:text-4xl lg:text-5xl font-bold leading-tight text-[#0d0d1a] truncate"
+              style={{ fontFamily: "'Cormorant Garamond', serif" }}
+            >
+              {title}
+            </h2>
+            <p className="mt-2 hidden sm:block text-gray-500 text-sm sm:text-base max-w-xl leading-relaxed">
               {description || defaultDesc}
             </p>
           </div>
 
-          {/* Right: View All + nav arrows */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {categorySlug && (
               <Link
                 href={`/category/${categorySlug}`}
-                className="hidden sm:flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-[#3C2A6D] transition group"
+                className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 sm:px-4 h-9 sm:h-10 text-xs sm:text-sm font-semibold text-gray-700 shadow-sm hover:border-purple-400 hover:text-[#3C2A6D] transition group"
               >
-                View All
+                View all
                 <RiArrowRightLine className="w-4 h-4 group-hover:translate-x-0.5 transition" />
               </Link>
             )}
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => swiperRef.current?.slidePrev()}
-                aria-label="Previous"
-                className="w-10 h-10 rounded-full bg-white border border-gray-200 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md text-gray-700 hover:text-[#3C2A6D] flex items-center justify-center transition-all active:scale-95"
-              >
-                <RiArrowLeftSLine className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => swiperRef.current?.slideNext()}
-                aria-label="Next"
-                className="w-10 h-10 rounded-full bg-white border border-gray-200 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md text-gray-700 hover:text-[#3C2A6D] flex items-center justify-center transition-all active:scale-95"
-              >
-                <RiArrowRightSLine className="w-5 h-5" />
-              </button>
-            </div>
+            <button onClick={() => swiperRef.current?.slidePrev()} aria-label="Previous"
+              className="hidden sm:flex w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm hover:border-purple-400 hover:bg-purple-50 text-gray-700 hover:text-[#3C2A6D] items-center justify-center transition-all active:scale-95">
+              <RiArrowLeftSLine className="w-5 h-5" />
+            </button>
+            <button onClick={() => swiperRef.current?.slideNext()} aria-label="Next"
+              className="hidden sm:flex w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm hover:border-purple-400 hover:bg-purple-50 text-gray-700 hover:text-[#3C2A6D] items-center justify-center transition-all active:scale-95">
+              <RiArrowRightSLine className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
@@ -118,17 +106,6 @@ const ProductSlider = ({ products, title, description }: Props) => {
         {/* Custom pagination container */}
         <div className="product-slider-pagination flex justify-center gap-2 mt-6 sm:mt-8" />
 
-        {/* Mobile: view all link */}
-        {categorySlug && (
-          <div className="sm:hidden text-center mt-4">
-            <Link
-              href={`/category/${categorySlug}`}
-              className="inline-flex items-center gap-1 text-sm font-medium text-[#3C2A6D]"
-            >
-              View All Products <RiArrowRightLine className="w-4 h-4" />
-            </Link>
-          </div>
-        )}
       </div>
 
       {/* Decorative blur */}

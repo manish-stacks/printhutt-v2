@@ -6,7 +6,7 @@ import '/public/style.css';
 import '/public/acrylic.css';
 import 'remixicon/fonts/remixicon.css';
 import { ToastContainer } from 'react-toastify';
-import CustomScripts from '@/components/common/CustomScripts';
+import ServerScripts from '@/components/common/ServerScripts';
 
 export async function generateViewport(): Promise<Viewport> {
   const s = await getSiteSettings();
@@ -44,6 +44,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -65,7 +67,7 @@ export default async function RootLayout({
 
         {/* Meta Pixel / Google Analytics / Clarity ab "Custom Scripts" (headScripts) se
             inject hote hain — admin settings me poora script paste karein. */}
-        
+        <ServerScripts html={s.headScripts} where="head" />
       </head>
       <body>
         <MainLayout>
@@ -73,7 +75,7 @@ export default async function RootLayout({
           {children}
         </MainLayout>
 
-        <CustomScripts headHtml={s.headScripts} bodyHtml={s.bodyScripts} />
+        <ServerScripts html={s.bodyScripts} where="body" />
       </body>
     </html>
   );

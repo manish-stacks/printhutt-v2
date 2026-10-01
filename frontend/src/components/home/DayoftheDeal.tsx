@@ -46,41 +46,41 @@ const DayoftheWeek = ({
   }, [catID]);
 
   return (
-    <section ref={sectionRef} className="relative overflow-hidden bg-[#ffffff]">
+    <section ref={sectionRef} className="relative overflow-hidden bg-gradient-to-b from-white to-[#f8f6fd] [&:nth-of-type(even)]:to-white">
 
       {/* Glow */}
-      <div className="absolute top-0 left-0 w-72 h-72 bg-pink-500/10 blur-3xl rounded-full" />
-      <div className="absolute bottom-0 right-0 w-72 h-72 bg-amber-400/10 blur-3xl rounded-full" />
+      <div className="pointer-events-none absolute top-0 left-0 w-72 h-72 bg-pink-500/10 blur-3xl rounded-full" />
+      <div className="pointer-events-none absolute bottom-0 right-0 w-72 h-72 bg-amber-400/10 blur-3xl rounded-full" />
 
       <div className="relative max-w-[1320px] mx-auto px-4 sm:px-6">
 
         {/* Content */}
         {loading ? (
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 py-10">
 
             {Array.from({ length: 4 }).map(
               (_, index) => (
                 <div
                   key={index}
-                  className="rounded-[28px] overflow-hidden bg-[#13132a] border border-white/10"
+                  className="rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm"
                 >
 
                   {/* Image Skeleton */}
-                  <div className="aspect-[4/5] bg-white/5 animate-pulse" />
+                  <div className="aspect-[4/5] bg-gray-100 animate-pulse" />
 
                   {/* Content Skeleton */}
                   <div className="p-5">
 
-                    <div className="h-4 w-24 rounded bg-white/10 animate-pulse mb-3" />
+                    <div className="h-4 w-24 rounded bg-gray-100 animate-pulse mb-3" />
 
-                    <div className="h-6 w-full rounded bg-white/10 animate-pulse mb-4" />
+                    <div className="h-6 w-full rounded bg-gray-100 animate-pulse mb-4" />
 
                     <div className="flex items-center justify-between">
 
-                      <div className="h-5 w-20 rounded bg-white/10 animate-pulse" />
+                      <div className="h-5 w-20 rounded bg-gray-100 animate-pulse" />
 
-                      <div className="w-10 h-10 rounded-full bg-white/10 animate-pulse" />
+                      <div className="w-10 h-10 rounded-full bg-gray-100 animate-pulse" />
 
                     </div>
 
@@ -96,7 +96,7 @@ const DayoftheWeek = ({
 
           <Suspense
             fallback={
-              <div className="text-white">
+              <div className="text-gray-500 py-10 text-center">
                 Loading...
               </div>
             }

@@ -141,7 +141,7 @@ export function buildApp(): Express {
       '/products/with-offers', '/products/top-related',
       '/products/suggest', '/sliders/storefront',
       '/testimonials/storefront', '/offers/storefront',
-      '/blogs/storefront', '/settings',
+      '/blogs/storefront',
       '/pages/', '/seo/', '/warranty', '/return-policy', '/shipping','/feed',
     ];
 

@@ -100,14 +100,14 @@ const ReelCard = ({ video, title, url, info }: { video: string; title: string; u
           </video>
         )}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/55 to-transparent" />
-        <button
+        {/* <button
           type="button"
           aria-label={muted ? "Unmute" : "Mute"}
           onClick={() => setMuted((m) => !m)}
           className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur hover:bg-black/70"
         >
           {muted ? <RiVolumeMuteLine size={16} /> : <RiVolumeUpLine size={16} />}
-        </button>
+        </button> */}
       </div>
 
       {/* Product strip */}
