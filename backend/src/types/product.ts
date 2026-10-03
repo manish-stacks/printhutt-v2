@@ -46,6 +46,8 @@ export interface IProduct extends Document {
   description: string;
   category: mongoose.Types.ObjectId;
   subcategory?: mongoose.Types.ObjectId;
+  extraCategories?: mongoose.Types.ObjectId[];
+  extraSubcategories?: mongoose.Types.ObjectId[];
   price: number;
   discountType?: string;
   discountPrice: number;
