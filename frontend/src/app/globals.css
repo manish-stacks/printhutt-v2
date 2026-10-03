@@ -255,3 +255,30 @@ table { max-width: 100%; }
   .ph-admin table thead th, .ph-admin table tbody td { padding: 10px 12px; }
 }
 
+
+
+/* ───────── Product add / edit form redesign ───────── */
+.ph-admin .ph-form .ph-section,
+.ph-admin .ph-form .shadow-md.rounded-lg.bg-white { background:#fff; border:1px solid var(--ph-bd); border-radius:16px; padding:20px; box-shadow:0 1px 2px rgba(16,24,40,.04); }
+.ph-admin .ph-form .ph-section > h3,
+.ph-admin .ph-form .shadow-md.rounded-lg.bg-white > h3 { font-size:15px !important; font-weight:700; color:var(--ph-ink); padding-bottom:12px; margin-bottom:14px !important; border-bottom:1px solid #f0f1f5; }
+.ph-admin .ph-form .ph-section-row { display:flex; flex-direction:column; align-items:stretch; gap:6px; }
+.ph-admin .ph-form .ph-section-row > label { margin:12px 0 0 !important; padding:0; font-size:13px; font-weight:600; color:#374151; }
+.ph-admin .ph-form .ph-section-row > h3 + label, .ph-admin .ph-form .ph-section-row > p + label { margin-top:4px !important; }
+.ph-admin .ph-form .ph-label { margin:10px 0 0; font-size:13px; font-weight:600; color:#374151; }
+.ph-admin .ph-form label.block { font-size:13px; font-weight:600; color:#374151; margin-bottom:6px; }
+.ph-admin .ph-form input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([id^="react-select"]),
+.ph-admin .ph-form select, .ph-admin .ph-form textarea {
+  width:100%; min-height:42px; border:1px solid #e2e5ec !important; border-radius:12px !important; background:#fff !important;
+  padding:8px 12px; font-size:14px; color:#111827; outline:none !important; box-shadow:none; transition:border-color .15s, box-shadow .15s; }
+.ph-admin .ph-form input:focus:not([type=checkbox]):not([id^="react-select"]), .ph-admin .ph-form select:focus, .ph-admin .ph-form textarea:focus {
+  border-color:var(--ph-pri) !important; box-shadow:0 0 0 3px rgba(79,70,229,.12) !important; }
+.ph-admin .ph-form [class*="-control"] { min-height:42px; border-radius:12px; border-color:#e2e5ec; box-shadow:none; }
+.ph-admin .ph-form [class*="-control"]:hover { border-color:#c7cbd6; }
+.ph-admin .ph-form [class*="-multiValue"] { background:#eef0ff; border-radius:8px; }
+.ph-admin .ph-form [class*="-multiValue"] > div:first-child { color:#3730a3; font-weight:600; font-size:12px; }
+.ph-admin .ph-form .ph-page-head p { color:var(--ph-muted); font-size:13px; font-weight:400; margin-top:2px; }
+@media (min-width:1024px) {
+  .ph-admin .ph-form > .lg\:w-4\/12 { position:sticky; top:12px; align-self:flex-start; max-height:calc(100vh - 24px); overflow-y:auto; padding-bottom:4px; scrollbar-width:thin; }
+}
+@media (max-width:640px) { .ph-admin .ph-form .ph-section { padding:16px; } }

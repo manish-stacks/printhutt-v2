@@ -7,6 +7,8 @@ export const personalizedGiftsRepo = {
     if (sectionType !== 'all') (query as Record<string, unknown>).sectionType = sectionType;
     return PersonalizedGift.find(query).sort({ sortOrder: 1, createdAt: -1 });
   },
+  countBySection: (sectionType: string, excludeId?: string) =>
+    PersonalizedGift.countDocuments({ sectionType, ...(excludeId ? { _id: { $ne: excludeId } } : {}) }),
   findById: (id: string) => PersonalizedGift.findById(id),
   create: (data: Record<string, unknown>) => PersonalizedGift.create(data),
   isValidObjectId: (id: string): boolean => mongoose.Types.ObjectId.isValid(id),

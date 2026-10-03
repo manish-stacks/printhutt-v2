@@ -3,21 +3,22 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Swiper, SwiperSlide } from "swiper/react";
-import type { Swiper as SwiperType } from "swiper";
-import { RiArrowLeftSLine, RiArrowRightSLine, RiArrowRightLine, RiVolumeMuteLine, RiVolumeUpLine } from "react-icons/ri";
+import { RiArrowRightLine, RiVolumeMuteLine, RiVolumeUpLine } from "react-icons/ri";
 import { personalizedGiftService } from "@/_services/common/personalizedGiftService";
-import "swiper/css";
 
 /* "Watch and Shop" style reel card — video/image (9:16) + neeche white strip (naam + CTA) */
+const ytIdOf = (u = "") => u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/i)?.[1];
+
 const Card = ({ p }: { p: any }) => {
   const boxRef = useRef<HTMLDivElement>(null);
   const vidRef = useRef<HTMLVideoElement>(null);
   const [near, setNear] = useState(false);
   const [ready, setReady] = useState(false);
   const [muted, setMuted] = useState(true);
+  const isYoutube = p?.type === "youtube";
+  const yid = isYoutube ? ytIdOf(p?.videoUrl) : undefined;
   const isVideo = p?.type === "video";
-  const src = p?.videoUrl || p?.media?.url;
+  const src = isYoutube ? undefined : (isVideo ? (p?.videoUrl || p?.media?.url) : p?.media?.url);
 
   useEffect(() => {
     const el = boxRef.current;
@@ -39,7 +40,21 @@ const Card = ({ p }: { p: any }) => {
   return (
     <div className="group relative overflow-hidden rounded-xl bg-neutral-900 shadow-[0_6px_20px_-8px_rgba(0,0,0,.35)]">
       <div ref={boxRef} className="relative aspect-[9/16] w-full bg-neutral-800">
-        {isVideo ? (
+        {isYoutube ? (
+          <>
+            {!ready && <div className="absolute inset-0 animate-pulse bg-neutral-800" />}
+            {near && yid && (
+              <iframe
+                title={p?.name || "Video"}
+                src={`https://www.youtube-nocookie.com/embed/${yid}?autoplay=1&mute=1&loop=1&playlist=${yid}&controls=0&playsinline=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1`}
+                allow="autoplay; encrypted-media; picture-in-picture"
+                loading="lazy"
+                onLoad={() => setReady(true)}
+                className={`pointer-events-none absolute left-1/2 top-0 h-full aspect-video -translate-x-1/2 border-0 transition-opacity duration-500 ${ready ? "opacity-100" : "opacity-0"}`}
+              />
+            )}
+          </>
+        ) : isVideo ? (
           <>
             {!ready && <div className="absolute inset-0 animate-pulse bg-neutral-800" />}
             {near && (
@@ -91,8 +106,6 @@ export default function GiftReelSlider({
 }: { category: "Customized" | "Personalized"; title: string; subtitle?: string; dark?: boolean }) {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const swiperRef = useRef<SwiperType | null>(null);
-  const [edge, setEdge] = useState({ start: true, end: false });
 
   useEffect(() => {
     let alive = true;
@@ -103,7 +116,6 @@ export default function GiftReelSlider({
     return () => { alive = false; };
   }, [category]);
 
-  const arrow = `absolute top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-800 shadow-md ring-1 ring-black/5 transition hover:bg-neutral-100 disabled:opacity-0 md:flex`;
   const font = { fontFamily: "'Cormorant Garamond', serif" };
 
   return (
@@ -121,32 +133,18 @@ export default function GiftReelSlider({
         </div>
 
         <div className="relative">
-          <button aria-label="Previous" disabled={edge.start} onClick={() => swiperRef.current?.slidePrev()} className={`${arrow} -left-4`}><RiArrowLeftSLine size={22} /></button>
-          <button aria-label="Next" disabled={edge.end} onClick={() => swiperRef.current?.slideNext()} className={`${arrow} -right-4`}><RiArrowRightSLine size={22} /></button>
-
           {loading ? (
-            <div className="flex gap-4 overflow-hidden">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-[18px] xl:grid-cols-5">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="aspect-[9/16] w-[60%] shrink-0 animate-pulse rounded-xl bg-black/10 sm:w-[30%] lg:w-[19%]" />
+                <div key={i} className="aspect-[9/16] animate-pulse rounded-xl bg-black/10" />
               ))}
             </div>
           ) : (
-            <Swiper
-              onSwiper={(s) => (swiperRef.current = s)}
-              onSlideChange={(s) => setEdge({ start: s.isBeginning, end: s.isEnd })}
-              spaceBetween={14}
-              slidesPerView={1.6}
-              breakpoints={{
-                480: { slidesPerView: 2.3 },
-                768: { slidesPerView: 3.3 },
-                1024: { slidesPerView: 4.3, spaceBetween: 18 },
-                1280: { slidesPerView: 5, spaceBetween: 18 },
-              }}
-            >
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-[18px] xl:grid-cols-5">
               {items.map((p, i) => (
-                <SwiperSlide key={p?._id || i}><Card p={p} /></SwiperSlide>
+                <Card key={p?._id || i} p={p} />
               ))}
-            </Swiper>
+            </div>
           )}
         </div>
       </div>

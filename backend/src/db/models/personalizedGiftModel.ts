@@ -11,7 +11,7 @@ const personalizedGiftSchema = new mongoose.Schema(
         },
         type: {
             type: String,
-            enum: ["image", "video"],
+            enum: ["image", "video", "youtube"],
             default: "image",
         },
         sectionType: {

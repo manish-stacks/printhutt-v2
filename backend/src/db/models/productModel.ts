@@ -56,6 +56,9 @@ const productSchema = new Schema<IProduct>(
       type: Schema.Types.ObjectId,
       ref: "SubCategory",
     },
+    // Product ko extra categories/subcategories me bhi dikhane ke liye
+    extraCategories: [{ type: Schema.Types.ObjectId, ref: "Category" }],
+    extraSubcategories: [{ type: Schema.Types.ObjectId, ref: "SubCategory" }],
     price: {
       type: Number,
       required: [true, "Please add a price"],
@@ -232,6 +235,8 @@ productSchema.index({ status: 1, createdAt: -1 });
 // Category/SubCategory filtering (most common storefront queries)
 productSchema.index({ category: 1, status: 1, createdAt: -1 });
 productSchema.index({ subcategory: 1, status: 1, createdAt: -1 });
+productSchema.index({ extraCategories: 1, status: 1, createdAt: -1 });
+productSchema.index({ extraSubcategories: 1, status: 1, createdAt: -1 });
 
 // Slug lookup (product detail page)
 productSchema.index({ slug: 1 }, { unique: true });

@@ -19,7 +19,7 @@ interface ProductCardProps {
     variant?: 'light' | 'dark';
 }
 
-const iconBtn = "w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-black/40 sm:bg-white/10 backdrop-blur-md border border-white/10 hover:bg-amber-400 hover:border-amber-400 transition-all duration-300 flex items-center justify-center group/btn";
+const iconBtn = "w-8 h-8 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-black/40 sm:bg-white/10 backdrop-blur-md border border-white/10 hover:bg-amber-400 hover:border-amber-400 transition-all duration-300 flex items-center justify-center group/btn";
 
 /** Variant label: size → color → fallback */
 const vLabel = (v: any, i: number) => v?.size || v?.color || `Option ${i + 1}`;
@@ -67,11 +67,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
     };
 
     const showVariants = variants.length > 1;
-    const shown = variants.slice(0, 3);
+    const shown = variants.slice(0, 2);
 
     return (
         <div className="group h-full">
-            <div className="relative flex flex-col h-full overflow-hidden rounded-[14px] border border-white/10 bg-[#13132a] hover:border-amber-400/40 transition-all duration-500 sm:hover:-translate-y-1.5 shadow-lg hover:shadow-amber-400/10">
+            <div className="relative flex flex-col h-full overflow-hidden rounded-xl sm:rounded-[14px] border border-white/10 bg-[#13132a] hover:border-amber-400/40 transition-all duration-500 sm:hover:-translate-y-1.5 shadow-lg hover:shadow-amber-400/10">
                 {/* Media */}
                 <div className="relative aspect-square overflow-hidden bg-[#1b1b36]">
                     <Link href={href} className="block relative h-full" aria-label={product.title}>
@@ -107,15 +107,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
                 </div>
 
                 {/* Body */}
-                <div className="flex flex-col flex-1 p-3 sm:p-4">
+                <div className="flex flex-col flex-1 p-2 sm:p-4">
                     <div className="flex items-center gap-1.5 mb-1 min-w-0">
                         <RiFlashlightLine size={12} className="text-amber-400 shrink-0" />
-                        <span className="text-white/40 text-[10px] sm:text-[11px] uppercase tracking-[0.12em] font-semibold truncate">{product?.category?.name || 'PrintHutt'}</span>
+                        <span className="text-white/40 text-[9px] sm:text-[11px] uppercase tracking-[0.08em] sm:tracking-[0.12em] font-semibold truncate">{product?.category?.name || 'PrintHutt'}</span>
                     </div>
                     <Link href={href} className="block">
-                        <h3 className="text-white text-[14px] sm:text-[16px] font-semibold leading-snug line-clamp-2 min-h-[2.6em] hover:text-amber-300 transition-colors">{product.title}</h3>
+                        <h3 className="text-white text-[12px] sm:text-[16px] font-semibold leading-snug line-clamp-2 min-h-[2.5em] hover:text-amber-300 transition-colors">{product.title}</h3>
                     </Link>
-                    <div className="flex items-center gap-0.5 mt-1.5">
+                    <div className="flex items-center gap-0.5 mt-1 [&_svg]:w-[10px] [&_svg]:h-[10px] sm:[&_svg]:w-3 sm:[&_svg]:h-3">
                         {[...Array(5)].map((_, i) => i < rating
                             ? <RiStarFill key={i} size={12} className="text-amber-400" />
                             : <RiStarLine key={i} size={12} className="text-white/25" />)}
@@ -123,8 +123,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
                     {/* Variants — user ko pata chale kaunse options hain */}
                     {showVariants && (
-                        <div className="mt-2.5">
-                            <p className="text-[10px] uppercase tracking-wider text-white/40 mb-1.5">{variants.length} options</p>
+                        <div className="mt-1.5 sm:mt-2.5">
+                            <p className="hidden sm:block text-[10px] uppercase tracking-wider text-white/40 mb-1.5">{variants.length} options</p>
                             <div className="flex flex-wrap gap-1.5">
                                 {shown.map((v, i) => (
                                     <button
@@ -132,15 +132,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
                                         type="button"
                                         onClick={() => { setVIdx(i); setPicked(true); }}
                                         title={vLabel(v, i)}
-                                        className={`max-w-[100px] truncate px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-medium border transition-all
+                                        className={`max-w-[72px] sm:max-w-[100px] truncate px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg text-[9px] sm:text-[11px] font-medium border transition-all
                                             ${i === vIdx ? 'bg-amber-400 text-black border-amber-400' : 'bg-white/5 text-white/70 border-white/15 hover:border-amber-400/60'}`}
                                     >
                                         {vLabel(v, i)}
                                     </button>
                                 ))}
-                                {variants.length > 3 && (
-                                    <Link href={href} className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-medium border border-white/15 text-white/60 hover:text-amber-300">
-                                        +{variants.length - 3}
+                                {variants.length > 2 && (
+                                    <Link href={href} className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg text-[9px] sm:text-[11px] font-medium border border-white/15 text-white/60 hover:text-amber-300">
+                                        +{variants.length - 2}
                                     </Link>
                                 )}
                             </div>
@@ -148,18 +148,18 @@ const ProductCard = ({ product }: ProductCardProps) => {
                     )}
 
                     <div className="flex-1" />
-                    <div className="pt-2.5 mt-2.5 border-t border-white/10">
+                    <div className="pt-2 mt-2 sm:pt-2.5 sm:mt-2.5 border-t border-white/10">
                         {product?.showPrice ? (
                             <div className="flex items-center justify-between gap-2">
                                 <div className="min-w-0">
                                     <div className="flex items-baseline gap-1.5 flex-wrap">
-                                        <span className="text-amber-400 text-[17px] sm:text-[22px] font-bold leading-none">{formatCurrency(pr.final)}</span>
+                                        <span className="text-amber-400 text-[15px] sm:text-[22px] font-bold leading-none">{formatCurrency(pr.final)}</span>
                                         {pr.hasDiscount && <span className="text-white/30 text-[11px] sm:text-sm line-through">{formatCurrency(pr.mrp)}</span>}
                                     </div>
                                     <span className={`block text-[10px] sm:text-xs mt-1.5 font-medium ${isOutOfStock ? 'text-red-400' : 'text-emerald-400'}`}>{isOutOfStock ? 'Out of Stock' : 'In Stock'}</span>
                                 </div>
                                 <button onClick={product?.isCustomize ? onCustomize : onAdd} disabled={isOutOfStock} aria-label="Add to cart"
-                                    className={`shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 ${isOutOfStock ? 'bg-gray-500 cursor-not-allowed opacity-50' : 'bg-amber-400 hover:bg-white'}`}>
+                                    className={`shrink-0 w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-all duration-300 ${isOutOfStock ? 'bg-gray-500 cursor-not-allowed opacity-50' : 'bg-amber-400 hover:bg-white'}`}>
                                     <RiShoppingBag4Line size={19} className="text-black" />
                                 </button>
                             </div>

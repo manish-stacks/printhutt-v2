@@ -17,7 +17,7 @@ export default function VideoField({ value, asThumb, onChange, onToggleThumb }: 
         placeholder="https://youtu.be/xxxxxxxxxxx ya youtube.com/watch?v=… / shorts/…"
         className="block w-full h-10 rounded-lg bg-white px-3 text-sm border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none"
       />
-      {value && !id && <p className="text-xs text-rose-600">Valid YouTube link nahi hai</p>}
+      {value && !id && <p className="text-xs text-rose-600">Not a valid YouTube link</p>}
       {id && (
         <div className="flex items-center gap-4">
           <div className="relative w-40 aspect-video rounded-lg overflow-hidden bg-black">
@@ -27,7 +27,7 @@ export default function VideoField({ value, asThumb, onChange, onToggleThumb }: 
           </div>
           <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
             <input type="checkbox" checked={!!asThumb} onChange={(e) => onToggleThumb(e.target.checked)} className="w-4 h-4 accent-indigo-600" />
-            Is video ko product card / listing thumbnail bana do
+            Use this video as the product card / listing thumbnail
           </label>
         </div>
       )}

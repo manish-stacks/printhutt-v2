@@ -398,6 +398,8 @@ export async function updateProduct(
   u.short_description = getOr('short_description', u.short_description);
   u.category = getOr('category', u.category);
   u.subcategory = getOr('subcategory', u.subcategory);
+  if (body.extraCategories !== undefined) u.extraCategories = parseIdList(body.extraCategories);
+  if (body.extraSubcategories !== undefined) u.extraSubcategories = parseIdList(body.extraSubcategories);
   u.price = body.price !== undefined ? parseFloat(body.price) : u.price;
   u.discountType = getOr('discountType', u.discountType);
   u.discountPrice =
@@ -639,6 +641,14 @@ export async function deleteSingleImage(body: ImageDeleteDTO): Promise<unknown> 
   return { success: true, message: 'Image deleted successfully' };
 }
 
+/** JSON array ya comma-separated string -> valid ObjectId list */
+function parseIdList(v?: string): string[] {
+  if (!v) return [];
+  let arr: unknown[] = [];
+  try { const j = JSON.parse(v); arr = Array.isArray(j) ? j : []; } catch { arr = String(v).split(','); }
+  return arr.map((x) => String(x).trim()).filter((x) => mongoose.isValidObjectId(x));
+}
+
 /* ──────────────── helper: build product data block (create) ──────────────── */
 function buildProductData(
   body: Record<string, string>,
@@ -653,6 +663,8 @@ function buildProductData(
     short_description: body.short_description ?? '',
     category: body.category ?? '',
     subcategory: body.subcategory ?? '',
+    extraCategories: parseIdList(body.extraCategories),
+    extraSubcategories: parseIdList(body.extraSubcategories),
     price: parseFloat(body.price ?? '0'),
     discountType: body.discountType ?? '',
     discountPrice: parseFloat(body.discountPrice ?? '0'),

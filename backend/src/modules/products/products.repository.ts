@@ -61,14 +61,16 @@ export const productRepo = {
       const rx = { $regex: search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
       query.$or = [{ title: rx }, { sku: rx }, { slug: rx }];
     }
-    if (f.category && mongoose.isValidObjectId(f.category)) query.category = f.category;
+    if (f.category && mongoose.isValidObjectId(f.category)) {
+      query.$and = [...(query.$and || []), { $or: [{ category: f.category }, { extraCategories: f.category }] }];
+    }
     if (f.status === 'active') query.status = true;
     if (f.status === 'inactive') query.status = false;
     if (f.stock === 'out') query.stock = { $lte: 0 };
     if (f.stock === 'low') query.stock = { $gt: 0, $lte: 10 };
     if (f.stock === 'in') query.stock = { $gt: 0 };
     if (f.discount === 'yes') query.discountPrice = { $gt: 0 };
-    if (f.discount === 'no') query.$and = [{ $or: [{ discountPrice: { $lte: 0 } }, { discountPrice: null }] }];
+    if (f.discount === 'no') query.$and = [...(query.$and || []), { $or: [{ discountPrice: { $lte: 0 } }, { discountPrice: null }] }];
     if (f.type === 'customize') query.isCustomize = true;
     if (f.type === 'variant') query.isVarientStatus = true;
     if (f.type === 'simple') { query.isCustomize = { $ne: true }; query.isVarientStatus = { $ne: true }; }
@@ -174,7 +176,7 @@ export const productRepo = {
       .lean<{ _id: unknown } | null>();
     if (!category) return null;
 
-    const { products, total } = await pageBySeed({ category: category._id, status: true }, page, limit, seed);
+    const { products, total } = await pageBySeed({ $or: [{ category: category._id }, { extraCategories: category._id }], status: true }, page, limit, seed);
     return { category, products, total };
   },
 
@@ -190,7 +192,7 @@ export const productRepo = {
     } | null>();
     if (!sub) return null;
     const [{ products, total }, categories] = await Promise.all([
-      pageBySeed({ subcategory: sub._id, status: true }, page, limit, seed),
+      pageBySeed({ $or: [{ subcategory: sub._id }, { extraSubcategories: sub._id }], status: true }, page, limit, seed),
       SubCategory.find({ status: true, parentCategory: sub.parentCategory }).lean(),
     ]);
     return { products, total, categories };

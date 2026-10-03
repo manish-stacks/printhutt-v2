@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { RiLoader2Line } from 'react-icons/ri';
 import { toast } from 'react-toastify';
 import Select, { MultiValue } from 'react-select';
+import ExtraCategoryPicker from '@/components/admin/product/ExtraCategoryPicker';
 import type { ProductFormData } from '@/lib/types/product';
 import type { Warranty } from '@/lib/types/warranty';
 import type { ShippingInformation } from '@/lib/types/shipping';
@@ -308,7 +309,7 @@ export default function AddProduct() {
           {/* top row */}
           <div className="w-full px-3 mb-5">
             <div className="ph-page-head ph-head-card">
-              <h3 className="text-lg font-bold">Create Product</h3>
+              <div><h3 className="text-lg font-bold">Add product</h3><p>Fill in details, pricing, media and visibility</p></div>
               <button type="button" onClick={() => window.history.back()} className="ph-btn ph-btn-ghost">Back</button>
             </div>
           </div>
@@ -632,7 +633,7 @@ export default function AddProduct() {
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-lg font-bold mb-4">Product Status</h3>
+              <h3 className="text-[15px] font-bold mb-4">Product status</h3>
               <div className="space-y-4">
                 {[
                   { key: 'status', label: 'Active' },
@@ -680,7 +681,7 @@ export default function AddProduct() {
 
             {formData.isCustomize && (
               <div className="bg-white p-6 rounded-lg shadow-md">
-                <h3 className="text-lg font-bold mb-4">Customize Options</h3>
+                <h3 className="text-[15px] font-bold mb-4">Customize options</h3>
                 <input
                   type="text" placeholder='link' name='customizeLink'
                   value={formData.customizeLink} onChange={handleInputChange}
@@ -695,6 +696,7 @@ export default function AddProduct() {
             )}
 
             <div className="ph-section ph-section-row">
+              <h3>Offers &amp; shipping</h3>
               <label className="block font-medium text-gray-700 ml-3">Offers On</label>
               <Select options={options} isMulti onChange={handleSelectChangeOffer} />
               <label className="block font-medium text-gray-700 ml-3 mt-3">Shipping Fee</label>
@@ -707,31 +709,43 @@ export default function AddProduct() {
             </div>
 
             <div className="ph-section ph-section-row">
-              <label className="block font-medium text-gray-700 ml-3">Select Category</label>
+              <h3>Main category</h3>
+              <label className="block font-medium text-gray-700 ml-3">Category</label>
               <select
                 id="category" name="category"
                 value={formData.category || ''} onChange={handleCategoryChange}
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
               >
-                <option>Choose Category</option>
+                <option>Select a category</option>
                 {categories && categories.map(cat => (
                   <option key={cat._id} value={cat._id}>{cat.name.toUpperCase()}</option>
                 ))}
               </select>
-              <label className="block font-medium text-gray-700 ml-3 mt-3">Select Sub Category</label>
+              <label className="block font-medium text-gray-700 ml-3 mt-3">Sub category</label>
               <select
                 id="subcategory" name="subcategory"
                 value={formData.subcategory || ''} onChange={handleInputChange}
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
               >
-                <option>Choose SubCategory</option>
+                <option>Select a sub category</option>
                 {subcategories.map(cat => (
                   <option key={cat._id} value={cat._id}>{cat.name.toUpperCase()}</option>
                 ))}
               </select>
             </div>
 
+            <ExtraCategoryPicker
+              categories={categories as any}
+              mainCategory={formData.category as any}
+              mainSubcategory={formData.subcategory as any}
+              extraCategories={((formData as any).extraCategories || []).map((x: any) => (typeof x === 'object' ? x._id : x))}
+              extraSubcategories={((formData as any).extraSubcategories || []).map((x: any) => (typeof x === 'object' ? x._id : x))}
+              onChange={(v) => setFormData(prev => ({ ...prev, ...v } as any))}
+            />
+
+
             <div className="ph-section space-y-5">
+              <h3>SEO</h3>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Meta Title</label>
                 <input className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 mt-1"

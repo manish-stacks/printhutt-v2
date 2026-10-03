@@ -1,6 +1,6 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Swal from 'sweetalert2';
@@ -19,14 +19,21 @@ const DEFAULTS: Record<string, string> = {
 
 export default function ProductListPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const sp = useSearchParams();
   const [rows, setRows] = useState<any[]>([]);
   const [pagination, setPagination] = useState<any>();
   const [loading, setLoading] = useState(true);
   const [copyingId, setCopyingId] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
-  const [search, setSearch] = useState('');
-  const [values, setValues] = useState<Record<string, string>>(DEFAULTS);
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState(sp.get('q') || '');
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const v = { ...DEFAULTS };
+    Object.keys(DEFAULTS).forEach((k) => { const x = sp.get(k); if (x) v[k] = x; });
+    return v;
+  });
+  const [page, setPage] = useState(() => Math.max(1, Number(sp.get('page')) || 1));
+  const firstRun = useRef(true);
   const q = useDebounced(search);
   const vals = useDebounced(values, 250);
 
@@ -41,14 +48,28 @@ export default function ProductListPage() {
       setRows(res?.products || []);
       setPagination(res?.pagination);
     } catch (e: any) {
-      toast.error(e?.message || 'Products load nahi hue');
+      toast.error(e?.message || 'Failed to load products');
     } finally {
       setLoading(false);
     }
   }, [page, q, vals]);
 
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { setPage(1); }, [q, vals]);
+  // filter/search change -> page 1 (but not on first mount, so ?page=5 is preserved)
+  useEffect(() => {
+    if (firstRun.current) { firstRun.current = false; return; }
+    setPage(1);
+  }, [q, vals]);
+
+  // keep page + filters in URL so Back from edit returns to same page
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (page > 1) params.set('page', String(page));
+    if (q) params.set('q', q);
+    Object.keys(DEFAULTS).forEach((k) => { if (vals[k] && vals[k] !== DEFAULTS[k]) params.set(k, vals[k]); });
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [page, q, vals, pathname, router]);
 
   const filters: FilterDef[] = [
     { key: 'category', label: 'Category', type: 'select', options: [{ value: 'all', label: 'All categories' }, ...categories.map((c) => ({ value: c._id, label: c.name }))] },
@@ -65,7 +86,7 @@ export default function ProductListPage() {
   ];
 
   const handleDelete = async (id: string) => {
-    const r = await Swal.fire({ title: 'Delete product?', text: 'Ye wapas nahi aayega.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e11d48', confirmButtonText: 'Delete' });
+    const r = await Swal.fire({ title: 'Delete product?', text: 'This action cannot be undone.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e11d48', confirmButtonText: 'Delete' });
     if (!r.isConfirmed) return;
     try {
       await delete_a_product(id);
@@ -89,7 +110,7 @@ export default function ProductListPage() {
       setCopyingId(id);
       const res: any = await copy_product(id);
       if (!res?.success) throw new Error(res?.message);
-      toast.success(`"${res.data.title}" copy bana — edit page khul raha hai`);
+      toast.success(`"${res.data.title}" duplicated — opening editor`);
       router.push(`/admin/products/edit/${res.data._id}`);
     } catch (e: any) { toast.error(e?.message || 'Copy failed'); } finally { setCopyingId(null); }
   };

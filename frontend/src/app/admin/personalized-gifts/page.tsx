@@ -1,299 +1,140 @@
 "use client";
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import {
-  RiAddLine, RiDeleteBin6Line, RiEdit2Line,
-  RiImageLine, RiVideoLine, RiAppsLine, RiLockLine,
-} from "react-icons/ri";
+import { RiAddLine, RiDeleteBin6Line, RiEdit2Line, RiImageLine, RiVideoLine, RiYoutubeLine, RiAppsLine } from "react-icons/ri";
 import { personalizedGiftService } from "@/_services/common/personalizedGiftService";
 import PersonalizedGiftForm from "./PersonalizedGiftForm";
 import { toast } from "react-toastify";
 
-const MAX_PER_TYPE = 8;
+const MAX_PER_SECTION = 10;
+type Tab = "all" | "Customized" | "Personalized";
 
-const PersonalizedGiftPage = () => {
+const SECTIONS: { value: Exclude<Tab, "all">; title: string }[] = [
+  { value: "Customized", title: "Gifts That Glow With Emotion" },
+  { value: "Personalized", title: "Personalized Gifts Crafted With Love" },
+];
+
+const ytId = (u = "") => u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/i)?.[1];
+
+const TYPE_META: Record<string, { label: string; icon: any; cls: string }> = {
+  image: { label: "Image", icon: RiImageLine, cls: "bg-blue-50 text-blue-700" },
+  video: { label: "Video link", icon: RiVideoLine, cls: "bg-purple-50 text-purple-700" },
+  youtube: { label: "YouTube", icon: RiYoutubeLine, cls: "bg-red-50 text-red-700" },
+};
+
+function Thumb({ item }: { item: any }) {
+  const box = "h-20 w-14 shrink-0 overflow-hidden rounded-lg bg-gray-100 object-cover";
+  if (item.type === "youtube") {
+    const id = ytId(item.videoUrl);
+    return id ? <img src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" className={box} /> : <div className={box} />;
+  }
+  if (item.type === "video") return <video src={item.videoUrl || item.media?.url} className={`${box} bg-black`} muted preload="metadata" />;
+  return item.media?.url ? <img src={item.media.url} alt={item.name} className={box} /> : <div className={box} />;
+}
+
+export default function PersonalizedGiftPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
-  const [filter, setFilter] = useState<"all" | "image" | "video">("all");
+  const [tab, setTab] = useState<Tab>("all");
 
   const fetchData = async () => {
     try {
-      const response = await personalizedGiftService.all();
-      setItems(response?.data || []);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+      const r: any = await personalizedGiftService.all();
+      setItems(r?.data || []);
+    } catch (e) { console.error(e); } finally { setLoading(false); }
   };
+  useEffect(() => { fetchData(); }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const count = (s: string) => items.filter((i) => i.sectionType === s).length;
+  const shown = tab === "all" ? items : items.filter((i) => i.sectionType === tab);
+  const allFull = SECTIONS.every((s) => count(s.value) >= MAX_PER_SECTION);
+  const defaultSection = (tab !== "all" && count(tab) < MAX_PER_SECTION ? tab : SECTIONS.find((s) => count(s.value) < MAX_PER_SECTION)?.value) || "Customized";
 
-  const handleDelete = async (id: string) => {
+  const remove = async (id: string) => {
     if (!confirm("Delete this item?")) return;
-    try {
-      await personalizedGiftService.delete(id);
-      fetchData();
-      toast.success("Item deleted successfully");
-    } catch (error) {
-      console.error(error);
-    }
+    try { await personalizedGiftService.delete(id); toast.success("Item deleted"); fetchData(); } catch (e) { console.error(e); }
   };
 
-  /* ─── Compute counts + limits ─── */
-  const imageCount = items.filter((i: any) => i.type === "image").length;
-  const videoCount = items.filter((i: any) => i.type === "video").length;
-  const imageAtLimit = imageCount >= MAX_PER_TYPE;
-  const videoAtLimit = videoCount >= MAX_PER_TYPE;
-
-  /* ─── Filter items ─── */
-  const filteredItems =
-    filter === "all" ? items : items.filter((i: any) => i.type === filter);
-
-  /* ─── Add New with limit guard ─── */
-  const handleAddNew = () => {
-    if (filter === "image" && imageAtLimit) {
-      toast.error(`Image limit reached (${MAX_PER_TYPE}/${MAX_PER_TYPE}). Delete one first.`);
-      return;
-    }
-    if (filter === "video" && videoAtLimit) {
-      toast.error(`Video limit reached (${MAX_PER_TYPE}/${MAX_PER_TYPE}). Delete one first.`);
-      return;
-    }
-    if (imageAtLimit && videoAtLimit) {
-      toast.error("Both image and video limits reached. Delete some items first.");
-      return;
-    }
-    setEditData(null);
-    setOpen(true);
-  };
-
-  /* ─── Filter Tab component ─── */
-  const FilterTab = ({
-    value, label, count, max, icon: Icon,
-  }: {
-    value: "all" | "image" | "video";
-    label: string;
-    count: number;
-    max?: number;
-    icon: any;
-  }) => {
-    const isActive = filter === value;
-    const atLimit = max !== undefined && count >= max;
-
+  const tabBtn = (value: Tab, label: string, n: number, max?: number) => {
+    const active = tab === value;
+    const full = max !== undefined && n >= max;
     return (
-      <button
-        onClick={() => setFilter(value)}
-        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
-          isActive
-            ? "bg-black text-white border-black shadow-sm"
-            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-        }`}
-      >
-        <Icon className="w-4 h-4" />
+      <button key={value} onClick={() => setTab(value)}
+        className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition ${active ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}>
+        {value === "all" && <RiAppsLine />}
         <span>{label}</span>
-        <span
-          className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-            isActive
-              ? "bg-white/20 text-white"
-              : atLimit
-                ? "bg-red-100 text-red-700"
-                : "bg-gray-100 text-gray-700"
-          }`}
-        >
-          {count}
-          {max !== undefined && `/${max}`}
+        <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${active ? "bg-white/20" : full ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-700"}`}>
+          {n}{max !== undefined && `/${max}`}
         </span>
-        {atLimit && (
-          <RiLockLine className={`w-3.5 h-3.5 ${isActive ? "text-white/80" : "text-red-500"}`} />
-        )}
       </button>
     );
   };
 
   return (
     <div className="ph-page">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Personalized Gifts</h2>
-
-        <button
-          onClick={handleAddNew}
-          disabled={imageAtLimit && videoAtLimit}
-          className="inline-flex items-center gap-2 rounded-xl bg-black text-white px-5 py-3 disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          <RiAddLine />
-          Add New
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold">Personalized Gifts</h2>
+          <p className="text-sm text-gray-500">Each home page section shows up to {MAX_PER_SECTION} items. Use an image upload, a direct video link or a YouTube link.</p>
+        </div>
+        <button onClick={() => { setEditData(null); setOpen(true); }} disabled={allFull}
+          className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-300">
+          <RiAddLine /> Add item
         </button>
       </div>
 
-      {/* ─── Filter Tabs ─── */}
-      <div className="flex flex-wrap items-center gap-2 mb-5">
-        <FilterTab value="all" label="All" count={items.length} icon={RiAppsLine} />
-        <FilterTab
-          value="image"
-          label="Images"
-          count={imageCount}
-          max={MAX_PER_TYPE}
-          icon={RiImageLine}
-        />
-        <FilterTab
-          value="video"
-          label="Videos"
-          count={videoCount}
-          max={MAX_PER_TYPE}
-          icon={RiVideoLine}
-        />
+      <div className="mb-5 flex flex-wrap gap-2">
+        {tabBtn("all", "All", items.length)}
+        {SECTIONS.map((s) => tabBtn(s.value, s.title, count(s.value), MAX_PER_SECTION))}
       </div>
 
-      {/* ─── Limit warning banner ─── */}
-      {(imageAtLimit || videoAtLimit) && (
-        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800 flex items-center gap-2">
-          <RiLockLine className="w-4 h-4 flex-shrink-0" />
-          <span>
-            {imageAtLimit && videoAtLimit
-              ? "Both image and video limits reached. Delete some items to add new ones."
-              : imageAtLimit
-                ? `Image limit reached (${MAX_PER_TYPE}/${MAX_PER_TYPE}). Only video uploads allowed.`
-                : `Video limit reached (${MAX_PER_TYPE}/${MAX_PER_TYPE}). Only image uploads allowed.`}
-          </span>
+      {tab !== "all" && count(tab) >= MAX_PER_SECTION && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          This section is full ({MAX_PER_SECTION}/{MAX_PER_SECTION}). Delete an item to add a new one.
         </div>
       )}
 
       <div className="overflow-x-auto rounded-2xl border bg-white">
-        <table className="w-full">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-4 text-left">Media</th>
-              <th className="p-4 text-left">Name</th>
-              <th className="p-4 text-left">Badge</th>
-              <th className="p-4 text-left">Type</th>
-              <th className="p-4 text-left">Section</th>
-              <th className="p-4 text-left">Status</th>
-              <th className="p-4 text-right">Action</th>
-            </tr>
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+            <tr>{["Media", "Name", "Source", "Section", "Order", "Status", ""].map((h) => <th key={h} className="p-4 font-semibold">{h}</th>)}</tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-400">
-                  Loading...
-                </td>
-              </tr>
-            ) : filteredItems.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-400">
-                  {filter === "all"
-                    ? "No items found"
-                    : `No ${filter} items found`}
-                </td>
-              </tr>
-            ) : (
-              filteredItems.map((item: any) => (
-                <tr key={item._id} className="border-t hover:bg-gray-50 transition">
-                  {/* Media Preview */}
+              <tr><td colSpan={7} className="p-8 text-center text-gray-400">Loading…</td></tr>
+            ) : shown.length === 0 ? (
+              <tr><td colSpan={7} className="p-8 text-center text-gray-400">No items yet</td></tr>
+            ) : shown.map((item) => {
+              const m = TYPE_META[item.type] || TYPE_META.image;
+              const Icon = m.icon;
+              return (
+                <tr key={item._id} className="border-t transition hover:bg-gray-50">
+                  <td className="p-4"><Thumb item={item} /></td>
                   <td className="p-4">
-                    {item.type === "video" ? (
-                      item.videoUrl ? (
-                        <video
-                          src={item.videoUrl}
-                          className="w-16 h-20 rounded-lg object-cover bg-black"
-                          muted
-                          preload="metadata"
-                        />
-                      ) : (
-                        <div className="w-16 h-20 rounded-lg bg-gray-100 flex items-center justify-center text-[10px] text-gray-400">
-                          No URL
-                        </div>
-                      )
-                    ) : item.media?.url ? (
-                      <Image
-                        src={item.media.url}
-                        alt={item.name}
-                        width={64}
-                        height={80}
-                        className="rounded-lg object-cover w-16 h-20"
-                      />
-                    ) : (
-                      <div className="w-16 h-20 rounded-lg bg-gray-100 flex items-center justify-center text-[10px] text-gray-400">
-                        No Image
-                      </div>
-                    )}
+                    <p className="font-medium text-gray-900">{item.name}</p>
+                    {item.badge && <p className="text-xs text-gray-500">Badge: {item.badge}</p>}
                   </td>
-
-                  <td className="p-4 font-medium">{item.name}</td>
-                  <td className="p-4 text-gray-500">{item.badge || "—"}</td>
-                  <td className="p-4 capitalize">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
-                        item.type === "video"
-                          ? "bg-purple-50 text-[#3C2A6D]"
-                          : "bg-blue-50 text-blue-700"
-                      }`}
-                    >
-                      {item.type === "video" ? <RiVideoLine /> : <RiImageLine />}
-                      {item.type}
-                    </span>
-                  </td>
-                  <td className="p-4 text-gray-500">{item.sectionType}</td>
-
+                  <td className="p-4"><span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium ${m.cls}`}><Icon />{m.label}</span></td>
+                  <td className="p-4 text-gray-600">{item.sectionType === "Customized" ? "Gifts That Glow" : "Crafted With Love"}</td>
+                  <td className="p-4 text-gray-600">{item.sortOrder ?? 0}</td>
+                  <td className="p-4"><span className={`rounded-full px-3 py-1 text-xs font-medium ${item.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{item.isActive ? "Active" : "Inactive"}</span></td>
                   <td className="p-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        item.isActive
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {item.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-
-                  <td className="p-4">
-                    <div className="flex items-center justify-end gap-3">
-                      <button
-                        onClick={() => {
-                          setEditData(item);
-                          setOpen(true);
-                        }}
-                        className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition"
-                      >
-                        <RiEdit2Line />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item._id)}
-                        className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200 transition"
-                      >
-                        <RiDeleteBin6Line />
-                      </button>
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => { setEditData(item); setOpen(true); }} aria-label="Edit" className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-600 hover:bg-blue-200"><RiEdit2Line /></button>
+                      <button onClick={() => remove(item._id)} aria-label="Delete" className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-100 text-red-600 hover:bg-red-200"><RiDeleteBin6Line /></button>
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      {/* Form Modal */}
       {open && (
-        <PersonalizedGiftForm
-          editData={editData}
-          availableTypes={{
-            image: !imageAtLimit,
-            video: !videoAtLimit,
-          }}
-          onClose={() => {
-            setOpen(false);
-            fetchData();
-          }}
-        />
+        <PersonalizedGiftForm editData={editData} defaultSection={defaultSection} onClose={() => { setOpen(false); fetchData(); }} />
       )}
     </div>
   );
-};
-
-export default PersonalizedGiftPage;
+}
